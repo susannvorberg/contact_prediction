@@ -2,22 +2,17 @@
 
 
 #===============================================================================
-###    Plot the prediciton matrix using ggplot in R
+###     Plot a contact map 
+### 
+###     when pdb file is specified, then observed distances will be in upper left
+###     and contact map will be in lower right
 #===============================================================================
 
 import numpy as np
 import pandas as pd
-import os
 import argparse
-import plotly
 
-scripts = os.environ['SCRIPTS']
-data_dir = os.environ['DATA']
-plot_dir = os.environ['PLOTS']
-
-sys.path.append(scripts + "/bayesian_framework") # for evaluation plotting
-from bayesian_framework_util_functions import *
-
+from plot_utils import *
 
 
 def main():
