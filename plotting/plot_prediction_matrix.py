@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-
 #===============================================================================
 ###     Plot a contact map 
 ### 
@@ -11,14 +10,13 @@
 import numpy as np
 import pandas as pd
 import argparse
-
 from plot_utils import *
 
 
 def main():
 
     ### Parse arguments
-    parser = argparse.ArgumentParser(description='stochastic gradient descentin python.')
+    parser = argparse.ArgumentParser(description='Plotting a contact map.')
     parser.add_argument("-c", "--contact_map_file",     type=str,   help="path to contact map file")
     parser.add_argument("-s", "--seqsep",               type=int,   help="sequence separation")
     parser.add_argument("-o", "--plot_out",             type=str,   help="directory for plot")
@@ -50,26 +48,21 @@ def main():
     #L                   = len(pred_matrix)
     
     
-   
-
-
+  
     ### Read contact map
     pred_matrix_arr     = np.genfromtxt(matrix_file)
     L                   = len(pred_matrix_arr)
-    N                   = None
     indices_upper_tri   = np.triu_indices(L, seqsep)
 
 
-    ###Read pdb file if specified
+    ###compute distance map from pdb file
     if(pdb_file is not None):
-        #compute distance map from pdb file
         observed_distances = distance_map(pdb_file)
     
 
-
     ### Prepare Plotting
     plot_matrix      = pd.DataFrame()
-    
+
     plot_matrix['residue_i']  = indices_upper_tri[0]+1
     plot_matrix['residue_j']  = indices_upper_tri[1]+1
     plot_matrix['confidence'] = pred_matrix_arr[indices_upper_tri]
@@ -78,13 +71,10 @@ def main():
         plot_matrix['distance']   = observed_distances[indices_upper_tri]
         plot_matrix['class']      = (plot_matrix.distance < contact_threshold).tolist()
 
-
-
     ### Plot Contact Map
     base_name = '.'.join(os.path.basename(matrix_file).split('.')[:-1])
     printname = plot_out + "/" + base_name + ".html"
     plot_contact_map_someScore_plotly(plot_matrix, name, L, N, seqsep, printname)
-
 
 
 if __name__ == '__main__':
