@@ -1,0 +1,96 @@
+#!/usr/bin/env python
+
+
+#===============================================================================
+###    Plot the prediciton matrix using ggplot in R
+#===============================================================================
+
+import numpy as np
+import pandas as pd
+import os
+import argparse
+import plotly
+
+scripts = os.environ['SCRIPTS']
+data_dir = os.environ['DATA']
+plot_dir = os.environ['PLOTS']
+
+sys.path.append(scripts + "/bayesian_framework") # for evaluation plotting
+from bayesian_framework_util_functions import *
+
+
+
+def main():
+
+    ### Parse arguments
+    parser = argparse.ArgumentParser(description='stochastic gradient descentin python.')
+    parser.add_argument("-c", "--contact_map_file",     type=str,   help="path to contact map file")
+    parser.add_argument("-s", "--seqsep",               type=int,   help="sequence separation")
+    parser.add_argument("-o", "--plot_out",             type=str,   help="directory for plot")
+    parser.add_argument("-c", "--contact_threshold",    type=int,   help="contact definition; C_beta distance between residue pairs")
+    parser.add_argument("--pdb_file",                   type=str,   help="pdb file [optional]")
+    
+    args = parser.parse_args()
+    
+    seqsep              = int(args.seqsep)
+    plot_out            = str(args.plot_out)
+    matrix_file         = str(args.matrix_file)
+    contact_threshold   = int(args.contact_threshold)
+    
+    pdb_file = None
+    if args.pdb_file:
+        pdb_file = str(args.pdb_file)
+        
+
+    #debugging
+    #matrix_file = "/data/ouga/home/ag_soeding/vorberg/collaborations/andrea_drosophila/mat/HP6.apc.mat"
+    #matrix_file = "/data/ouga/home/ag_soeding/vorberg/collaborations/andrea_drosophila/mat/HMR_1_412.apc.mat"
+    #matrix_file = "/data/ouga/home/ag_soeding/vorberg/collaborations/andrea_drosophila/mat/Suvar205.apc.mat"
+    #matrix_file = "/usr/users/svorber/work/data/benchmarkset_cathV4_red1/ccmpred_dev_center_v/reduced1/l_02/mypred/4i1kA00.l2normapc.mat"
+    #seqsep     = 4
+    #contact_threshold = 8
+    #plot_out    = "/data/ouga/home/ag_soeding/vorberg/collaborations/andrea_drosophila/mat/"
+    #pred_matrix_arr     = np.triu(pred_matrix_arr, seq_sep)            #use only one triangle and apply seqsep
+    #pred_matrix         = pd.DataFrame(pred_matrix_arr)
+    #L                   = len(pred_matrix)
+    
+    
+   
+
+
+    ### Read contact map
+    pred_matrix_arr     = np.genfromtxt(matrix_file)
+    L                   = len(pred_matrix_arr)
+    N                   = None
+    indices_upper_tri   = np.triu_indices(L, seqsep)
+
+
+    ###Read pdb file if specified
+    if(pdb_file is not None):
+        #compute distance map from pdb file
+        observed_distances = distance_map(pdb_file)
+    
+
+
+    ### Prepare Plotting
+    plot_matrix      = pd.DataFrame()
+    
+    plot_matrix['residue_i']  = indices_upper_tri[0]+1
+    plot_matrix['residue_j']  = indices_upper_tri[1]+1
+    plot_matrix['confidence'] = pred_matrix_arr[indices_upper_tri]
+
+    if(pdb_file is not None):
+        plot_matrix['distance']   = observed_distances[indices_upper_tri]
+        plot_matrix['class']      = (plot_matrix.distance < contact_threshold).tolist()
+
+
+
+    ### Plot Contact Map
+    base_name = '.'.join(os.path.basename(matrix_file).split('.')[:-1])
+    printname = plot_out + "/" + base_name + ".html"
+    plot_contact_map_someScore_plotly(plot_matrix, name, L, N, seqsep, printname)
+
+
+
+if __name__ == '__main__':
+    main()
