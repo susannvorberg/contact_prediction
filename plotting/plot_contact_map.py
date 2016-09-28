@@ -3,31 +3,35 @@
 #===============================================================================
 ###     Plot a contact map 
 ### 
-###     when pdb file is specified, then observed distances will be in upper left
+###     when pdb file is specified, observed distances will be in upper left
 ###     and contact map will be in lower right
 #===============================================================================
 
+import os
 import numpy as np
 import pandas as pd
 import argparse
-from plot_utils import *
+import json
+import plot.plot_utils as plot
+import pdb.pdb_utils as pdb
+import IO.io_utils as io
 
 
 def main():
 
     ### Parse arguments
     parser = argparse.ArgumentParser(description='Plotting a contact map.')
-    parser.add_argument("-c", "--contact_map_file",     type=str,   help="path to contact map file")
-    parser.add_argument("-s", "--seqsep",               type=int,   help="sequence separation")
-    parser.add_argument("-o", "--plot_out",             type=str,   help="directory for plot")
-    parser.add_argument("-c", "--contact_threshold",    type=int,   help="contact definition; C_beta distance between residue pairs")
-    parser.add_argument("--pdb_file",                   type=str,   help="pdb file [optional]")
+    parser.add_argument("contact_map_file",     type=str,   help="path to contact map file")
+    parser.add_argument("plot_out",             type=str,   help="directory for plot")
+    parser.add_argument("--seqsep",             type=int,   default=6,  help="sequence separation")
+    parser.add_argument("--contact_threshold",  type=int,   default=8, help="contact definition; C_beta distance between residue pairs")
+    parser.add_argument("--pdb_file",           type=str,   help="pdb file [optional]")
     
     args = parser.parse_args()
     
     seqsep              = int(args.seqsep)
     plot_out            = str(args.plot_out)
-    matrix_file         = str(args.matrix_file)
+    matrix_file         = str(args.contact_map_file)
     contact_threshold   = int(args.contact_threshold)
     
     pdb_file = None
@@ -50,14 +54,24 @@ def main():
     
   
     ### Read contact map
-    pred_matrix_arr     = np.genfromtxt(matrix_file)
+    pred_matrix_arr     = np.genfromtxt(matrix_file, comments="#")
     L                   = len(pred_matrix_arr)
+    N                   = None
     indices_upper_tri   = np.triu_indices(L, seqsep)
+    base_name = '.'.join(os.path.basename(matrix_file).split('.')[:-1])
+    protein = base_name
+
+    ###Read Meta info if available
+    meta_info = io.read_json_from_mat(matrix_file)
+    if 'N' in meta_info.keys():
+        N = meta_info['N']
+    if 'protein' in meta_info.keys():
+        protein = meta_info['protein']
 
 
     ###compute distance map from pdb file
     if(pdb_file is not None):
-        observed_distances = distance_map(pdb_file)
+        observed_distances = pdb.distance_map(pdb_file)
     
 
     ### Prepare Plotting
@@ -72,9 +86,8 @@ def main():
         plot_matrix['class']      = (plot_matrix.distance < contact_threshold).tolist()
 
     ### Plot Contact Map
-    base_name = '.'.join(os.path.basename(matrix_file).split('.')[:-1])
     printname = plot_out + "/" + base_name + ".html"
-    plot_contact_map_someScore_plotly(plot_matrix, name, L, N, seqsep, printname)
+    plot.plot_contact_map_someScore_plotly(plot_matrix, protein, L, N, seqsep, printname)
 
 
 if __name__ == '__main__':
