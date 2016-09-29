@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
 import argparse
+import json
+import os
+
 import numpy as np
 import pandas as pd
-import os
-import json
-import pdb.pdb_utils as pdb
+
+import utils.pdb_utils as pdb
 
 
 def create_evaluation_file(pdb_file, eval_dir, seqsep, N, L, neff, cath, name):

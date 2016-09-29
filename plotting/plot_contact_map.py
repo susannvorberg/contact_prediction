@@ -7,14 +7,15 @@
 ###     and contact map will be in lower right
 #===============================================================================
 
+import argparse
 import os
+
 import numpy as np
 import pandas as pd
-import argparse
-import json
 import plot.plot_utils as plot
-import pdb.pdb_utils as pdb
-import IO.io_utils as io
+
+import utils.io_utils as io
+import utils.pdb_utils as pdb
 
 
 def main():
