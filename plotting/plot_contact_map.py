@@ -12,8 +12,7 @@ import os
 
 import numpy as np
 import pandas as pd
-import plot.plot_utils as plot
-
+import utils.plot_utils as plot
 import utils.io_utils as io
 import utils.pdb_utils as pdb
 
