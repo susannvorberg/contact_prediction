@@ -1,5 +1,5 @@
 //============================================================================
-// Name        : util_py.cpp
+// Name        : boost_converters.cpp
 // Author      : susi
 // Version     :
 // Copyright   : Your copyright notice
@@ -9,7 +9,7 @@
 //============================================================================
 
 
-#include "util_py.hpp"
+#include "boost_converters.hpp"
 #include <boost/python.hpp>
 #include <map>
 
