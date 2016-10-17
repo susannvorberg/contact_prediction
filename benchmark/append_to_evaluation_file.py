@@ -5,7 +5,7 @@ import os
 import pandas as pd
 import numpy as np
 import json
-import cpp_modules.bayesian_utils as bu
+import cpp_modules.bayes_utils_py as bu
 
 
 def compute_apc_corrected_matrix(cmat):
