@@ -48,10 +48,11 @@ def read_json_from_mat(matfile):
 
     with open(matfile, 'r') as f:
         for line in f:
-            if '#META' in line:
-                meta = json.loads(line)
-            else:
-                print(str(matfile) + "does not contain META info. (Line must start with #META!)")
+            if '#>META>' in line:
+                meta = json.loads(line.split(">")[2])
+
+    if len(meta) == 0:
+        print(str(matfile) + " does not contain META info. (Line must start with #META!)")
 
     return meta
 
