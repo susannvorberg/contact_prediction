@@ -5,7 +5,7 @@ import os
 import pandas as pd
 import numpy as np
 import json
-import cpp_modules.bayes_utils_py as bu
+import build.libcontactutils as cu
 
 
 def compute_apc_corrected_matrix(cmat):
@@ -31,9 +31,9 @@ def compute_l2norm_from_braw(braw_file, L, apc=False):
 
     #compute l2norm (with or without apc)
     if(apc):
-        mat   = np.array(bu.calcHeuristicAPC_py(L, braw_file, True, 0))
+        mat   = np.array(cu.calcHeuristicAPC_py(L, braw_file, True, 0))
     else:
-        mat   = np.array(bu.calcHeuristicAPC_py(L, braw_file, False, 0))
+        mat   = np.array(cu.calcHeuristicAPC_py(L, braw_file, False, 0))
 
     return mat
 

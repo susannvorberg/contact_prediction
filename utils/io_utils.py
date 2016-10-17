@@ -29,9 +29,9 @@ AMINO_INDICES = {
      'X' : 0,
      'Y' : 19,
      'Z' : 0,
-     '-' : 0
-}
+     '-' : 0}
 
+AMINO_ACIDS = "-ARNDCQEGHILKMFPSTWYV"
 
 def read_json_from_mat(matfile):
     '''
@@ -55,24 +55,22 @@ def read_json_from_mat(matfile):
 
     return meta
 
-def read_alignment_file(alignment_file):
-    '''
-        Read alingment file in psicov format into matrix
-        gaps = 0
-        amino acids = 1..20
-    :param alignment_file:
-    :return: integer numpy matrix
-    '''
+def read_alignment(alignment_file):
+    """
+    Read alignment file (Psicov Format)
 
-    # read alignment columns
+    :param alignment_file: path to alignment file
+    :return: matrix of alingnment
+    """
+    alignment = None
+
     try:
         f = open(alignment_file)
+        alignment = np.array([[AMINO_INDICES[c] for c in x.strip()] for x in f], dtype=np.uint8)
+
+        f.close()
     except IOError:
-        print("Could not open psicov file!")
+        print ("Could not open psicov file: " + alignment_file )
 
-    msa = np.array([[AMINO_INDICES[c] for c in x.strip()] for x in f], dtype=np.uint8)
-    # f.readlines(N) # for debugging
 
-    f.close()
-
-    return msa
+    return alignment

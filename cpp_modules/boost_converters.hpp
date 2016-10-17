@@ -1,5 +1,5 @@
 //============================================================================
-// Name        : util_py.hpp
+// Name        : boost_converters.hpp
 // Author      : susi
 // Version     :
 // Copyright   : Your copyright notice
@@ -9,8 +9,8 @@
 //				 returned to python
 //============================================================================
 
-#ifndef UTIL_PY
-#define UTIL_PY
+#ifndef BOOST_CONVERTERS
+#define BOOST_CONVERTERS
 
 #include <boost/python.hpp>
 #include <armadillo>
@@ -87,4 +87,4 @@ boost::python::dict toPythonDict(std::map<std::string, std::vector<double> > map
 
 
 
-#endif /* UTIL_PY*/
+#endif /* BOOST_CONVERTERS*/
