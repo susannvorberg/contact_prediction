@@ -9,7 +9,6 @@
 #===============================================================================
 import argparse
 import os
-import numpy as np
 from collections import Counter
 import plotly.graph_objs as go
 from plotly.offline import plot as plotly_plot
@@ -17,7 +16,7 @@ import utils.io_utils as io
 
 
 
-def plot_percentage_gaps_per_position(alignment_file, plot_file):
+def plot_percentage_gaps_per_position(alignment_file, plot_file=''):
 
     # read alignment
     protein = os.path.basename(alignment_file).split(".")[0]
@@ -30,11 +29,16 @@ def plot_percentage_gaps_per_position(alignment_file, plot_file):
     gaps = [Counter(alignment[pos])[0] / N for pos in range(L)]
 
     #create plot
-    data = [go.Scatter(x=range(L),
-                    y=gaps,
-                    mode="Lines"
-                    )
-            ]
+    data = []
+    data.append(
+        go.Scatter(
+            x=[x for x in range(L)],
+            y=gaps,
+            name = "percentage of gaps",
+            mode="Lines"
+        )
+    )
+
     layout = {
         'title':"Percentage of gaps in alignment of " + str(protein) + "<br> N="+str(N) + ", L="+str(L),
         'xaxis':{'title':"Alignment Position"},
@@ -43,7 +47,10 @@ def plot_percentage_gaps_per_position(alignment_file, plot_file):
     }
 
     plot = {'data': data, 'layout': layout}
-    plotly_plot(plot, filename=plot_file, auto_open=False)
+    if plot_file is '':
+        return plot
+    else:
+        plotly_plot(plot, filename=plot_file, auto_open=False)
 
 
 def main():

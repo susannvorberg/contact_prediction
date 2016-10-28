@@ -15,6 +15,23 @@ import pandas as pd
 import utils.plot_utils as plot
 import utils.io_utils as io
 import utils.pdb_utils as pdb
+import plotting.plot_alignment_coverage as aligncov
+
+def find_dict_key(key, dictionary):
+    for k, v in dictionary.items():
+        if k == key:
+            print("found key!")
+            return v;
+        if isinstance(v, dict):
+            res = find_dict_key(key, v)
+            if res is not None:
+                return res
+        if isinstance(v, list):
+            for d in v:
+                res = find_dict_key(key, d)
+                if res is not None:
+                    return res
+
 
 
 def main():
@@ -25,7 +42,8 @@ def main():
     parser.add_argument("plot_out",             type=str,   help="directory for plot")
     parser.add_argument("--seqsep",             type=int,   default=6,  help="sequence separation")
     parser.add_argument("--contact_threshold",  type=int,   default=8, help="contact definition; C_beta distance between residue pairs")
-    parser.add_argument("--pdb_file",           type=str,   help="pdb file [optional]")
+    parser.add_argument("--pdb_file",           type=str,   help="path to pdb file [optional] -  plotting true contacs")
+    parser.add_argument("--alignment_file",     type=str,   help="path to alignment file [optional] - plotting coverage")
     
     args = parser.parse_args()
     
@@ -33,61 +51,57 @@ def main():
     plot_out            = str(args.plot_out)
     matrix_file         = str(args.contact_map_file)
     contact_threshold   = int(args.contact_threshold)
-    
-    pdb_file = None
-    if args.pdb_file:
-        pdb_file = str(args.pdb_file)
-        
 
     #debugging
-    #matrix_file = "/data/ouga/home/ag_soeding/vorberg/collaborations/andrea_drosophila/mat/HP6.apc.mat"
-    #matrix_file = "/data/ouga/home/ag_soeding/vorberg/collaborations/andrea_drosophila/mat/HMR_1_412.apc.mat"
-    #matrix_file = "/data/ouga/home/ag_soeding/vorberg/collaborations/andrea_drosophila/mat/Suvar205.apc.mat"
-    #matrix_file = "/usr/users/svorber/work/data/benchmarkset_cathV4_red1/ccmpred_dev_center_v/reduced1/l_02/mypred/4i1kA00.l2normapc.mat"
-    #seqsep     = 4
-    #contact_threshold = 8
-    #plot_out    = "/data/ouga/home/ag_soeding/vorberg/collaborations/andrea_drosophila/mat/"
-    #pred_matrix_arr     = np.triu(pred_matrix_arr, seq_sep)            #use only one triangle and apply seqsep
-    #pred_matrix         = pd.DataFrame(pred_matrix_arr)
-    #L                   = len(pred_matrix)
+    # matrix_file    = "/Users/Susann.Vorberg/work/data/benchmarkset_cathV4/benchmarkset_cathV4_combs/ccmpred_dev_center_v/l_1772/pred/1a0i_A_02.mat"
+    # pdb_file       = "/Users/Susann.Vorberg/work/data/benchmarkset_cathV4/dompdb_CATHv4_renum_seqtom/1a0iA02.pdb"
+    # alignment_file = "/Users/Susann.Vorberg/work/data/benchmarkset_cathV4/benchmarkset_cathV4_combs/psc_eval01/1a0i_A_02.psc"
+    # seqsep     = 4
+    # contact_threshold = 8
+    # plot_out    = "/Users/Susann.Vorberg"
     
     
   
     ### Read contact map
     pred_matrix_arr     = np.genfromtxt(matrix_file, comments="#")
     L                   = len(pred_matrix_arr)
-    N                   = None
     indices_upper_tri   = np.triu_indices(L, seqsep)
     base_name = '.'.join(os.path.basename(matrix_file).split('.')[:-1])
     protein = base_name
 
     ###Read Meta info if available
     meta_info = io.read_json_from_mat(matrix_file)
-    if 'N' in meta_info.keys():
-        N = meta_info['N']
-    if 'protein' in meta_info.keys():
-        protein = meta_info['protein']
+    neff = find_dict_key("neff", meta_info)
+    N = find_dict_key("ncol", meta_info)
 
 
-    ###compute distance map from pdb file
-    if(pdb_file is not None):
-        observed_distances = pdb.distance_map(pdb_file)
-    
+    ### if alignment file is specified, compute Ni
+    if (args.alignment_file):
+        alignment_file = args.alignment_file
+        alignment = io.read_alignment(alignment_file)
+        N = len(alignment)
+        gaps_percentage_plot = aligncov.plot_percentage_gaps_per_position(alignment_file)
+    else:
+        gaps_percentage_plot = None
+
 
     ### Prepare Plotting
     plot_matrix      = pd.DataFrame()
-
     plot_matrix['residue_i']  = indices_upper_tri[0]+1
     plot_matrix['residue_j']  = indices_upper_tri[1]+1
     plot_matrix['confidence'] = pred_matrix_arr[indices_upper_tri]
 
-    if(pdb_file is not None):
+    ###compute distance map from pdb file
+    if(args.pdb_file):
+        pdb_file = args.pdb_file
+        observed_distances = pdb.distance_map(pdb_file)
         plot_matrix['distance']   = observed_distances[indices_upper_tri]
-        plot_matrix['class']      = (plot_matrix.distance < contact_threshold).tolist()
+        plot_matrix['contact']    = ((plot_matrix.distance < contact_threshold) * 1).tolist()
 
     ### Plot Contact Map
-    printname = plot_out + "/" + base_name + ".html"
-    plot.plot_contact_map_someScore_plotly(plot_matrix, protein, L, N, seqsep, printname)
+    plot_name = plot_out + "/" + base_name + ".html"
+    title = protein + "<br>L: " + str(L) + " N: " + str(N) + " Neff: " + str(neff)
+    plot.plot_contact_map_someScore_plotly(plot_matrix, title, seqsep, gaps_percentage_plot, plot_name)
 
 
 if __name__ == '__main__':
