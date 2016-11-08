@@ -9,7 +9,7 @@
 
 import argparse
 import os
-
+import gzip
 import numpy as np
 import pandas as pd
 import utils.plot_utils as plot
@@ -32,7 +32,25 @@ def find_dict_key(key, dictionary):
                 if res is not None:
                     return res
 
+def get_matfile(mat_file):
+    """
+        Read matrix file
+    :param mat_file: path to matrix file
+    :param apc: compute apc corrected matrix
+    :return: matrix (-apc)
+    """
 
+    if not os.path.exists(mat_file):
+        raise IOError("Matrix File " + str(mat_file) + "cannot be found. ")
+
+    ### Read contact map
+    if "gz" in mat_file:
+        with gzip.open(mat_file, 'rb') as f:
+            mat = np.genfromtxt(f, comments="#")
+    else:
+        mat = np.genfromtxt(mat_file, comments="#")
+
+    return mat
 
 def main():
 
@@ -53,17 +71,17 @@ def main():
     contact_threshold   = int(args.contact_threshold)
 
     #debugging
-    # matrix_file    = "/Users/Susann.Vorberg/work/data/benchmarkset_cathV4/benchmarkset_cathV4_combs/ccmpred_dev_center_v/l_1772/pred/1a0i_A_02.mat"
-    # pdb_file       = "/Users/Susann.Vorberg/work/data/benchmarkset_cathV4/dompdb_CATHv4_renum_seqtom/1a0iA02.pdb"
-    # alignment_file = "/Users/Susann.Vorberg/work/data/benchmarkset_cathV4/benchmarkset_cathV4_combs/psc_eval01/1a0i_A_02.psc"
-    # seqsep     = 4
-    # contact_threshold = 8
-    # plot_out    = "/Users/Susann.Vorberg"
-    
+    #matrix_file = "/home/vorberg/work/data/benchmarkset_cathV4/benchmarkset_cathV4_combs/ccmpred_dev_center_v/l_1772/pred/1zl8_B_00_cov75.mat"
+    #matrix_file = "/home/vorberg/work/data/benchmarkset_cathV4/benchmarkset_cathV4_combs/benchmark_hhfilter_cov/cov_0/mat/2xyk_B_00.mat.gz"
+    #pdb_file = "/home/vorberg/work/data/benchmarkset_cathV4/dompdb_CATHv4_renum_seqtom/2xykB00_ren.pdb"
+    #alignment_file = "/home/vorberg/work/data/benchmarkset_cathV4/benchmarkset_cathV4_combs/psc_eval01/2xyk_B_00.psc"
+    #seqsep     = 4
+    #contact_threshold = 8
+    #plot_out    = "//home/vorberg/"
     
   
     ### Read contact map
-    pred_matrix_arr     = np.genfromtxt(matrix_file, comments="#")
+    pred_matrix_arr     = get_matfile(matrix_file)
     L                   = len(pred_matrix_arr)
     indices_upper_tri   = np.triu_indices(L, seqsep)
     base_name = '.'.join(os.path.basename(matrix_file).split('.')[:-1])
@@ -94,7 +112,7 @@ def main():
     ###compute distance map from pdb file
     if(args.pdb_file):
         pdb_file = args.pdb_file
-        observed_distances = pdb.distance_map(pdb_file)
+        observed_distances = pdb.distance_map(pdb_file,L)
         plot_matrix['distance']   = observed_distances[indices_upper_tri]
         plot_matrix['contact']    = ((plot_matrix.distance < contact_threshold) * 1).tolist()
 
