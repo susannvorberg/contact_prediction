@@ -14,6 +14,10 @@ def plot_contact_map_someScore_plotly(plot_matrix, title, seqsep, gaps_percentag
 
     data = []
 
+    # colorscale from red (small distance) to blue(large distance)
+    distance_colors = cl.scales['10']['div']['RdBu']
+    distance_colorscale = [[i / 9.0, distance_colors[i]] for i in range(10)]
+
     #add predicted contact map
     data.append(
         go.Heatmap(
@@ -80,9 +84,10 @@ def plot_contact_map_someScore_plotly(plot_matrix, title, seqsep, gaps_percentag
         green_yello_red = ['rgb(254,196,79)', 'rgb(222,45,38)']
         max_tp = np.max(plot_matrix[plot_matrix.contact > 0]['distance'])
         max_fp = np.max(plot_matrix[plot_matrix.contact < 1]['distance'])
-        fp_distance_range =   int(max_fp - max_tp)
+        fp_distance_range =   int(np.ceil((max_fp - max_tp)/10.0)*10)
         green_yello_red_interpolated = cl.interp(green_yello_red, fp_distance_range)
         data_color = [green_yello_red_interpolated[int(x-max_tp)] for x in sub_L5_false['distance']]
+
 
         fp = go.Scatter(
             x = sub_L5_false['residue_i'].tolist() + sub_L5_false['residue_j'].tolist(),
@@ -99,15 +104,20 @@ def plot_contact_map_someScore_plotly(plot_matrix, title, seqsep, gaps_percentag
             name="FP (L/5)",
             hoverinfo="none"
         )
-        
+
+        #colorscale from red (small distance) to blue(large distance)
+        distance_colors = cl.scales['10']['div']['RdBu']
+        distance_colorscale = [[i/9.0, distance_colors[i] ]for i in range(10)]
+
         #define triangle on opposite site of Predictions 
         heatmap_observed = go.Heatmap(
             x=plot_matrix.residue_j.tolist(),
             y=plot_matrix.residue_i.tolist(),
             z=plot_matrix.distance.tolist(),
             name='observed',
-            #colorscale='RdBu' , reversescale=True,
-            colorscale='Greys', reversescale=True,
+            colorscale=distance_colorscale,
+            #colorscale='Greys', reversescale=True,
+            #colorscale=distance_colors_interpol, reversescale=True,
             colorbar=go.ColorBar(
                 x=1.02,
                 y=0,
