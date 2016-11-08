@@ -25,7 +25,7 @@ def calc_residue_dist(residue_one, residue_two):
     return np.sqrt(np.sum(diff_vector * diff_vector))
 
 
-def distance_map(pdb_file):
+def distance_map(pdb_file,L=None):
     '''
     Compute the distances between Cbeta (Calpha for Glycine) atoms of all residue pairs
 
@@ -41,9 +41,11 @@ def distance_map(pdb_file):
 
     # due to missing residues in the pdb file
     # protein length L can be > than len(chain.get_list())
-    L = chain.get_list()[-1].id[1]
-    distance_map = np.full((L, L), np.NaN)
+    L_chain = chain.get_list()[-1].id[1]
+    if L is None or L < L_chain:
+        L = chain.get_list()[-1].id[1]
 
+    distance_map = np.full((L, L), np.NaN)
     for residue_one in chain.get_list():
         for residue_two in chain.get_list():
             distance_map[residue_one.id[1] - 1, residue_two.id[1] - 1] = calc_residue_dist(residue_one, residue_two)
