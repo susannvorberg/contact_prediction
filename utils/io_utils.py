@@ -1,6 +1,7 @@
 import os
 import json
 import numpy as np
+import gzip
 
 AMINO_INDICES = {
      'A' : 1,
@@ -75,3 +76,23 @@ def read_alignment(alignment_file):
 
 
     return alignment
+
+def read_matfile(mat_file):
+    """
+        Read matrix file
+    :param mat_file: path to matrix file
+    :param apc: compute apc corrected matrix
+    :return: matrix (-apc)
+    """
+
+    if not os.path.exists(mat_file):
+        raise IOError("Matrix File " + str(mat_file) + "cannot be found. ")
+
+    ### Read contact map
+    if "gz" in mat_file:
+        with gzip.open(mat_file, 'rb') as f:
+            mat = np.genfromtxt(f, comments="#")
+    else:
+        mat = np.genfromtxt(mat_file, comments="#")
+
+    return mat

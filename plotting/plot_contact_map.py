@@ -9,7 +9,6 @@
 
 import argparse
 import os
-import gzip
 import numpy as np
 import pandas as pd
 import utils.plot_utils as plot
@@ -32,25 +31,9 @@ def find_dict_key(key, dictionary):
                 if res is not None:
                     return res
 
-def get_matfile(mat_file):
-    """
-        Read matrix file
-    :param mat_file: path to matrix file
-    :param apc: compute apc corrected matrix
-    :return: matrix (-apc)
-    """
 
-    if not os.path.exists(mat_file):
-        raise IOError("Matrix File " + str(mat_file) + "cannot be found. ")
 
-    ### Read contact map
-    if "gz" in mat_file:
-        with gzip.open(mat_file, 'rb') as f:
-            mat = np.genfromtxt(f, comments="#")
-    else:
-        mat = np.genfromtxt(mat_file, comments="#")
 
-    return mat
 
 def main():
 
@@ -81,7 +64,7 @@ def main():
     
   
     ### Read contact map
-    pred_matrix_arr     = get_matfile(matrix_file)
+    pred_matrix_arr     = io.read_matfile(matrix_file)
     L                   = len(pred_matrix_arr)
     indices_upper_tri   = np.triu_indices(L, seqsep)
     base_name = '.'.join(os.path.basename(matrix_file).split('.')[:-1])
