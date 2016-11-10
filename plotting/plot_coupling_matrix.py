@@ -10,6 +10,7 @@
 
 import argparse
 import os
+import raw
 
 def main():
 
@@ -32,7 +33,7 @@ def main():
     if not os.path.exists(binary_raw_file):
         raise IOError("Braw File " + str(binary_raw_file) + "cannot be found. ")
 
-    braw = ccmpred.raw.parse(binary_raw_file)
+    braw = raw.parse_msgpack(binary_raw_file)
 
 
 
