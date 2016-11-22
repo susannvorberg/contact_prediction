@@ -16,7 +16,6 @@ from plotly.offline import plot as plotly_plot
 import utils.io_utils as io
 
 
-
 def plot_amino_acid_distribution_per_position(alignment_file, plot_file):
 
     # read alignment
@@ -45,7 +44,7 @@ def plot_amino_acid_distribution_per_position(alignment_file, plot_file):
                       x=range(L),
                       y=aa_freq_per_pos[aa],
                       showlegend=True,
-                      name=AMINO_ACIDS[aa]
+                      name=io.AMINO_ACIDS[aa]
               ))
 
 
@@ -72,8 +71,8 @@ def main():
 
     alignment_file              = str(args.alignment_file)
     plot_file                   = str(args.plot_file)
-    #alignment_file = "/home/vorberg/work/data/benchmarkset_cathV4/benchmarkset_cathV4_combs/psc_eval01/3cb2_A_03.psc"
-    #plot_file = "/home/vorberg/test.html"
+    #alignment_file = "/home/vorberg/work/data/benchmarkset_cathV4/benchmarkset_cathV4_combs/psc_eval01/1h4x_A_00.psc"
+    #plot_file = "/home/vorberg/alignment_1h4x_A_00.html"
 
     plot_amino_acid_distribution_per_position(alignment_file, plot_file)
 
