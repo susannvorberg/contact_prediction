@@ -5,37 +5,9 @@ import os
 import pandas as pd
 import numpy as np
 import json
-import build.libcontactutils as cu
+import utils.benchmark_utils as bu
 
 
-def compute_apc_corrected_matrix(cmat):
-    '''
-        Subtract the average product correction term
-    :param cmat: contact score matrix
-    :return: apc corrected matrix
-    '''
-    mean = np.mean(cmat, axis=0)
-    apc_term = mean[:, np.newaxis] * mean[np.newaxis, :] / np.mean(cmat)
-    return cmat - apc_term
-
-def compute_l2norm_from_braw(braw_file, L, apc=False):
-    '''
-        Compute the l2norm of all residue pairs
-    :param braw_file: binary raw coupling file
-    :param apc: compute apc corrected l2norm
-    :return: l2norm (-apc) score matrix
-    '''
-
-    if not os.path.exists(braw_file):
-        raise IOError("Braw File " + str(braw_file) + "cannot be found. ")
-
-    #compute l2norm (with or without apc)
-    if(apc):
-        mat   = np.array(cu.calcHeuristicAPC_py(L, braw_file, True, 0))
-    else:
-        mat   = np.array(cu.calcHeuristicAPC_py(L, braw_file, False, 0))
-
-    return mat
 
 def get_matfile(mat_file, apc=False):
     """
@@ -53,7 +25,7 @@ def get_matfile(mat_file, apc=False):
 
     #subtract apc
     if(apc):
-        mat   = compute_apc_corrected_matrix(mat)
+        mat   = bu.compute_apc_corrected_matrix(mat)
 
     return mat
 
@@ -97,7 +69,7 @@ def append_to_evaluation_file(eval_file, score_name, braw_file=None, mat_file=No
 
     ### Compute l2norm score from braw
     if braw_file is not None:
-        mat = compute_l2norm_from_braw(braw_file, L, apc)
+        mat = bu.compute_l2norm_from_braw(braw_file, L, apc)
 
     ### Read score from mat
     if mat_file is not None:
@@ -114,7 +86,6 @@ def append_to_evaluation_file(eval_file, score_name, braw_file=None, mat_file=No
     #print("Write additional meta data to eval meta file...")
     #with open(eval_meta_file, 'w') as fp:
     #    json.dump(eval_meta, fp)
-
 
 
 def main():
