@@ -11,10 +11,12 @@ import argparse
 import os
 import numpy as np
 import pandas as pd
-import utils.plot_utils as plot
-import utils.io_utils as io
-import utils.pdb_utils as pdb
-import plotting.plot_alignment_coverage as aligncov
+#import utils.io_utils as io
+#import utils.plot_utils as plot
+#import utils.pdb_utils as pdb
+#import utils.benchmark_utils as bu
+#import plotting.plot_alignment_coverage as aligncov
+#import raw
 
 def find_dict_key(key, dictionary):
     for k, v in dictionary.items():
@@ -32,46 +34,71 @@ def find_dict_key(key, dictionary):
                     return res
 
 
-
-
-
 def main():
 
     ### Parse arguments
     parser = argparse.ArgumentParser(description='Plotting a contact map.')
-    parser.add_argument("contact_map_file",     type=str,   help="path to contact map file")
+
+    group_append = parser.add_mutually_exclusive_group(required=True)
+    group_append.add_argument('-m','--mat_file', type=str, dest='mat_file',  help='path to mat file')
+    group_append.add_argument('-b', '--braw_file',type=str, dest='braw_file', help='path to braw file')
+
     parser.add_argument("plot_out",             type=str,   help="directory for plot")
     parser.add_argument("--seqsep",             type=int,   default=6,  help="sequence separation")
     parser.add_argument("--contact_threshold",  type=int,   default=8, help="contact definition; C_beta distance between residue pairs")
     parser.add_argument("--pdb_file",           type=str,   help="path to pdb file [optional] -  plotting true contacs")
     parser.add_argument("--alignment_file",     type=str,   help="path to alignment file [optional] - plotting coverage")
-    
+    parser.add_argument("--apc",                action="store_true", default=False,   help="Apply average product correction")
+
+
     args = parser.parse_args()
-    
+
+    if args.mat_file is None and args.braw_file is None:
+        print("Either mat_file or braw_file need to be set.")
+
     seqsep              = int(args.seqsep)
     plot_out            = str(args.plot_out)
-    matrix_file         = str(args.contact_map_file)
     contact_threshold   = int(args.contact_threshold)
+    braw_file           = str(args.braw_file)
+    mat_file            = str(args.mat_file)
+    apc                 = args.apc
 
     #debugging
-    #matrix_file = "/home/vorberg/work/data/benchmarkset_cathV4/benchmarkset_cathV4_combs/ccmpred_dev_center_v/l_1772/pred/1zl8_B_00_cov75.mat"
+    #braw_file = "/home/vorberg/work/data/benchmarkset_cathV4/benchmarkset_cathV4_combs/ccmpred_dev_center_v/l_1772/braw_ccmpredpython_pcratio01/1h4x_A_00.braw.gz"
+    #braw_file = "/home/vorberg/work/data/benchmarkset_cathV4/benchmarkset_cathV4_combs/ccmpred_dev_center_v/l_1772/braw/1h4x_A_00.braw.gz"
+    #matrix_file = "/home/vorberg/programs/CCMpred-Dev-64bit/CCMpred-Dev/example/1atzA.mat"
+    #matrix_file = "/home/vorberg/programs/ccmpred-new/example/1atzA.mat"
     #matrix_file = "/home/vorberg/work/data/benchmarkset_cathV4/benchmarkset_cathV4_combs/benchmark_hhfilter_cov/cov_0/mat/2xyk_B_00.mat.gz"
-    #pdb_file = "/home/vorberg/work/data/benchmarkset_cathV4/dompdb_CATHv4_renum_seqtom/2xykB00_ren.pdb"
+    #pdb_file = "/home/vorberg/work/data/benchmarkset_cathV4/dompdb_CATHv4_renum_seqtom/1h4xA00_ren.pdb"
     #alignment_file = "/home/vorberg/work/data/benchmarkset_cathV4/benchmarkset_cathV4_combs/psc_eval01/2xyk_B_00.psc"
+    #alignment_file = "/home/vorberg/programs/ccmpred-new/example/1atzA.aln"
     #seqsep     = 4
     #contact_threshold = 8
     #plot_out    = "//home/vorberg/"
+    #apc=False
     
   
-    ### Read contact map
-    pred_matrix_arr     = io.read_matfile(matrix_file)
-    L                   = len(pred_matrix_arr)
+
+    ### Compute l2norm score from braw
+    if braw_file is not None:
+        braw = raw.parse_msgpack(braw_file)
+        meta_info = braw.meta
+        mat = bu.compute_l2norm_from_brawfile(braw_file, apc)
+        base_name = '.'.join(os.path.basename(braw_file).split('.')[:-1])
+
+    ### Read score from mat
+    if mat_file is not None:
+        mat = io.read_matfile(mat_file, apc)
+        meta_info = io.read_json_from_mat(mat_file)
+        base_name = '.'.join(os.path.basename(mat_file).split('.')[:-1])
+
+
+    L                   = len(mat)
     indices_upper_tri   = np.triu_indices(L, seqsep)
-    base_name = '.'.join(os.path.basename(matrix_file).split('.')[:-1])
     protein = base_name
 
+
     ###Read Meta info if available
-    meta_info = io.read_json_from_mat(matrix_file)
     neff = find_dict_key("neff", meta_info)
     N = find_dict_key("ncol", meta_info)
 
@@ -90,7 +117,7 @@ def main():
     plot_matrix      = pd.DataFrame()
     plot_matrix['residue_i']  = indices_upper_tri[0]+1
     plot_matrix['residue_j']  = indices_upper_tri[1]+1
-    plot_matrix['confidence'] = pred_matrix_arr[indices_upper_tri]
+    plot_matrix['confidence'] = mat[indices_upper_tri]
 
     ###compute distance map from pdb file
     if(args.pdb_file):
@@ -100,7 +127,7 @@ def main():
         plot_matrix['contact']    = ((plot_matrix.distance < contact_threshold) * 1).tolist()
 
     ### Plot Contact Map
-    plot_name = plot_out + "/" + base_name + ".html"
+    plot_name = plot_out + "/" + base_name + "2.html"
     title = protein + "<br>L: " + str(L) + " N: " + str(N) + " Neff: " + str(neff)
     plot.plot_contact_map_someScore_plotly(plot_matrix, title, seqsep, gaps_percentage_plot, plot_name)
 

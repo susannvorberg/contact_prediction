@@ -6,28 +6,9 @@ import pandas as pd
 import numpy as np
 import json
 import utils.benchmark_utils as bu
+import utils.io_utils as io
 
 
-
-def get_matfile(mat_file, apc=False):
-    """
-        Read matrix file
-    :param mat_file: path to matrix file
-    :param apc: compute apc corrected matrix
-    :return: matrix (-apc)
-    """
-
-    if not os.path.exists(mat_file):
-        raise IOError("Matrix File " + str(mat_file) + "cannot be found. ")
-
-    ### Read contact map
-    mat = np.genfromtxt(mat_file, comments="#")
-
-    #subtract apc
-    if(apc):
-        mat   = bu.compute_apc_corrected_matrix(mat)
-
-    return mat
 
 def append_to_evaluation_file(eval_file, score_name, braw_file=None, mat_file=None, apc=False):
     """
@@ -69,11 +50,11 @@ def append_to_evaluation_file(eval_file, score_name, braw_file=None, mat_file=No
 
     ### Compute l2norm score from braw
     if braw_file is not None:
-        mat = bu.compute_l2norm_from_braw(braw_file, L, apc)
+        mat = bu.compute_l2norm_from_braw(braw_file, apc)
 
     ### Read score from mat
     if mat_file is not None:
-        mat = get_matfile(mat_file, apc)
+        mat = io.read_matfile(mat_file, apc)
 
     #append score to evaluation df
     eval_df[score_name] = mat[list(zip(*ij_indices)[0]),list(zip(*ij_indices)[1])]

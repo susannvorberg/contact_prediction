@@ -2,6 +2,7 @@ import os
 import json
 import numpy as np
 import gzip
+import utils.benchmark_utils as bu
 
 AMINO_INDICES = {
      'A' : 1,
@@ -77,9 +78,9 @@ def read_alignment(alignment_file):
 
     return alignment
 
-def read_matfile(mat_file):
+def read_matfile(mat_file, apc=False):
     """
-        Read matrix file
+    Read matrix file
     :param mat_file: path to matrix file
     :param apc: compute apc corrected matrix
     :return: matrix (-apc)
@@ -94,5 +95,9 @@ def read_matfile(mat_file):
             mat = np.genfromtxt(f, comments="#")
     else:
         mat = np.genfromtxt(mat_file, comments="#")
+
+    #subtract apc
+    if(apc):
+        mat   = bu.compute_apc_corrected_matrix(mat)
 
     return mat

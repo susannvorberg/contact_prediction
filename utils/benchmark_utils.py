@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import os
-#import build.libcontactutils as cu
+import raw
 
 
 def compute_mean_error(cb_distance, score, contact_thr):
@@ -53,7 +53,25 @@ def compute_apc_corrected_matrix(cmat):
     return cmat - apc_term
 
 
-def compute_l2norm_from_braw(braw_file, L, apc=False):
+def compute_l2norm_from_braw(braw, apc=False):
+    '''
+    Compute the l2norm of all residue pairs
+
+    :param braw: raw coupling values
+    :param apc: compute apc corrected l2norm
+    :return: l2norm (-apc) score matrix
+    '''
+
+    #compute l2norm
+    mat = np.sqrt(np.sum(braw.x_pair * braw.x_pair, axis=(2, 3)))
+
+    #apply apc)
+    if(apc):
+        mat   = compute_apc_corrected_matrix(mat)
+
+    return mat
+
+def compute_l2norm_from_brawfile(braw_file, apc=False):
     '''
         Compute the l2norm of all residue pairs
     :param braw_file: binary raw coupling file
@@ -64,10 +82,8 @@ def compute_l2norm_from_braw(braw_file, L, apc=False):
     if not os.path.exists(braw_file):
         raise IOError("Braw File " + str(braw_file) + "cannot be found. ")
 
-    #compute l2norm (with or without apc)
-    if(apc):
-        mat   = np.array(cu.calcHeuristicAPC_py(L, braw_file, True, 0))
-    else:
-        mat   = np.array(cu.calcHeuristicAPC_py(L, braw_file, False, 0))
+    # read binary raw file
+    braw = raw.parse_msgpack(braw_file)
 
-    return mat
+    return compute_l2norm_from_braw(braw, apc)
+
