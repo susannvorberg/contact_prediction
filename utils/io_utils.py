@@ -48,10 +48,14 @@ def read_json_from_mat(matfile):
 
     meta={}
 
-    with open(matfile, 'r') as f:
+    open_fn = gzip.open if matfile.endswith(".gz") else open
+
+    #read meta data from (gzipped) mat file
+    with open_fn(matfile) as f:
         for line in f:
             if '#>META>' in line:
-                meta = json.loads(line.split(">")[2])
+                meta = json.loads(line.split("> ")[1])
+
 
     if len(meta) == 0:
         print(str(matfile) + " does not contain META info. (Line must start with #META!)")
@@ -78,7 +82,7 @@ def read_alignment(alignment_file):
 
     return alignment
 
-def read_matfile(mat_file, apc=False):
+def read_matfile(matfile, apc=False):
     """
     Read matrix file
     :param mat_file: path to matrix file
@@ -86,18 +90,15 @@ def read_matfile(mat_file, apc=False):
     :return: matrix (-apc)
     """
 
-    if not os.path.exists(mat_file):
-        raise IOError("Matrix File " + str(mat_file) + "cannot be found. ")
+    if not os.path.exists(matfile):
+        raise IOError("Matrix File " + str(matfile) + "cannot be found. ")
 
-    ### Read contact map
-    if "gz" in mat_file:
-        with gzip.open(mat_file, 'rb') as f:
-            mat = np.genfromtxt(f, comments="#")
-    else:
-        mat = np.genfromtxt(mat_file, comments="#")
+    ### Read contact map (matfile can also be compressed file)
+    mat = np.genfromtxt(matfile, comments="#")
 
     #subtract apc
     if(apc):
         mat   = bu.compute_apc_corrected_matrix(mat)
 
     return mat
+
