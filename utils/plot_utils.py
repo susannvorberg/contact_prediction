@@ -8,6 +8,75 @@ import colorlover as cl
 import utils.io_utils as io
 
 
+def plot_meanprecision_per_protein(scatter_dict, plot_out=None):
+    """
+    Plots the mean precision over all ranks for every protein in the test set
+    Proteins are ordered by mean precision of score with highest overal mean precision
+
+    :param scatter_dict: dictionary with keys = scores and each score has a list of [proteins, precision, annotation]
+    :param order_proteins:  list of protein names
+    :param plot_out: name of plot
+    :return:
+    """
+
+    # determine score with highest overal mean precision
+    max_mean_prec = ['', 0]
+    for score in scatter_dict.keys():
+        if np.mean(scatter_dict[score][1]) > max_mean_prec[1]:
+            max_mean_prec[0] = score
+            max_mean_prec[1] = np.mean(scatter_dict[score][1])
+
+    order_indices = np.argsort(scatter_dict[max_mean_prec[0]][1])
+    order_proteins = [scatter_dict[max_mean_prec[0]][0][index] for index in order_indices]
+
+    # if there are additional proteins for other scores that are missing in the current ordering
+    for score in scatter_dict.keys():
+        if len(scatter_dict[score][0]) > len(order_proteins):
+            additional_proteins = set(scatter_dict[score][0]) - set(order_proteins)
+            order_proteins += list(additional_proteins)
+
+    data = []
+    for name, values in scatter_dict.iteritems():
+        line_data = go.Scatter(
+            x=values[0],
+            y=values[1],
+            mode='markers',
+            name=name,
+            text=values[2],
+            showlegend=True
+        )
+        data.append(line_data)
+
+    plot = {
+        "data": data,
+        "layout": go.Layout(
+            title='Mean Precision per Protein (over all ranks) in Test Set',
+            yaxis1=dict(
+                title='Mean Precision over ranks',
+                exponentformat="e",
+                showexponent='All',
+                range=[-0.01, 1.01]
+            ),
+            xaxis1=dict(
+                title='Proteins',
+                type='category',
+                categoryorder='array',
+                categoryarray=order_proteins,
+                tickangle=45,
+                exponentformat="e",
+                showexponent='All'
+            )
+        )
+    }
+
+    if plot_out is not None:
+        plotly_plot(plot, filename=plot_out, auto_open=False)
+    else:
+        return plot
+
+
+
+
 def plot_evaluationmeasure_vs_rank_plotly(evaluation_dict, title, yaxistitle, plot_out=None):
     """
     Plot average precision over proteins
@@ -374,3 +443,106 @@ def plot_coupling_matrix(couplings, single_terms_i, single_terms_j, residue_i, r
         plotly_plot(fig, filename=plot_file, auto_open=False)
     else:
         return fig
+
+
+def plot_aa_freq_matrix(pair_freq, single_freq_i, single_freq_j, residue_i, residue_j, title, frequencies=True, plot_file=None):
+    grid = np.indices((21, 21))
+    x = [item  for sublist in grid[0] for item in sublist]
+    y = [item  for sublist in grid[1] for item in sublist]
+
+    # colorscale from red (small distance) to blue(large distance)
+    distance_colors = cl.scales['10']['div']['RdBu']
+    distance_colorscale = [[i / 9.0, distance_colors[i]] for i in range(10)]
+
+    if(frequencies):
+        bubble_size = pair_freq * 500
+    else:
+        bubble_size = (np.array(pair_freq) / np.max(pair_freq)) * 50
+
+    bubbles = go.Scatter(
+        x=x,
+        y=y,
+        mode='markers',
+        text=pair_freq,
+        marker=dict(
+            size=bubble_size,
+            sizemode="diameter",
+            colorscale=distance_colorscale,  # 'RdBl',
+            reversescale=True,
+            color=pair_freq,
+            showscale=True
+        ),
+        hoverinfo="x+y+text",
+        hoveron="points+fills",
+        showlegend=False
+    )
+
+    singles_i = go.Bar(
+        x=range(21),
+        y=single_freq_i,
+        orientation='v',
+        showlegend=False,
+        name="aa_freq_i:" + str(residue_i),
+        marker=dict(
+            colorscale=distance_colorscale,  # 'RdBl',
+            reversescale=True,
+            color=single_freq_i,
+            showscale=False,
+
+        )
+    )
+
+    singles_j = go.Bar(
+        y=range(21),
+        x=single_freq_j,
+        orientation='h',
+        showlegend=False,
+        name="aa_freq_j:" + str(residue_j),
+        marker=dict(
+            colorscale=distance_colorscale,  # 'RdBl',
+            reversescale=True,
+            color=single_freq_j,
+            showscale=False,
+        )
+    )
+
+    fig = tools.make_subplots(rows=2, cols=2, shared_xaxes=True, shared_yaxes=True)
+    fig.append_trace(singles_j, 1, 1)
+    fig.append_trace(bubbles, 1, 2)
+    fig.append_trace(singles_i, 2, 2)
+
+    fig['layout']['xaxis2']['title'] = 'i: ' + str(residue_i)
+    fig['layout']['xaxis1']['domain'] = [0.0, 0.1]
+    fig['layout']['xaxis2']['domain'] = [0.1, 1.0]
+
+    fig['layout']['yaxis1']['title'] = 'j:' + str(residue_j)
+    fig['layout']['yaxis1']['domain'] = [0.1, 1.0]
+    fig['layout']['yaxis2']['domain'] = [0.0, 0.1]
+
+    fig['layout']['title'] = title
+    fig['layout']['width'] = 1000
+    fig['layout']['height'] = 1000
+    fig['layout']['font']['size'] = 18
+
+    fig['layout']['xaxis2']['tickmode'] = "array"
+    fig['layout']['xaxis2']['tickvals'] = [0, 5, 8, 1, 20, 10, 11, 13, 15, 9, 19, 18, 14, 2, 7, 12, 4, 6, 3, 16, 17]
+    fig['layout']['xaxis2']['ticktext'] = [io.AMINO_ACIDS[a] for a in
+                                           [0, 5, 8, 1, 20, 10, 11, 13, 15, 9, 19, 18, 14, 2, 7, 12, 4, 6, 3, 16, 17]]
+    fig['layout']['xaxis2']['type'] = "category"
+    fig['layout']['xaxis2']['categoryorder'] = "array"
+    fig['layout']['xaxis2']['categoryarray'] = [0, 5, 8, 1, 20, 10, 11, 13, 15, 9, 19, 18, 14, 2, 7, 12, 4, 6, 3, 16, 17]
+
+    fig['layout']['yaxis1']['tickmode'] = "array"
+    fig['layout']['yaxis1']['tickvals'] = [0, 5, 8, 1, 20, 10, 11, 13, 15, 9, 19, 18, 14, 2, 7, 12, 4, 6, 3, 16, 17]
+    fig['layout']['yaxis1']['ticktext'] = [io.AMINO_ACIDS[a] for a in
+                                           [0, 5, 8, 1, 20, 10, 11, 13, 15, 9, 19, 18, 14, 2, 7, 12, 4, 6, 3, 16, 17]]
+    fig['layout']['yaxis1']['type'] = "category"
+    fig['layout']['yaxis1']['categoryorder'] = "array"
+    fig['layout']['yaxis1']['categoryarray'] = [0, 5, 8, 1, 20, 10, 11, 13, 15, 9, 19, 18, 14, 2, 7, 12, 4, 6, 3, 16, 17]
+
+    if plot_file:
+        plotly_plot(fig, filename=plot_file, auto_open=False)
+    else:
+        return fig
+
+
