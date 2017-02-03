@@ -71,6 +71,7 @@ def compute_l2norm_from_braw(braw, apc=False):
 
     return mat
 
+
 def compute_l2norm_from_brawfile(braw_file, apc=False):
     '''
         Compute the l2norm of all residue pairs
