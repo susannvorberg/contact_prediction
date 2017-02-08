@@ -5,10 +5,81 @@ import plotly.graph_objs as go
 from plotly.offline import plot as plotly_plot
 from plotly import tools
 import colorlover as cl
-import utils.io_utils as io
+
+AMINO_ACIDS = "-ARNDCQEGHILKMFPSTWYV"
 
 
-def plot_meanprecision_per_protein(scatter_dict, plot_out=None):
+def plot_scatter_meanprecision_per_protein_vs_feature(scatter_dict, title, xaxis_title, log_xaxis=False, plot_out=None):
+    """
+    Plots a scatter plot with trendline (moving average)
+    for mean precision per protein vs protein feature (e.g. neff, div)
+
+    :param scatter_dict:
+    :param title:
+    :param xaxis_title:
+    :param plotname:
+    :return:
+    """
+
+    colors = np.array(cl.scales[str(len(scatter_dict))]['qual']['Set1'])
+
+    data = [
+        go.Scatter(
+            x=values[xaxis_title], #neff
+            y=values['mean_precision'],
+            mode='markers',
+            name=name,
+            marker = dict(
+                color = colors[scatter_dict.keys().index(name)]
+            ),
+            text=values['annotation'],
+            showlegend=True
+        )
+        for name, values in scatter_dict.iteritems()
+        ]
+
+    for name, values in scatter_dict.iteritems():
+        data.append(go.Scatter(
+            x=values[xaxis_title], #neff
+            y=values['rolling_mean'],
+            mode='lines',
+            line=dict(
+                color=colors[scatter_dict.keys().index(name)]
+            ),
+            name='rolling mean '  + name,
+            showlegend=False
+        ))
+
+    plot = {
+        "data": data,
+        "layout": go.Layout(
+            title=title,
+            yaxis1=dict(
+                title='Mean Precision over ranks',
+                exponentformat="e",
+                showexponent='All',
+                range=[-0.01, 1.01]
+            ),
+            xaxis1=dict(
+                title=xaxis_title,
+                autorange=True
+                #exponentformat="e",
+                #showexponent='All'
+            )
+        )
+    }
+
+    if(log_xaxis):
+        plot['layout']['xaxis1']['type']='log'
+
+
+    if plot_out is not None:
+        plotly_plot(plot, filename=plot_out, auto_open=False)
+    else:
+        return plot
+
+
+def plot_meanprecision_per_protein(scatter_dict, title, plot_out=None):
     """
     Plots the mean precision over all ranks for every protein in the test set
     Proteins are ordered by mean precision of score with highest overal mean precision
@@ -19,30 +90,31 @@ def plot_meanprecision_per_protein(scatter_dict, plot_out=None):
     :return:
     """
 
+
     # determine score with highest overal mean precision
     max_mean_prec = ['', 0]
     for score in scatter_dict.keys():
-        if np.mean(scatter_dict[score][1]) > max_mean_prec[1]:
+        if np.mean(scatter_dict[score]['mean_precision']) > max_mean_prec[1]:
             max_mean_prec[0] = score
-            max_mean_prec[1] = np.mean(scatter_dict[score][1])
+            max_mean_prec[1] = np.mean(scatter_dict[score]['mean_precision'])
 
-    order_indices = np.argsort(scatter_dict[max_mean_prec[0]][1])
-    order_proteins = [scatter_dict[max_mean_prec[0]][0][index] for index in order_indices]
+    order_indices = np.argsort(scatter_dict[max_mean_prec[0]]['mean_precision'])
+    order_proteins = [scatter_dict[max_mean_prec[0]]['protein'][index] for index in order_indices]
 
     # if there are additional proteins for other scores that are missing in the current ordering
     for score in scatter_dict.keys():
-        if len(scatter_dict[score][0]) > len(order_proteins):
-            additional_proteins = set(scatter_dict[score][0]) - set(order_proteins)
+        if len(scatter_dict[score]['protein']) > len(order_proteins):
+            additional_proteins = set(scatter_dict[score]['protein']) - set(order_proteins)
             order_proteins += list(additional_proteins)
 
     data = []
     for name, values in scatter_dict.iteritems():
         line_data = go.Scatter(
-            x=values[0],
-            y=values[1],
+            x=values['protein'],
+            y=values['mean_precision'],
             mode='markers',
             name=name,
-            text=values[2],
+            text=values['annotation'],
             showlegend=True
         )
         data.append(line_data)
@@ -50,7 +122,7 @@ def plot_meanprecision_per_protein(scatter_dict, plot_out=None):
     plot = {
         "data": data,
         "layout": go.Layout(
-            title='Mean Precision per Protein (over all ranks) in Test Set',
+            title=title,
             yaxis1=dict(
                 title='Mean Precision over ranks',
                 exponentformat="e",
@@ -526,7 +598,7 @@ def plot_aa_freq_matrix(pair_freq, single_freq_i, single_freq_j, residue_i, resi
 
     fig['layout']['xaxis2']['tickmode'] = "array"
     fig['layout']['xaxis2']['tickvals'] = [0, 5, 8, 1, 20, 10, 11, 13, 15, 9, 19, 18, 14, 2, 7, 12, 4, 6, 3, 16, 17]
-    fig['layout']['xaxis2']['ticktext'] = [io.AMINO_ACIDS[a] for a in
+    fig['layout']['xaxis2']['ticktext'] = [AMINO_ACIDS[a] for a in
                                            [0, 5, 8, 1, 20, 10, 11, 13, 15, 9, 19, 18, 14, 2, 7, 12, 4, 6, 3, 16, 17]]
     fig['layout']['xaxis2']['type'] = "category"
     fig['layout']['xaxis2']['categoryorder'] = "array"
@@ -534,7 +606,7 @@ def plot_aa_freq_matrix(pair_freq, single_freq_i, single_freq_j, residue_i, resi
 
     fig['layout']['yaxis1']['tickmode'] = "array"
     fig['layout']['yaxis1']['tickvals'] = [0, 5, 8, 1, 20, 10, 11, 13, 15, 9, 19, 18, 14, 2, 7, 12, 4, 6, 3, 16, 17]
-    fig['layout']['yaxis1']['ticktext'] = [io.AMINO_ACIDS[a] for a in
+    fig['layout']['yaxis1']['ticktext'] = [AMINO_ACIDS[a] for a in
                                            [0, 5, 8, 1, 20, 10, 11, 13, 15, 9, 19, 18, 14, 2, 7, 12, 4, 6, 3, 16, 17]]
     fig['layout']['yaxis1']['type'] = "category"
     fig['layout']['yaxis1']['categoryorder'] = "array"

@@ -2,7 +2,6 @@ import os
 import json
 import numpy as np
 import gzip
-import utils.benchmark_utils as bu
 
 AMINO_INDICES = {
      'A' : 1,
@@ -44,7 +43,8 @@ def read_json_from_mat(matfile):
     '''
 
     if not os.path.exists(matfile):
-        raise FileNotFoundError("Specified matfile does not exist: " + str(matfile))
+        print("Specified matfile does not exist: " + str(matfile))
+        return
 
     meta={}
 
@@ -82,7 +82,7 @@ def read_alignment(alignment_file):
 
     return alignment
 
-def read_matfile(matfile, apc=False):
+def read_matfile(matfile):
     """
     Read matrix file
     :param mat_file: path to matrix file
@@ -95,10 +95,6 @@ def read_matfile(matfile, apc=False):
 
     ### Read contact map (matfile can also be compressed file)
     mat = np.genfromtxt(matfile, comments="#")
-
-    #subtract apc
-    if(apc):
-        mat   = bu.compute_apc_corrected_matrix(mat)
 
     return mat
 
