@@ -1,12 +1,12 @@
 import numpy as np
-import pandas as pd
+import random
 
 import plotly.graph_objs as go
 from plotly.offline import plot as plotly_plot
 from plotly import tools
 import colorlover as cl
+from io_utils import AMINO_ACIDS
 
-AMINO_ACIDS = "-ARNDCQEGHILKMFPSTWYV"
 
 
 def plot_scatter_meanprecision_per_protein_vs_feature(scatter_dict, title, xaxis_title, log_xaxis=False, plot_out=None):
@@ -21,7 +21,7 @@ def plot_scatter_meanprecision_per_protein_vs_feature(scatter_dict, title, xaxis
     :return:
     """
 
-    colors = np.array(cl.scales[str(len(scatter_dict))]['qual']['Set1'])
+    colors = np.array(cl.scales[str(max(3,len(scatter_dict)))]['qual']['Set1'])
 
     data = [
         go.Scatter(
@@ -47,7 +47,7 @@ def plot_scatter_meanprecision_per_protein_vs_feature(scatter_dict, title, xaxis
                 color=colors[scatter_dict.keys().index(name)]
             ),
             name='rolling mean '  + name,
-            showlegend=False
+            showlegend=True
         ))
 
     plot = {
@@ -146,7 +146,54 @@ def plot_meanprecision_per_protein(scatter_dict, title, plot_out=None):
     else:
         return plot
 
+def plot_precision_vs_recall_plotly(precision_recall_dict, title, plot_out=None):
+    """
+    Plot Precision vs Recall Curve
 
+    thresholding at ranks dependent on protein length: L/x
+
+    :param precision_recall:
+    :param title:
+    :param plotname:
+    :return:
+    """
+
+    methods = precision_recall_dict.keys()
+
+    data= []
+    for method in methods:
+        data.append(
+            go.Scatter(
+                x=precision_recall_dict[method]['recall'],
+                y=precision_recall_dict[method]['precision'],
+                name=method + "("+str(precision_recall_dict[method]['size'],)+" proteins)",
+                mode='lines'
+            )
+        )
+
+
+    plot = {
+        "data": data,
+        "layout": go.Layout(
+            title=title,
+            xaxis1=dict(
+                title='Recall',
+                range=[0, 1]
+            ),
+            yaxis1=dict(
+                title='Precision',
+                range=[0, 1]
+            ),
+            font=dict(size=18)
+            )
+    }
+
+
+
+    if plot_out is not None:
+        plotly_plot(plot, filename=plot_out, auto_open=False)
+    else:
+        return plot
 
 
 def plot_evaluationmeasure_vs_rank_plotly(evaluation_dict, title, yaxistitle, plot_out=None):
@@ -247,6 +294,9 @@ def plot_precision_rank_facetted_plotly(precision_rank, title, plot_out=None):
     fig['layout']['font'] = {'size': 18}  # set global font size
     fig['layout']['title'] = title
 
+    fig['layout']['legend']['x']=0
+    fig['layout']['legend']['y']=0
+
     if plot_out is not None:
         plotly_plot(fig, filename=plot_out, auto_open=False)
     else:
@@ -309,8 +359,8 @@ def plot_contact_map_someScore_plotly(plot_matrix, title, seqsep, gaps_percentag
     if 'contact' in plot_matrix and 'distance' in plot_matrix:
 
         #define true and false positives among the L/5 highest scores
-        sub_L5_true  = plot_matrix.head(int(L/5)).query('contact > 0')
-        sub_L5_false = plot_matrix.head(int(L/5)).query('contact < 1')
+        sub_L5_true  = plot_matrix.query('distance > 0').head(int(L/5)).query('contact > 0')
+        sub_L5_false = plot_matrix.query('distance > 0').head(int(L/5)).query('contact < 1')
 
         #Mark TP and FP in the plot with little crosses
         tp = go.Scatter(
@@ -379,13 +429,13 @@ def plot_contact_map_someScore_plotly(plot_matrix, title, seqsep, gaps_percentag
         data.append(fp)
 
 
-    fig = tools.make_subplots(rows=2, cols=1, shared_xaxes=True)
+    fig = tools.make_subplots(rows=2, cols=1, shared_xaxes=True, print_grid=False)
 
     for trace in data:
         fig.append_trace(trace, 2, 1)
 
     fig['layout']['title']  = title
-    fig['layout']['width']  = 1000
+    fig['layout']['width']  = 1100
     fig['layout']['height'] = 1000
     fig['layout']['legend'] = {'x': 1.02,'y': 1}  # places legend to the right of plot
 
@@ -617,4 +667,305 @@ def plot_aa_freq_matrix(pair_freq, single_freq_i, single_freq_j, residue_i, resi
     else:
         return fig
 
+
+#basic plotly plots
+
+def plot_barplot(statistics_dict, title, y_axis_title, type='stack', colors=None, plot_out=None):
+    """
+    Plot the distribution of the statistics in the dictionary as barplots
+    - Keys in the dictionary represent different groups (different colors)
+    - Each entry of the dictionary is another dictionary with
+        numeric values representing single bars at different x-coords
+    """
+
+    data = []
+    # different colors: either stacked or next to each other
+    for group in sorted(statistics_dict.keys()):
+
+        # these are positions on x-axis
+        x = []
+        y = []
+        for key in sorted(statistics_dict[group].keys()):
+            x.append(key)
+            y.append(statistics_dict[group][key])
+
+        # different colors: either stacked or next to each other
+        data.append(go.Bar(
+            x=x,
+            y=y,
+            showlegend=False,
+            name=group
+        ))
+
+        if (colors is not None):
+            data[-1]['marker']['color'] = colors[len(data) - 1]
+
+    plot = {
+        "data": data,
+        "layout": go.Layout(
+            barmode=type,
+            title=title,
+            yaxis=dict(
+                title=y_axis_title,
+                exponentformat="e",
+                showexponent='All'
+            ),
+            font = dict(size=18)
+        )
+    }
+
+    if plot_out is not None:
+        plotly_plot(plot, filename=plot_out, auto_open=False)
+    else:
+        return plot
+
+
+def draw_box(values, parameter_name, color=None, orient='v', jitter_pos=None):
+    # imitate jitter
+    #     upper_quantile = np.percentile(values, 95)
+    #     lower_quantile = np.percentile(values, 5)
+    #     outliers = [val for val in values if val > upper_quantile or val < lower_quantile]
+    #     x = np.random.normal(size=len(outliers))
+
+    boxpoints = 'Outliers'
+    opacity = 0.2
+
+    if jitter_pos is not None:
+        boxpoints = 'all'
+        jitter_pos = jitter_pos
+        opacity = 1
+
+    if orient == 'h':
+        box = go.Box(
+            x=values,
+            boxmean='sd',
+            pointpos=jitter_pos,
+            boxpoints=boxpoints,
+            name=parameter_name.replace('_', '<br>_'),
+            marker=dict(opacity=opacity),
+            hoverinfo='all',
+            orientation=orient,
+            showlegend=False
+        )
+    else:
+        box = go.Box(
+            y=values,
+            boxmean='sd',
+            pointpos=jitter_pos,
+            boxpoints=boxpoints,
+            name=parameter_name,
+            marker=dict(opacity=opacity),
+            hoverinfo='all',
+            orientation=orient,
+            showlegend=False
+
+        )
+
+    if (color is not None):
+        box['marker']['color'] = color
+
+    return (box)
+
+
+def plot_boxplot(statistics_dict, title, y_axis_title, colors=None, jitter_pos=None, orient='v', print_total=False, order=None, plot_out=None):
+    """
+    Plot the distribution of the statistics in the dictionary as boxplots
+    Either plot it or return plot object
+    """
+
+    data = []
+    annotations_list = []
+    color = None
+    max_value=-np.inf
+    min_value=np.inf
+
+    if(order is None):
+        order=sorted(statistics_dict.keys())
+
+    for key in order:
+        value = statistics_dict[key]
+
+        if colors is not None:
+            component = int(key.split("_")[-1])
+            color = colors[component]
+
+        max_value = np.max([max_value, np.max(value)])
+        min_value = np.min([min_value, np.min(value)])
+
+        data.append(
+            draw_box(
+                value,
+                key,
+                color,
+                orient,
+                jitter_pos
+            )
+        )
+
+    if print_total:
+        for box in data:
+            annotations_list.append(
+                go.Annotation(
+                    x=box['name'],
+                    y=max_value + (max_value-min_value)/10.0,
+                    text=str(len(box['y'])),
+                    showarrow=False)
+            )
+
+            # for key, row in statistics_df.iterrows():
+            #         if colors is not None:
+            #             component = int(key[-1])-1
+            #             color = colors[component]
+            #         data.append(draw_box(row.values, str(key), color, orient, jitter_pos))
+
+    plot = {"data": data,
+            "layout": go.Layout(
+                title=title,
+                yaxis=dict(title=y_axis_title,
+                           exponentformat='e',
+                           showexponent='All'
+                           ),
+                annotations=go.Annotations(annotations_list),
+                font=dict(size=18)
+            )
+            }
+
+    if orient == 'h':
+        plot['layout']['xaxis'].update(plot['layout']['yaxis'])
+        plot['layout']['yaxis'] = {}
+        plot['layout']['margin']['l'] = 150
+
+    if plot_out is not None:
+        plotly_plot(plot, filename=plot_out, auto_open=False)
+    else:
+        return plot
+
+
+def plot_scatter(scatter_dict, title, x_axis_title, y_axis_title, showlegend=False, colors = None, plot_out=None):
+    data=[]
+    for name, values in scatter_dict.iteritems():
+        scatter_data = go.Scatter(
+            x= values[0],
+            y= values[1],
+            mode = 'markers',
+            name = name,
+            text = values[2],
+            showlegend=showlegend
+        )
+        if(colors is not None):
+            component = int(name[-1])
+            scatter_data['marker']['color'] = colors[component]
+        data.append(scatter_data)
+
+    plot = {
+        "data": data,
+        "layout" : go.Layout(
+            title = title,
+            yaxis1 = dict(
+                title=y_axis_title,
+                exponentformat="e",
+                showexponent='All'
+            ),
+            xaxis1 = dict(
+                title=x_axis_title,
+                exponentformat="e",
+                showexponent='All'
+            )
+        )
+    }
+
+
+    if plot_out is not None:
+        plotly_plot(plot, filename=plot_out, auto_open=False)
+    else:
+        return plot
+
+
+def jitter_plot(values_dict, title, annotations=None, colors=None, plot_out=None):
+    """
+    Plot dictionary as jitter points
+    Every key will have seprate color and is placed at different x axis location
+    values will be scattered around this x axis location.
+
+    annotations need same keys as data
+    """
+
+    data = []
+    for k in range(len(values_dict)):
+        name = sorted(values_dict.keys())[k]
+        x_vals = [k + random.sample([-1, 1], 1)[0] * random.uniform(0, 0.25) for i in range(len(values_dict[name]))]
+        y_vals = values_dict[name]
+
+        jitter_dat = go.Scatter(x=x_vals,
+                                y=y_vals,
+                                mode='markers',
+                                # text = annotations[sorted(values_dict.keys())[k]],
+                                name=sorted(values_dict.keys())[k],
+                                # hoverinfo="text+y",
+                                showlegend=False
+                                )
+
+        if annotations is not None:
+            jitter_dat['text'] = annotations[sorted(values_dict.keys())[k]]
+
+        if (colors is not None):
+            component = int(name.split("_")[-1])
+            color = colors[component]
+            jitter_dat['marker'] = {'color': color}
+
+        data.append(jitter_dat)
+
+        data.append(
+            go.Scatter(
+                x=[np.min(x_vals) - 0.01, np.max(x_vals) + .01],
+                y=[np.mean(y_vals)] * 2,
+                name="mean of " + sorted(values_dict.keys())[k] + ": " + str(np.round(np.mean(y_vals), decimals=2)),
+                mode='lines',
+                hoverinfo="y",
+                line=dict(
+                    color='black',
+                    width=4)
+            )
+        )
+
+        data.append(
+            go.Scatter(
+                x=[np.min(x_vals) - 0.01, np.max(x_vals) + 0.01],
+                y=[np.median(y_vals)] * 2,
+                name="median of " + sorted(values_dict.keys())[k] + ": " + str(np.round(np.median(y_vals), decimals=2)),
+                mode='lines',
+                hoverinfo="y",
+                line=dict(
+                    color='black',
+                    width=4,
+                    dash='dash')
+            )
+        )
+
+    plot = {
+        "data": data,
+        "layout": go.Layout(
+            title=title,
+            xaxis1=dict(
+                range=[-0.25, len(values_dict) - 1 + 0.25],
+                tickvals=range(len(values_dict)),
+                ticktext=sorted(values_dict.keys()),
+                zeroline=False,
+                exponentformat='e',
+                showexponent='All'
+            ),
+            yaxis1=dict(
+                zeroline=False,
+                exponentformat='e',
+                showexponent='All'
+            ),
+            font=dict(size=18)
+
+        )
+    }
+
+    if plot_out is not None:
+        plotly_plot(plot, filename=plot_out, auto_open=False)
+    else:
+        return plot
 
