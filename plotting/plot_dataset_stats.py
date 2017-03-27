@@ -26,7 +26,7 @@ def plot_boxplot_for_statistic(stats_df, column_name, title, jitter_pos=None, pl
     sorted_folds=[]
 
     #all folds
-    for fold in range(1, np.max(stats_df['fold'])+1):
+    for fold in np.unique(stats_df['fold']):
         name='Fold ' + str(fold)
         sorted_folds.append(name)
         statistics_dict[name] = stats_df[stats_df['fold'] == fold][column_name].tolist()
@@ -49,14 +49,14 @@ def plot_boxplot_for_statistic(stats_df, column_name, title, jitter_pos=None, pl
 def plot_stacked_barchart_cath(stats_df, title, type="stack", relative=True, plot_out=None):
 
     statistics_dict = {}
-    for cath in range(3):
-        statistics_dict['CATH ' + str(cath + 1)] = {}
-        stats_df_cath = stats_df[stats_df['cath_topology'] == cath + 1]
+    for cath in np.unique(stats_df['cath_topology']):
+        statistics_dict['CATH ' + str(cath)] = {}
+        stats_df_cath = stats_df[stats_df['cath_topology'] == cath]
 
-        statistics_dict['CATH ' + str(cath + 1)]['all folds'] = 0
-        for fold in range(np.max(stats_df['fold'].values)):
-            statistics_dict['CATH ' + str(cath + 1)]['fold ' + str(fold+1)] = len(stats_df_cath[stats_df_cath['fold'] == (fold+1)])
-            statistics_dict['CATH ' + str(cath + 1)]['all folds'] += statistics_dict['CATH ' + str(cath + 1)]['fold ' + str(fold+1)]
+        statistics_dict['CATH ' + str(cath)]['all folds'] = 0
+        for fold in np.unique(stats_df['fold']):
+            statistics_dict['CATH ' + str(cath)]['fold ' + str(fold)] = len(stats_df_cath[stats_df_cath['fold'] == fold])
+            statistics_dict['CATH ' + str(cath)]['all folds'] += statistics_dict['CATH ' + str(cath)]['fold ' + str(fold)]
 
     df = pd.DataFrame(statistics_dict)
 
@@ -91,18 +91,20 @@ def main():
     print ("path to dataset files: \t"      + str(dataset_files))
     print ("--------------------------------------------------------")
 
-    #plot_out           = plot_dir + "/bayesian_framework/dataset_statistics/dataset_cath4.1/"
-    #alignment_path     = data_dir + "/benchmarkset_cathV4.1/psicov/"
-    #dataset_files      = data_dir + "/benchmarkset_cathV4.1/dataset_properties/"
+    #plot_out           = "/home/vorberg/work/plots/bayesian_framework/dataset_statistics/dataset_cath4.1/"
+    #alignment_path     = "/home/vorberg/work/data/benchmarkset_cathV4.1/psicov/"
+    #dataset_files      = "/home/vorberg/work/data/benchmarkset_cathV4.1/dataset_properties/"
 
 
     dataset_folds={}
-    for id, file in enumerate(glob.glob(dataset_files + "/*")):
-        dataset_folds[id+1] = pd.read_table(file)
-
+    for file in glob.glob(dataset_files + "/*n5e01*"):
+        id = os.path.basename(file).split("_")[2]
+        dataset_folds[id] = pd.read_table(file, skipinitialspace=True)
+        dataset_folds[id].columns=['domain', 'resolution', 'CATH', 'L', 'N']
 
 
     stats = {
+        'protein' :        [],
         'diversity' :      [],
         'fold' :           [],
         'N':               [],
@@ -113,9 +115,9 @@ def main():
 
 
     for fold in dataset_folds.keys():
-        for row in dataset_folds[fold].itertuples():
-            protein = row[1].strip()
-            cath = row[3].strip()
+        for index, row in dataset_folds[fold].iterrows():
+            protein = row['domain']
+            cath = row['CATH']
 
             psicov_file = alignment_path + "/" + protein +".filt.psc"
             alignment = io.read_alignment(psicov_file)
