@@ -92,6 +92,7 @@ def main():
 
     args=parse_arguments()
 
+    #debug
     # mat_file        = "/home/vorberg/1mkc_A_00.mat"
     # plot_dir        = "/home/vorberg/"
     # pdb_file        = "/home/vorberg/work/data//benchmarkset_cathV4/dompdb_CATHv4_renum_seqtom/1mkcA00_ren.pdb"
@@ -113,11 +114,9 @@ def main():
         mat = io.read_matfile(mat_file)
         if(apc):
             mat = bu.compute_apc_corrected_matrix(mat)
-        meta = io.read_json_from_mat(mat_file)
     else:
         braw = raw.parse_msgpack(braw_file)
         mat = bu.compute_l2norm_from_braw(braw, apc)
-        meta = braw.meta
 
     plot_precision_vs_rank(pdb_file, seqsep, contact_threshold, mat, plot_dir)
 
