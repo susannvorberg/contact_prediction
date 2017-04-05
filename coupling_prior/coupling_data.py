@@ -48,12 +48,15 @@ class CouplingData():
         self.seqsep                 = 8
         self.mask_sse               = False
         self.filter_gap_columns     = True
+        self.max_gap_percentage     = 0.5
         self.filter_best_pairs      = False
         self.filter_pairs_by_Nij    = True
         self.diversity_thr          = 0.3
         self.balance                = 1
         self.nr_crossval_pairs      = 100 #50000
-        self.number_of_pairs        = 2000
+        self.nr_of_pairs            = 2000
+
+        self.seed = 123
 
         self.nr_pairs_contact = 0
         self.nr_pairs_noncontact = 0
@@ -63,7 +66,7 @@ class CouplingData():
 
     def __repr__(self):
 
-        str = "Coupling dataset :\n"
+        str = "\nCoupling dataset :\n"
 
         str += "\nPath to data: \n"
         for param in ["self.braw_dir",
@@ -171,6 +174,44 @@ class CouplingData():
         self.psicov_dir = psicov_dir
         self.pdb_dir = pdb_dir
 
+
+    def set_contact_thr(self, contact_thr):
+        self.contact_thr  = int(contact_thr)
+
+    def set_non_contact_thr(self, non_contact_thr):
+        self.non_contact_thr  = int(non_contact_thr)
+
+    def set_seqsep(self, seqsep):
+        self.seqsep = int(seqsep)
+
+    def set_filter_gap_columns(self, filter_gap_columns):
+        self.filter_gap_columns = bool(filter_gap_columns)
+
+    def set_max_gap_percentage(self, max_gap_percentage):
+        self.max_gap_percentage = float(max_gap_percentage)
+
+    def set_filter_best_pairs(self, filter_best_pairs):
+        self.filter_best_pairs  = bool(filter_best_pairs)
+
+    def set_filter_pairs_by_Nij(self, filter_pairs_by_Nij):
+        self.filter_pairs_by_Nij  = bool(filter_pairs_by_Nij)
+
+    def set_diversity_thr(self, diversity_thr):
+        self.diversity_thr = float(diversity_thr)
+
+    def set_nr_residue_pairs_for_crossval(self, nr_crossval_pairs):
+        self.nr_crossval_pairs = int(nr_crossval_pairs)
+
+    def set_nr_residue_pairs_for_training(self, number_of_pairs):
+        self.number_of_pairs = int(number_of_pairs)
+
+    def set_balance(self, balance):
+        self.balance  = int(balance)
+
+    def set_seed(self, seed):
+        self.seed = int(seed)
+
+
     def initialise(self, protein_set=[]):
         """
         Initialise dataset according to specified (or default) settings
@@ -207,10 +248,10 @@ class CouplingData():
                 protein_set.append(os.path.basename(braw).split(".")[0])
 
         # shuffle rows WITH seed for reproducibility ! ! !
-        random.seed(1)
+        random.seed(self.seed)
         random.shuffle(protein_set)
 
-        print('Number of available proteins: {0}. Selecting {1} pairs per class...'.format(
+        print('\nNumber of available proteins: {0}. Selecting {1} pairs per class...'.format(
             len(protein_set), self.number_of_pairs))
 
         nr_pairs_contact_crossval = 0
@@ -223,10 +264,16 @@ class CouplingData():
             # p = protein_set[0]
 
             # set up file names
-            psicov_file = self.psicov_dir + "/" + p + ".psc"
-            braw_file_gz = self.braw_dir + "/" + p + ".braw.gz"
-            qijabfile = self.qijab_dir + "/" + p + ".bqijab.gz"
-            pdb_file = self.pdb_dir + "/" + p.replace('_', '') + "_ren.pdb"
+            psicov_file     = self.psicov_dir   + "/" + p + ".filt.psc"
+            braw_file_gz    = self.braw_dir     + "/" + p + ".filt.braw.gz"
+            qijabfile       = self.qijab_dir    + "/" + p + ".filt.bqij.gz"
+            pdb_file        = self.pdb_dir      + "/" + p + ".pdb"
+            # p_short = p.replace("_", "")
+            # psicov_file     = self.psicov_dir   + "/" + p + ".psc"
+            # braw_file_gz    = self.braw_dir     + "/" + p + ".braw.gz"
+            # qijabfile       = self.qijab_dir    + "/" + p + ".bqijab.gz"
+            # pdb_file        = self.pdb_dir      + "/" + p_short + "_ren.pdb"
+
 
             # check if braw file exists, otherwise continue
             if not os.path.isfile(braw_file_gz) or not os.path.isfile(psicov_file) or not os.path.isfile(qijabfile):
@@ -245,59 +292,63 @@ class CouplingData():
             indices_contact, indices_non_contact = self.get_residue_pairs_from_protein(
                 braw_file_gz, qijabfile, pdb_file, psicov)
 
-            # if enough data
-            if len(indices_contact[0]) > 0 or len(indices_non_contact[0]):
+            # if no data
+            if len(indices_contact[0]) == 0 and len(indices_non_contact[0]) == 0:
+                continue
 
-                protein_data = {}
-                protein_data['N'] = N
-                protein_data['L'] = L
-                protein_data['diversity'] = diversity
-                protein_data['braw_file_path'] = braw_file_gz
-                protein_data['msafilename'] = psicov_file
-                protein_data['qijabfilename'] = qijabfile
-                protein_data['residue_i'] = []
-                protein_data['residue_j'] = []
-                protein_data['contact'] = []
 
-                # shuffle indices, so to not introduce any bias when choosing only the first X pairs from each protein
-                random.shuffle(indices_contact[0], lambda: 0.1)
-                random.shuffle(indices_contact[1], lambda: 0.1)
-                random.shuffle(indices_non_contact[0], lambda: 0.1)
-                random.shuffle(indices_non_contact[1], lambda: 0.1)
+            protein_data = {}
+            protein_data['N'] = N
+            protein_data['L'] = L
+            protein_data['diversity'] = diversity
+            protein_data['braw_file_path'] = braw_file_gz
+            protein_data['msafilename'] = psicov_file
+            protein_data['qijabfilename'] = qijabfile
+            protein_data['residue_i'] = []
+            protein_data['residue_j'] = []
+            protein_data['contact'] = []
 
-                if nr_pairs_contacts < self.number_of_pairs or nr_pairs_bg < (self.number_of_pairs * self.balance):
-                    if nr_pairs_contacts < self.number_of_pairs:
-                        protein_data['residue_i'].extend(indices_contact[0][:max_nr_pairs_per_protein])
-                        protein_data['residue_j'].extend(indices_contact[1][:max_nr_pairs_per_protein])
-                        protein_data['contact'].extend([1] * len(indices_contact[0][:max_nr_pairs_per_protein]))
-                        nr_pairs_contacts += len(indices_contact[0][:max_nr_pairs_per_protein])
+            # shuffle indices, so to not introduce any bias when choosing only the first X pairs from each protein
+            random.seed(self.seed)
+            random.shuffle(indices_contact[0], lambda: 0.1)
+            random.shuffle(indices_contact[1], lambda: 0.1)
+            random.shuffle(indices_non_contact[0], lambda: 0.1)
+            random.shuffle(indices_non_contact[1], lambda: 0.1)
 
-                    if nr_pairs_bg < (self.number_of_pairs * self.balance):
-                        protein_data['residue_i'].extend(indices_non_contact[0][:max_nr_pairs_per_protein])
-                        protein_data['residue_j'].extend(indices_non_contact[1][:max_nr_pairs_per_protein])
-                        protein_data['contact'].extend([0] * len(indices_non_contact[0][:max_nr_pairs_per_protein]))
-                        nr_pairs_bg += len(indices_non_contact[0][:max_nr_pairs_per_protein])
-
+            if len(indices_contact[0]) > 0 and (nr_pairs_contacts < self.number_of_pairs):
+                    protein_data['residue_i'].extend(indices_contact[0][:max_nr_pairs_per_protein])
+                    protein_data['residue_j'].extend(indices_contact[1][:max_nr_pairs_per_protein])
+                    protein_data['contact'].extend([1] * len(indices_contact[0][:max_nr_pairs_per_protein]))
+                    nr_pairs_contacts += len(indices_contact[0][:max_nr_pairs_per_protein])
                     self.training_data[p] = protein_data
-                    print("{0}: {1} , dataset: #pairs (contact): {2} , #pairs (bg) {3}".format(
-                        len(self.training_data), p, nr_pairs_contacts, nr_pairs_bg))
 
-                else:
-                    if nr_pairs_contact_crossval < self.nr_crossval_pairs:
+            if len(indices_non_contact[0]) > 0 and nr_pairs_bg < (self.number_of_pairs * self.balance):
+                    protein_data['residue_i'].extend(indices_non_contact[0][:max_nr_pairs_per_protein])
+                    protein_data['residue_j'].extend(indices_non_contact[1][:max_nr_pairs_per_protein])
+                    protein_data['contact'].extend([0] * len(indices_non_contact[0][:max_nr_pairs_per_protein]))
+                    nr_pairs_bg += len(indices_non_contact[0][:max_nr_pairs_per_protein])
+                    self.training_data[p] = protein_data
+
+
+            if p not in self.training_data:
+
+                if len(indices_contact[0]) > 0 and nr_pairs_contact_crossval < self.nr_crossval_pairs:
                         protein_data['residue_i'].extend(indices_contact[0][:max_nr_pairs_per_protein])
                         protein_data['residue_j'].extend(indices_contact[1][:max_nr_pairs_per_protein])
                         protein_data['contact'].extend([1] * len(indices_contact[0][:max_nr_pairs_per_protein]))
                         nr_pairs_contact_crossval += len(indices_contact[0][:max_nr_pairs_per_protein])
+                        self.test_data[p] = protein_data
 
-                    if nr_pairs_noncontact_crossval < self.nr_crossval_pairs:
+                if len(indices_non_contact[0]) > 0 and nr_pairs_noncontact_crossval < self.nr_crossval_pairs:
                         protein_data['residue_i'].extend(indices_non_contact[0][:max_nr_pairs_per_protein])
                         protein_data['residue_j'].extend(indices_non_contact[1][:max_nr_pairs_per_protein])
                         protein_data['contact'].extend([0] * len(indices_non_contact[0][:max_nr_pairs_per_protein]))
                         nr_pairs_noncontact_crossval += len(indices_non_contact[0][:max_nr_pairs_per_protein])
+                        self.test_data[p] = protein_data
 
-                    self.test_data[p] = protein_data
-                    print("{0}: {1} , dataset: #pairs (contact): {2} , #pairs (bg) {3}".format(
-                        len(self.test_data), p, nr_pairs_contact_crossval, nr_pairs_noncontact_crossval))
+
+            print("{0}, #pairs in training set: contact={1} bg={2}, #pairs in testset: contact={3} bg={4}".format(
+                    p,  nr_pairs_contacts, nr_pairs_bg, nr_pairs_contact_crossval, nr_pairs_noncontact_crossval))
 
             # stop condition
             condition_training = [nr_pairs_contacts >= self.number_of_pairs,
@@ -323,7 +374,7 @@ class CouplingData():
         # do not used pairs with many gaps, e.g. max_percentage_gaps_allowed = 0.25
         if self.filter_gap_columns:
             percent_gaps_per_column = [float(psicov[:, l].tolist().count(0)) / N for l in range(L)]
-            columns_with_many_gaps = [i for i, j in enumerate(percent_gaps_per_column) if j > 0.5]
+            columns_with_many_gaps = [i for i, j in enumerate(percent_gaps_per_column) if j > self.max_gap_percentage]
 
             index_delete_contact_i = [index for index in range(len(indices_contact[0])) if
                                       indices_contact[0][index] in columns_with_many_gaps]
@@ -384,7 +435,7 @@ class CouplingData():
             delete_indices_noncontacts_q = \
                 np.where(qmat[indices_non_contact[0], indices_non_contact[1]].min(1) < 0)[0]
 
-            # delete pairs when Nij == 0
+            # delete pairs when Nij < 1
             delete_indices_contacts_N = np.where(Nij[indices_contact[0], indices_contact[1]] < 1)[0]
             delete_indices_noncontacts_N = np.where(Nij[indices_non_contact[0], indices_non_contact[1]] < 1)[0]
 
@@ -410,7 +461,7 @@ class CouplingData():
 
         for p in self.training_data:
 
-            braw_file_gz = self.braw_dir + "/" + p + ".braw.gz"
+            braw_file_gz = self.braw_dir + "/" + p + ".filt.braw.gz"
             braw = raw.parse_msgpack(braw_file_gz)
 
             residue_i   = np.array(self.training_data[p]['residue_i'])
