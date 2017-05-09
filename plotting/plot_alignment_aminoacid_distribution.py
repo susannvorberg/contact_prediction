@@ -41,7 +41,7 @@ def plot_amino_acid_distribution_per_position(alignment_file, plot_file):
     #add bar for each amino acid for each position
     for aa in range(1,21):
         data.append(go.Bar(
-                      x=range(L),
+                      x=range(1,L+1),
                       y=aa_freq_per_pos[aa],
                       showlegend=True,
                       name=io.AMINO_ACIDS[aa]
@@ -52,7 +52,10 @@ def plot_amino_acid_distribution_per_position(alignment_file, plot_file):
         barmode='stack',
         title="Distribution of Amino Acids per position in alignment of " + str(protein) + "<br> N="+str(N) + ", L="+str(L),
         xaxis=dict(title="Alignment Position"),
-        yaxis=dict(title="Amino Acid Distribution"),
+        yaxis=dict(
+            title="Amino Acid Distribution",
+            exponentformat='e',
+            showexponent='All'),
         font=dict(size=18)
     )
 
@@ -63,7 +66,7 @@ def plot_amino_acid_distribution_per_position(alignment_file, plot_file):
 def main():
 
     ### Parse arguments
-    parser = argparse.ArgumentParser(description='Plotting a contact map.')
+    parser = argparse.ArgumentParser(description='Plotting amino acid distribution over the alignment.')
     parser.add_argument("alignment_file",       type=str,   help="path to aligment file")
     parser.add_argument("plot_file",            type=str,   help="path to plot file")
 
@@ -71,8 +74,9 @@ def main():
 
     alignment_file              = str(args.alignment_file)
     plot_file                   = str(args.plot_file)
-    #alignment_file = "/home/vorberg/work/data/benchmarkset_cathV4/benchmarkset_cathV4_combs/psc_eval01/1h4x_A_00.psc"
-    #plot_file = "/home/vorberg/alignment_1h4x_A_00.html"
+    #protein='2fuv_A_04'
+    #alignment_file = "/home/vorberg/work/data/benchmarkset_cathV4/benchmarkset_cathV4_combs/psc_eval01/"+protein+".psc"
+    #plot_file = "/home/vorberg/alignment_"+protein+".html"
 
     plot_amino_acid_distribution_per_position(alignment_file, plot_file)
 
