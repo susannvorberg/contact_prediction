@@ -61,6 +61,11 @@ class Likelihood_Dataset{
         */
         void set_threads_per_protein(int threads);
 
+        /*
+        * Set the parameters
+        */
+        void set_parameters(boost::python::dict parameters);
+
 	private:
 
 		int nr_proteins;

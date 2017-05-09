@@ -37,12 +37,14 @@ Likelihood_Dataset::Likelihood_Dataset(
 	parameterMap = fromPythonDict(parameters_);
 	nr_components = parameterMap.size()/ 4 ;
 
+
+
 	//initialize variables
 	f = 0.0;
 	grad_weight_bg.zeros(nr_components);
 	grad_weight_contact.zeros(nr_components);
 	grad_mu.zeros(400, nr_components);
-	grad_precMat.zeros(400,nr_components);
+    grad_precMat.zeros(400,nr_components);
 
     if (debug_mode > 0){
         std::cout << "Initialised LL Dataset class with following settings: " << std::endl;
@@ -62,7 +64,7 @@ void Likelihood_Dataset::protein_dict_to_protein_map(boost::python::dict &pairs_
 
 	boost::python::list keys = pairs_per_protein.keys();
 	dataset = std::vector<myProtein>(len(keys));
-	for (int i = 0; i < len(keys); ++i) {
+	for (int i = 0; i < len(keys); i++) {
 
 		boost::python::dict protein_dict = boost::python::extract<boost::python::dict>(pairs_per_protein[keys[i]]);
 
@@ -94,7 +96,6 @@ void Likelihood_Dataset::protein_dict_to_protein_map(boost::python::dict &pairs_
 
 		dataset[i] = protein;
 
-
 	}
 
 }
@@ -112,6 +113,15 @@ void Likelihood_Dataset::set_debug_mode(int debug_mode){
 */
 void Likelihood_Dataset::set_threads_per_protein(int threads){
     this->nr_threads_prot = threads;
+}
+
+
+/*
+* Set the parameters
+*/
+void Likelihood_Dataset::set_parameters(boost::python::dict parameters){
+	this->parameterMap = fromPythonDict(parameters);
+	this->nr_components = parameterMap.size()/ 4 ;
 }
 
 
@@ -162,7 +172,9 @@ boost::python::dict Likelihood_Dataset::get_gradient_dict()
 
 		}
 		else if(parameter_name.find("prec") != std::string::npos){
-			std::vector<double> std_grad_precMat = arma::conv_to<std::vector<double> >::from(grad_precMat.col(component));
+
+		    std::vector<double> std_grad_precMat = arma::conv_to<std::vector<double> >::from(grad_precMat.col(component));
+
 			boost::python::list grad = toPythonList(std_grad_precMat);
 
 			gradient_dict[parameter_name] = grad;
@@ -181,7 +193,7 @@ void Likelihood_Dataset::compute_f(){
 	arma::vec f_vec(nr_proteins, arma::fill::zeros);
 
 
-	if (debug_mode > 0){
+	if (this->debug_mode > 0){
 	    std::cout << "Settings for OMP parallelization: " << std::endl;
 	    std::cout << "#threads: " << nr_threads_prot  << " is_nested: " << omp_get_nested( ) << " is_dynamic: " << omp_get_dynamic( )<< " nr available cpus: " << omp_get_num_procs()<< std::endl;
 	}
@@ -194,9 +206,10 @@ void Likelihood_Dataset::compute_f(){
 		myProtein protein_data = dataset[p];
 
 		//create protein object
-		#pragma omp critical
-		std::cout << "Compute protein " <<  protein_data.name << " (thread nr "<< omp_get_thread_num() << " on cpu " << sched_getcpu()  << ")" << std::endl;
-
+		if (this->debug_mode > 0){
+    		#pragma omp critical
+	        std::cout << "Compute protein " <<  protein_data.name << " (thread nr "<< omp_get_thread_num() << " on cpu " << sched_getcpu()  << ")" << std::endl;
+        }
 
 		Likelihood_Protein protein(
 		        protein_data.name,
@@ -204,11 +217,12 @@ void Likelihood_Dataset::compute_f(){
                 protein_data.L,
                 protein_data.brawfilename,
                 protein_data.qijabfilename,
-                parameterMap
+                this->parameterMap
                 );
 
         //set pair information
 		protein.set_pairs(protein_data.residue_i, protein_data.residue_j, protein_data.contact);
+
 
 		//calc Hessian, mu_ij_k, lambda_ij_k, responsibilities
 		//AND likelihood
@@ -239,9 +253,9 @@ void Likelihood_Dataset::compute_f_df(int hessian_pseudocount)
 	arma::cube grad_mu_cube(nr_proteins, nr_components,400, arma::fill::zeros);
 	arma::cube grad_precMat_cube(nr_proteins, nr_components,400, arma::fill::zeros);
 
-	if (debug_mode > 0){
+	if (this->debug_mode > 0){
 	    std::cout << "Settings for OMP parallelization: " << std::endl;
-	    std::cout << "#threads: " << nr_threads_prot  << " is_nested: " << omp_get_nested( ) << " is_dynamic: " << omp_get_dynamic( )<< " nr available cpus: " << omp_get_num_procs()<< std::endl;
+	    std::cout << "#threads: " << nr_threads_prot  << " is_nested: " << omp_get_nested( ) << " is_dynamic: " << omp_get_dynamic( )<< " nr available cpus: " << omp_get_num_procs() << "\n" << std::endl;
 	}
 
     //iterate over protein list
@@ -267,31 +281,32 @@ void Likelihood_Dataset::compute_f_df(int hessian_pseudocount)
         //set pair information
 		protein.set_pairs(protein_data.residue_i, protein_data.residue_j, protein_data.contact);
 
+
 		//calc Hessian, mu_ij_k, lambda_ij_k, responsibilities
 		//likelihood and gradients for all pairs
 		protein.compute_f_df(hessian_pseudocount);
 
+
 		//save protein likelihood value
 		f_vec(p) = protein.get_neg_log_likelihood();
 
+
+
         // get ALL gradients for ALL components
-        // EXCEPT for component 0
-        // - weights are fixed at 1 because of softmax overparametrization
-        // - component 0 is fixed: mu and var will not be changed
-        for(int component = 1 ; component < this->nr_components; component++){
+        for(int component = 0 ; component < this->nr_components; component++){
 
 		    //weights
 			grad_weight_contact_mat(p,component)    = protein.get_gradient_weight_comp(component, 1);
 			grad_weight_bg_mat(p,component)         = protein.get_gradient_weight_comp(component, 0);
 			//mu
 			grad_mu_cube.tube(p,component)          = protein.get_gradient_mu_comp(component);
-			//precMat - diagonal
+			//precMat - diagonal or isotrope
 			grad_precMat_cube.tube(p,component)     = protein.get_gradient_precisionMatrix_comp(component);
-
+            //precMat - isotrope (dependentL)
+            //grad_precMat_cube.tube(p,component)     = protein.get_gradient_precisionMatrix_isotrop_Ldependent(component);
 		}
 
 	}//end proteins
-
 
 	//sum over all proteins (parallelize over proteins)
 	f = arma::accu(f_vec);

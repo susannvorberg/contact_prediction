@@ -33,6 +33,8 @@ BOOST_PYTHON_MODULE(libll){
 
 	.def("set_debug_mode", &Likelihood_Dataset::set_debug_mode)
 	.def("set_threads_per_protein", &Likelihood_Dataset::set_threads_per_protein)
+	.def("set_parameters", &Likelihood_Dataset::set_parameters)
+
 
 	.def("compute_f_df", &Likelihood_Dataset::compute_f_df)
 	.def("compute_f", &Likelihood_Dataset::compute_f)
