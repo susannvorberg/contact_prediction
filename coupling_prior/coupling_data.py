@@ -43,18 +43,20 @@ class CouplingData():
 
 
         #dataset settings
-        self.contact_thr            = 8
-        self.non_contact_thr        = 25
-        self.seqsep                 = 8
-        self.mask_sse               = False
-        self.filter_gap_columns     = True
-        self.max_gap_percentage     = 0.5
-        self.filter_best_pairs      = False
-        self.filter_pairs_by_Nij    = True
-        self.diversity_thr          = 0.3
-        self.balance                = 1
-        self.nr_crossval_pairs      = 100 #50000
-        self.nr_of_pairs            = 2000
+        self.contact_thr                = 8
+        self.non_contact_thr            = 25
+        self.seqsep                     = 8
+        self.mask_sse                   = False
+        self.filter_gap_columns         = True
+        self.max_gap_percentage         = 0.5
+        self.filter_best_pairs          = False
+        self.filter_pairs_by_Nij        = True
+        self.maxnoncontacts_per_protein = 500
+        self.maxcontacts_per_protein    = 250
+        self.diversity_thr              = 0.3
+        self.balance                    = 1
+        self.nr_crossval_pairs          = 100 #50000
+        self.nr_of_pairs                = 2000
 
         self.seed = 123
 
@@ -84,6 +86,8 @@ class CouplingData():
                       "self.filter_gap_columns",
                       "self.filter_best_pairs",
                       "self.filter_pairs_by_Nij",
+                      "self.maxnoncontacts_per_protein",
+                      "self.maxcontacts_per_protein",
                       "self.diversity_thr",
                       "self.balance",
                       "self.nr_crossval_pairs",
@@ -196,6 +200,12 @@ class CouplingData():
     def set_filter_pairs_by_Nij(self, filter_pairs_by_Nij):
         self.filter_pairs_by_Nij  = bool(filter_pairs_by_Nij)
 
+    def set_maxcontacts_per_protein(self, maxcontacts_per_protein):
+        self.maxcontacts_per_protein = maxcontacts_per_protein
+
+    def set_maxnoncontacts_per_protein(self, maxnoncontacts_per_protein):
+        self.maxnoncontacts_per_protein = maxnoncontacts_per_protein
+
     def set_diversity_thr(self, diversity_thr):
         self.diversity_thr = float(diversity_thr)
 
@@ -240,7 +250,6 @@ class CouplingData():
         :return:
         """
 
-        max_nr_pairs_per_protein = 250
 
         if len(protein_set) == 0:
             braw_files = glob.glob(self.braw_dir + "/*braw*")
@@ -251,8 +260,8 @@ class CouplingData():
         random.seed(self.seed)
         random.shuffle(protein_set)
 
-        print('\nNumber of available proteins: {0}. Selecting {1} pairs per class...'.format(
-            len(protein_set), self.number_of_pairs))
+        print('\nNumber of available proteins: {0}. Selecting {1} contacts and {2} non-contacts...'.format(
+            len(protein_set), self.number_of_pairs, self.number_of_pairs * self.balance))
 
         nr_pairs_contact_crossval = 0
         nr_pairs_noncontact_crossval = 0
@@ -315,35 +324,36 @@ class CouplingData():
             random.shuffle(indices_non_contact[0], lambda: 0.1)
             random.shuffle(indices_non_contact[1], lambda: 0.1)
 
+
             if len(indices_contact[0]) > 0 and (nr_pairs_contacts < self.number_of_pairs):
-                    protein_data['residue_i'].extend(indices_contact[0][:max_nr_pairs_per_protein])
-                    protein_data['residue_j'].extend(indices_contact[1][:max_nr_pairs_per_protein])
-                    protein_data['contact'].extend([1] * len(indices_contact[0][:max_nr_pairs_per_protein]))
-                    nr_pairs_contacts += len(indices_contact[0][:max_nr_pairs_per_protein])
+                    protein_data['residue_i'].extend(indices_contact[0][:self.maxcontacts_per_protein])
+                    protein_data['residue_j'].extend(indices_contact[1][:self.maxcontacts_per_protein])
+                    protein_data['contact'].extend([1] * len(indices_contact[0][:self.maxcontacts_per_protein]))
+                    nr_pairs_contacts += len(indices_contact[0][:self.maxcontacts_per_protein])
                     self.training_data[p] = protein_data
 
             if len(indices_non_contact[0]) > 0 and nr_pairs_bg < (self.number_of_pairs * self.balance):
-                    protein_data['residue_i'].extend(indices_non_contact[0][:max_nr_pairs_per_protein])
-                    protein_data['residue_j'].extend(indices_non_contact[1][:max_nr_pairs_per_protein])
-                    protein_data['contact'].extend([0] * len(indices_non_contact[0][:max_nr_pairs_per_protein]))
-                    nr_pairs_bg += len(indices_non_contact[0][:max_nr_pairs_per_protein])
+                    protein_data['residue_i'].extend(indices_non_contact[0][:self.maxnoncontacts_per_protein])
+                    protein_data['residue_j'].extend(indices_non_contact[1][:self.maxnoncontacts_per_protein])
+                    protein_data['contact'].extend([0] * len(indices_non_contact[0][:self.maxnoncontacts_per_protein]))
+                    nr_pairs_bg += len(indices_non_contact[0][:self.maxnoncontacts_per_protein])
                     self.training_data[p] = protein_data
 
 
             if p not in self.training_data:
 
                 if len(indices_contact[0]) > 0 and nr_pairs_contact_crossval < self.nr_crossval_pairs:
-                        protein_data['residue_i'].extend(indices_contact[0][:max_nr_pairs_per_protein])
-                        protein_data['residue_j'].extend(indices_contact[1][:max_nr_pairs_per_protein])
-                        protein_data['contact'].extend([1] * len(indices_contact[0][:max_nr_pairs_per_protein]))
-                        nr_pairs_contact_crossval += len(indices_contact[0][:max_nr_pairs_per_protein])
+                        protein_data['residue_i'].extend(indices_contact[0][:self.maxcontacts_per_protein])
+                        protein_data['residue_j'].extend(indices_contact[1][:self.maxcontacts_per_protein])
+                        protein_data['contact'].extend([1] * len(indices_contact[0][:self.maxcontacts_per_protein]))
+                        nr_pairs_contact_crossval += len(indices_contact[0][:self.maxcontacts_per_protein])
                         self.test_data[p] = protein_data
 
                 if len(indices_non_contact[0]) > 0 and nr_pairs_noncontact_crossval < self.nr_crossval_pairs:
-                        protein_data['residue_i'].extend(indices_non_contact[0][:max_nr_pairs_per_protein])
-                        protein_data['residue_j'].extend(indices_non_contact[1][:max_nr_pairs_per_protein])
-                        protein_data['contact'].extend([0] * len(indices_non_contact[0][:max_nr_pairs_per_protein]))
-                        nr_pairs_noncontact_crossval += len(indices_non_contact[0][:max_nr_pairs_per_protein])
+                        protein_data['residue_i'].extend(indices_non_contact[0][:self.maxnoncontacts_per_protein])
+                        protein_data['residue_j'].extend(indices_non_contact[1][:self.maxnoncontacts_per_protein])
+                        protein_data['contact'].extend([0] * len(indices_non_contact[0][:self.maxnoncontacts_per_protein]))
+                        nr_pairs_noncontact_crossval += len(indices_non_contact[0][:self.maxnoncontacts_per_protein])
                         self.test_data[p] = protein_data
 
 
@@ -424,20 +434,24 @@ class CouplingData():
             qmat[np.triu_indices(L, 1)] = q
             qmat_sum = qmat.sum(2)
 
+
             # delete pairs when sum(qij) deviates too far from 1
             delete_indices_contacts_qsum = \
                 np.where(abs(1 - qmat_sum[indices_contact[0], indices_contact[1]]) > 1e-3)[0]
             delete_indices_noncontacts_qsum = \
                 np.where(abs(1 - qmat_sum[indices_non_contact[0], indices_non_contact[1]]) > 1e-3)[0]
 
+
             # delete pairs when qij contains negative elements
             delete_indices_contacts_q = np.where(qmat[indices_contact[0], indices_contact[1]].min(1) < 0)[0]
             delete_indices_noncontacts_q = \
                 np.where(qmat[indices_non_contact[0], indices_non_contact[1]].min(1) < 0)[0]
 
+
             # delete pairs when Nij < 1
             delete_indices_contacts_N = np.where(Nij[indices_contact[0], indices_contact[1]] < 1)[0]
             delete_indices_noncontacts_N = np.where(Nij[indices_non_contact[0], indices_non_contact[1]] < 1)[0]
+
 
             delete_indices_contacts = np.unique(
                 delete_indices_contacts_qsum.tolist() + delete_indices_contacts_q.tolist() + delete_indices_contacts_N.tolist())
@@ -446,7 +460,7 @@ class CouplingData():
 
             # delete those pairs that have not enough counts
             indices_contact[0] = np.delete(indices_contact[0], delete_indices_contacts)
-            indices_contact[1] = np.delete(indices_contact[1], delete_indices_contacts_q)
+            indices_contact[1] = np.delete(indices_contact[1], delete_indices_contacts)
             indices_non_contact[0] = np.delete(indices_non_contact[0], delete_indices_noncontacts)
             indices_non_contact[1] = np.delete(indices_non_contact[1], delete_indices_noncontacts)
 

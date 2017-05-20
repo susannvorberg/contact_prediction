@@ -10,12 +10,18 @@ def subset_evaluation_dict(evaluation_statistics, bins, subset_property, methods
 
     precision_rank = {}
     for bin in range(len(bins)-1):
-        bin_title = str(bins[bin]) + " <= "+ subset_property + " < "+ str(bins[bin+1])
+
+        bin_title = "bin {0}: {1} < {2} <= {3}".format(
+            bin+1,
+            np.round(bins[bin], decimals=2) ,
+            subset_property ,
+            np.round(bins[bin+1], decimals=2)
+        )
 
         precision_dict_bin = {protein:protein_eval_metrics
                               for protein, protein_eval_metrics in evaluation_statistics['proteins'].iteritems()
-                              if (protein_eval_metrics[subset_property] >= bins[bin])
-                              and (protein_eval_metrics[subset_property] < bins[bin+1])}
+                              if (protein_eval_metrics[subset_property] > bins[bin])
+                              and (protein_eval_metrics[subset_property] <= bins[bin+1])}
 
         bin_title += " (" + str(len(precision_dict_bin)) + " proteins)"
         precision_rank[bin_title] = {'rank': ranks}
@@ -23,11 +29,38 @@ def subset_evaluation_dict(evaluation_statistics, bins, subset_property, methods
             protein_ranks = [protein_eval_metrics['methods'][method][evaluation_measure]
                              for protein_eval_metrics in precision_dict_bin.values()]
             precision_rank[bin_title][method] = {}
-            precision_rank[bin_title][method]['mean'] = np.mean(protein_ranks, axis=0)
+            precision_rank[bin_title][method]['mean'] = np.nanmean(protein_ranks, axis=0)
             precision_rank[bin_title][method]['size'] = len(protein_ranks)
 
     return precision_rank
 
+def precision_vs_rank(evaluation_statistics, methods):
+    """
+    Compute precision and recall values at ranks_L
+
+    note: recall=1 means all contacts with specified sequence sep!
+
+    :param evaluation_statistics:
+    :param methods:
+    :return:
+    """
+
+    precision_recall = {}
+
+    #compute mean precision recall at ranks
+    for method in methods:
+        precision_for_method = [protein_eval_metrics['methods'][method]['precision']
+                                for protein_eval_metrics in evaluation_statistics['proteins'].values()]
+
+        recall_for_method = [protein_eval_metrics['methods'][method]['recall']
+                        for protein_eval_metrics in evaluation_statistics['proteins'].values()]
+
+        precision_recall[method] = {}
+        precision_recall[method]['precision']   = np.nanmean(precision_for_method, axis=0)
+        precision_recall[method]['recall'] = np.nanmean(recall_for_method, axis=0)
+        precision_recall[method]['size']        = len(precision_for_method)
+
+    return precision_recall
 
 def evaluationmeasure_vs_rank(evaluation_statistics, methods, evaluation_measure):
 
@@ -38,7 +71,7 @@ def evaluationmeasure_vs_rank(evaluation_statistics, methods, evaluation_measure
         measure_per_method_all_proteins_all_ranks = [protein_eval_metrics['methods'][method][evaluation_measure]
                                                      for protein_eval_metrics in evaluation_statistics['proteins'].values()]
         evaluation_by_rank[method] = {}
-        evaluation_by_rank[method]['mean'] = np.mean(measure_per_method_all_proteins_all_ranks, axis=0)
+        evaluation_by_rank[method]['mean'] = np.nanmean(measure_per_method_all_proteins_all_ranks, axis=0)
         evaluation_by_rank[method]['size'] = len(measure_per_method_all_proteins_all_ranks)
 
     return evaluation_by_rank
@@ -50,7 +83,7 @@ def compute_evaluation_metrics(eval_file, ranks, methods, contact_thr=8, seqsep=
     try:
         eval_df = pd.read_table(eval_file, sep="\t")
     except:
-        print("Could not open eval file!")
+        print("Could not open eval file {0}!".format(eval_file))
         return
 
     eval_meta_file = eval_file.replace(".eval", ".meta")
@@ -58,7 +91,7 @@ def compute_evaluation_metrics(eval_file, ranks, methods, contact_thr=8, seqsep=
         with open(eval_meta_file, 'r') as fp:
             eval_meta = json.load(fp)
     except:
-        print("Could not open eval_meta_file!")
+        print("Could not open eval meta file {0}!".format(eval_meta_file))
         return
 
     ### check eval file ======================================================================
@@ -79,6 +112,10 @@ def compute_evaluation_metrics(eval_file, ranks, methods, contact_thr=8, seqsep=
     eval_df['class'] = (eval_df['cb_distance'] <= contact_thr) * 1
     eval_df = eval_df[eval_df['j'] >= (eval_df['i'] + seqsep)]
 
+
+    eval_df.sort_values(by=['i', 'j'], inplace=True)
+    eval_df.reset_index(inplace=True)
+
     ### read protein info =====================================================================================
     protein_eval_metrics = {}
     L = eval_meta['protein']['L']
@@ -91,7 +128,7 @@ def compute_evaluation_metrics(eval_file, ranks, methods, contact_thr=8, seqsep=
     ### determine the ranks according to protein length L=====================================================
     # if there are less precision values than max(rank_L): adjust rank_L
     ranks_L = np.round(L * ranks).astype(int)
-    ranks_L = [rank for rank in ranks_L if rank < len(eval_df)]
+    ranks_L = np.array([rank for rank in ranks_L if rank < len(eval_df)])
 
     ### compute precision and recall values ==================================================================
     protein_eval_metrics['methods']={}
@@ -99,12 +136,15 @@ def compute_evaluation_metrics(eval_file, ranks, methods, contact_thr=8, seqsep=
         precision, recall, threshold = compute_precision_recall(eval_df['class'], eval_df[method])
         mean_error                   = compute_mean_error(eval_df['cb_distance'], eval_df[method], contact_thr)
 
+
         protein_eval_metrics['methods'][method] = {}
-        protein_eval_metrics['methods'][method]['precision'] = [0] * len(ranks)
-        protein_eval_metrics['methods'][method]['mean_error'] = [0] * len(ranks)
+        protein_eval_metrics['methods'][method]['precision']    = [np.nan] * len(ranks)
+        protein_eval_metrics['methods'][method]['mean_error']   = [np.nan] * len(ranks)
+        protein_eval_metrics['methods'][method]['recall']       = [np.nan] * len(ranks)
         for rank_id, rank in enumerate(ranks_L):
-            protein_eval_metrics['methods'][method]['precision'][rank_id] = np.array(precision)[rank]
-            protein_eval_metrics['methods'][method]["mean_error"][rank_id] = np.array(mean_error)[rank]
+            protein_eval_metrics['methods'][method]['precision'][rank_id]   = np.array(precision)[rank]
+            protein_eval_metrics['methods'][method]["mean_error"][rank_id]  = np.array(mean_error)[rank]
+            protein_eval_metrics['methods'][method]["recall"][rank_id]      = np.array(recall)[rank]
 
     return protein_eval_metrics
 
@@ -122,7 +162,7 @@ def compute_rollingmean_in_scatterdict(evaluation_statistics, methods, property)
         df['rolling_mean'] = df['mean_precision'].rolling(window=10).mean()
         scatter_dict[method] = df.to_dict(orient='list')
 
-    return scatter_di
+    return scatter_dict
 
 def mean_precision_per_protein(evaluation_statistics, methods):
     """
@@ -159,7 +199,7 @@ def mean_precision_per_protein(evaluation_statistics, methods):
         scatter_dict[method]['protein'] = evaluation_statistics['proteins'].keys()
 
         #mean precision for this method for all proteins
-        scatter_dict[method]['mean_precision'] = [np.mean(protein_eval_metrics['methods'][method]['precision'])
+        scatter_dict[method]['mean_precision'] = [np.nanmean(protein_eval_metrics['methods'][method]['precision'])
                                    for protein_eval_metrics in evaluation_statistics['proteins'].values()]
         #protein annotations
         scatter_dict[method]['annotation'] = [
@@ -170,7 +210,6 @@ def mean_precision_per_protein(evaluation_statistics, methods):
             ", cath: " + str(protein_eval_metrics['cath class']) +
             ", diversity: " + str(np.round(protein_eval_metrics['diversity'], decimals=3))
             for protein, protein_eval_metrics in evaluation_statistics['proteins'].iteritems()]
-
 
     return scatter_dict
 
@@ -207,12 +246,12 @@ def compute_precision_recall(true_class, score):
     df = pd.DataFrame({'true':true_class, 'score':score})
     df.sort_values('score', ascending=False, inplace=True)
 
-    df.loc[:,'cumsum_pred']   =  range(1, len(df)+1)
-    df.loc[:,'cumsum_tp']     = df.true.cumsum()
+    df['cumsum_pred']   = range(1, len(df)+1)
+    df['cumsum_tp']     = df.true.cumsum()
 
 
-    df.loc[:,'precision'] = df.loc[:,'cumsum_tp']  / df.loc[:,'cumsum_pred']
-    df.loc[:,'recall']    = df.loc[:,'cumsum_tp']  / sum(df.loc[:,'true'])
+    df['precision'] = df['cumsum_tp']  / df['cumsum_pred']
+    df['recall']    = df['cumsum_tp']  / np.sum(true_class)
 
     return df.precision.tolist(), df.recall.tolist(), df.score.tolist()
 

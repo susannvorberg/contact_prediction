@@ -1358,7 +1358,7 @@ void write_qijab_msgpack(int N,
 /*
  * Define the BOOST Module
  */
-BOOST_PYTHON_MODULE(bayes_utils_py)
+BOOST_PYTHON_MODULE(libcontactutils)
 {
 
 	boost::python::def("calcAPC_py", calcAPC_py);

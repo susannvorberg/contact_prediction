@@ -11,6 +11,7 @@ import utils.plot_utils as pu
 import utils.io_utils as io
 import utils.benchmark_utils as bu
 import utils.utils as u
+import utils.pdb_utils as pdb
 import raw
 
 
@@ -52,7 +53,7 @@ class Benchmark():
                 self.methods.remove(m)
 
             print("The following methods exist: ")
-            for m in self.methods:
+            for m in sorted(self.methods):
                 print(m)
 
     def __repr__(self):
@@ -73,7 +74,8 @@ class Benchmark():
         :return:
         """
 
-
+        if not os.path.exists(pdb_file):
+            raise IOError("PDB File " + str(pdb_file) + "does not exist. ")
 
         # determine indices that are resolved in PDB and have minimal required seq sep
         distance_matrix = pdb.distance_map(pdb_file)
@@ -120,14 +122,16 @@ class Benchmark():
         if not os.path.exists(method_file):
             raise IOError("Score File " + str(method_file) + "cannot be found. ")
 
-        ### load eval file and eval meta file
+        ### load eval file
         eval_df = pd.read_table(eval_file, sep="\t")
-        with open(eval_meta_file, 'r') as fp:
-            eval_meta = json.load(fp)
 
         # eval file already contains this score
         if method_name in eval_df.columns and not update:
             return
+
+        ### load eval meta file
+        with open(eval_meta_file, 'r') as fp:
+            eval_meta = json.load(fp)
 
         ### Get alignment properties
         info_str = ""
@@ -140,7 +144,6 @@ class Benchmark():
                 info_str += " div: " + str(eval_meta['protein']['div'])
             if 'cath' in eval_meta['protein']:
                 info_str += " cath: " + str(eval_meta['protein']['cath'])
-        print(protein_name + info_str)
 
         ## Get residue (must be resolved in PDB File AND minimum sequence sep)
         ij_indices = zip(eval_df['i'], eval_df['j'])
@@ -165,7 +168,9 @@ class Benchmark():
         with open(eval_meta_file, 'w') as fp:
             json.dump(eval_meta, fp)
 
-        print("Successfully added method " + method_name + "!")
+        print("Successfully added method {0} for protein {1}!".format(method_name, protein_name))
+
+
 
     def __remove_method_from_evaluation_file(self, eval_file, method_name):
         """
@@ -199,6 +204,7 @@ class Benchmark():
             with open(eval_meta_file, 'w') as fp:
                 json.dump(eval_meta, fp)
 
+
         print("Removed method " + method_name + " for protein " + protein_name)
 
     def __apply_filter(self, eval_meta):
@@ -228,6 +234,21 @@ class Benchmark():
 
         return (pass_filter)
 
+    def print_evaluation_file_stats(self):
+
+        count_methods = {}
+        for m in self.methods:
+            count_methods[m] = 0
+
+        for eval_file in self.eval_files:
+                eval = pd.read_table(eval_file)
+                for m in self.methods:
+                    if m in eval.columns.tolist() :
+                        count_methods[m] += 1
+
+        for m, value  in count_methods.iteritems():
+            print("{0} : {1}".format(m, value))
+
     def add_meta_data(self, meta_file, meta_data):
 
         meta={}
@@ -247,6 +268,8 @@ class Benchmark():
 
         with open(meta_file, 'w') as fp:
             json.dump(meta, fp)
+
+
 
     def create_evaluation_files(self, pdb_dir, alignment_dir, seqsep, protein_list=[]):
         """
@@ -274,20 +297,29 @@ class Benchmark():
             alg_files = glob.glob(alignment_dir + "/*")
             protein_list = [os.path.basename(alg_file).split(".")[0] for alg_file in alg_files]
 
-        for protein in protein_list:
-
-            pdb_file = glob.glob(pdb_dir + "/" + protein + "*")
+        print("Initialize evaluation files in {0}.".format(self.eval_dir))
+        for ind, protein in enumerate(protein_list):
+            pdb_file = glob.glob(pdb_dir + "/" + protein.replace("_", "") + "*")
+            if len(pdb_file) == 0:
+                print("PDB file for {0} does not exist. Skip this protein".format(protein))
+                continue
             evaluation_file = self.eval_dir + "/" + protein + ".eval"
-            self.__create_evaluation_file(evaluation_file, pdb_file, seqsep)
+            self.__create_evaluation_file(evaluation_file, pdb_file[0], seqsep)
 
             psc_file = glob.glob(alignment_dir + "/" + protein + "*")
-            meta_file = evaluation_file.replace("eval", "meta")
-            psc = io.read_alignment(psc_file)
+            if len(psc_file) == 0:
+                print("Alignment file for {0} does not exist. Skip this protein".format(protein))
+                continue
+            psc = io.read_alignment(psc_file[0])
             meta = {'name': protein,
                     'L': psc.shape[1],
                     'N': psc.shape[0],
                     'diversity': np.sqrt(psc.shape[0]) / psc.shape[1]}
+
+            meta_file = evaluation_file.replace(".eval", ".meta")
             self.add_meta_data(meta_file, meta)
+
+            print("{0}/{1}: {2} ".format(ind, len(protein_list), protein))
 
         #update eval_files
         self.eval_files = glob.glob(self.eval_dir + "/*eval")
@@ -302,12 +334,21 @@ class Benchmark():
         print("Will add scores to evaluation files for method {0} \n "
               "from files with extension {1} in {2}".format(method_name, extension, method_dir))
 
-        for eval_file in self.eval_files:
+        for i, eval_file in enumerate(self.eval_files):
             protein_name = os.path.basename(eval_file).split(".")[0]
+            print("{0}/{1}".format(i+1, len(self.eval_files)))
+
             method_file = glob.glob(method_dir+"/"+protein_name+"*"+extension+"*")
-            if(len(method_file) == 1):
-                self.__add_method_to_evaluation_file(eval_file, method_file[0], method_name,
-                                                     is_mat_file=is_mat_file, apc=apc, update=update)
+
+            if(len(method_file) == 0):
+                continue
+
+            self.__add_method_to_evaluation_file(eval_file, method_file[0], method_name,
+                                                 is_mat_file=is_mat_file, apc=apc, update=update)
+
+        #Add method name to available methods
+        self.methods.update([method_name])
+
 
     def remove_method_from_evaluation_files(self, method_name):
         """
@@ -348,7 +389,7 @@ class Benchmark():
         """
         self.filter=[]
 
-    def methods_to_benchmark(self, benchmark_methods):
+    def set_methods_for_benchmark(self, benchmark_methods):
 
         self.benchmark_methods = set()
         self.evaluation_statistics = {}
@@ -426,6 +467,17 @@ class Benchmark():
             title += title_description
             pu.plot_meanprecision_per_protein(scatter_dict, title, plotname)
 
+        if 'precision_vs_recall' in plot_type:
+            print("Generating precision vs Recall Plot for precision...")
+
+            precision_recall = bu.precision_vs_rank(self.evaluation_statistics, self.benchmark_methods)
+
+            # plot
+            title = 'Precision vs Recall (thresholding at ranks L/x) <br>'
+            title += title_description
+            plotname = plot_out_dir + "/precision_vs_recall.html"
+            pu.plot_precision_vs_recall_plotly(precision_recall, title, plotname)
+
 
         if 'precision_vs_rank' in plot_type:
 
@@ -435,7 +487,8 @@ class Benchmark():
             # plot
             title = 'Precision (PPV) vs rank (dependent on L) <br>'
             title += title_description
-            yaxistitle = 'Mean Precision'
+            title = ''
+            yaxistitle = 'Mean Precision over Proteins'
             plotname = plot_out_dir + "/precision_vs_rank.html"
             pu.plot_evaluationmeasure_vs_rank_plotly(precision_rank, title, yaxistitle, plotname)
 
@@ -451,13 +504,44 @@ class Benchmark():
             plotname = plot_out_dir + "/meanerror_vs_rank_.html"
             pu.plot_evaluationmeasure_vs_rank_plotly(meanerror_rank, title, yaxistitle, plotname)
 
-        if 'facetted_by_div' in plot_type:
+        if 'facetted_by_L' in plot_type:
             # compute mean precision over all ranks - for diversity bins
-            bins = [0, 0.1, 0.3, 0.7, np.inf]
+            L_values = list(u.gen_dict_extract('L', self.evaluation_statistics))
 
-            if len(list(u.gen_dict_extract('diversity', self.evaluation_statistics))) == 0:
+            if len(L_values) == 0:
                 print("Cannot facet plot by diversity as diversity is not annotated in meta data")
                 return
+
+            bins = np.percentile([0]+L_values, [0, 25, 50, 75, 100])
+
+
+            if 'precision_vs_rank' in plot_type:
+                precision_rank = bu.subset_evaluation_dict(
+                    self.evaluation_statistics, bins, 'L', self.benchmark_methods, 'precision')
+
+                title = 'Precision (PPV) vs rank (dependent on L) facetted by L'
+                title += title_description
+                plotname  = plot_out_dir + "/precision_vs_rank_facetted_by_L.html"
+                pu.plot_precision_rank_facetted_plotly(precision_rank, title, plotname)
+
+            if 'meanerror_rank' in plot_type:
+                mean_error_rank = bu.subset_evaluation_dict(
+                    self.evaluation_statistics, bins, 'L', self.benchmark_methods, 'mean_error')
+
+                title = 'Mean Error vs rank (dependent on L) facetted by L'
+                plotname = plot_out_dir + "/meanerror_vs_rank_facetted_by_L.html"
+                pu.plot_precision_rank_facetted_plotly(mean_error_rank, title, plotname)
+
+        if 'facetted_by_div' in plot_type:
+            # compute mean precision over all ranks - for diversity bins
+            div_values = list(u.gen_dict_extract('diversity', self.evaluation_statistics))
+
+            if len(div_values) == 0:
+                print("Cannot facet plot by diversity as diversity is not annotated in meta data")
+                return
+
+            bins = np.percentile([0]+div_values, [0, 25, 50, 75, 100])
+
 
             if 'precision_vs_rank' in plot_type:
                 precision_rank = bu.subset_evaluation_dict(
@@ -478,11 +562,14 @@ class Benchmark():
 
         if 'facetted_by_neff' in plot_type:
 
-            if len(list(u.gen_dict_extract('neff', self.evaluation_statistics))) == 0:
+            neff_values = list(u.gen_dict_extract('neff', self.evaluation_statistics))
+
+            if len(neff_values) == 0:
                 print("Cannot facet plot by neff as neff is not annotated in meta data")
                 return
 
-            bins = [10, 100, 1000, 10000, np.inf]
+            bins = np.percentile([0]+neff_values, [0, 25, 50, 75, 100])
+
 
             if 'precision_vs_rank' in plot_type:
                 precision_rank = bu.subset_evaluation_dict(
@@ -552,4 +639,4 @@ class Benchmark():
             title += title_description
             xaxis_title = 'diversity'
             pu.plot_scatter_meanprecision_per_protein_vs_feature(
-                scatter_dict, title, xaxis_title, log_xaxis=False, plot_out=plotname)
+                scatter_dict, title, xaxis_title, log_xaxis=True, plot_out=plotname)

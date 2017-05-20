@@ -413,18 +413,16 @@ def main():
     seqatoms_filename   = out_dir + "/" + combs_id + ".seqatom"
 
     #try ot get seqatom fasta from seqatom server
-    seqatoms = retrieve_seqatom_from_database(combs_id, seqatoms_filename)
+    #seqatoms = retrieve_seqatom_from_database(combs_id, seqatoms_filename)
 
     #if protein is not in seqatoms database, generate seqatoms
-    if seqatoms is None:
-        with open(seqatoms_filename, 'w') as out:
-            out.write(">" + combs_id + "\n")
-            ali = map_sequences(combs_id, combs_fasta, atom_fasta, pdb_dir)
-            getseq = interpret_map(ali, combs_fasta, atom_fasta)
-            out.write(getseq + "\n")
-        print("Generated SEQATOMS file for " + combs_id)
-    else:
-        print("Retrieved " + combs_id + " from SEQATOMS Cath database")
+    with open(seqatoms_filename, 'w') as out:
+        out.write(">" + combs_id + "\n")
+        ali = map_sequences(combs_id, combs_fasta, atom_fasta, pdb_dir)
+        getseq = interpret_map(ali, combs_fasta, atom_fasta)
+        out.write(getseq + "\n")
+    print("Generated SEQATOMS file for " + combs_id)
+
     sys.stdout.flush()
 
 

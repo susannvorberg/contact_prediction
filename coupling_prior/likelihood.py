@@ -327,7 +327,7 @@ class LikelihoodFct():
     def numerical_gradient(self, check_weights=True, check_mu=True, check_prec=True):
 
 
-        print("Dataset used for gradient checking \nnumber of contacts: {0}, number of non-contacts: {1}\n".format(self.dataset.nr_pairs_contact, self.dataset.nr_pairs_noncontact))
+        print("\nDataset used for gradient checking \nnumber of contacts: {0}, number of non-contacts: {1}\n".format(self.dataset.nr_pairs_contact, self.dataset.nr_pairs_noncontact))
 
 
         #compute analytical gradients

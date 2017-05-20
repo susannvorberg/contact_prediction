@@ -47,16 +47,23 @@ N(N_),
 L(L_),
 brawfilename(brawfilename_),
 qijabfilename(qijabfilename_),
-parameters(parameterMap, 0)
+parameters(parameterMap.size()/ 4)
 {
 
     //set up model specifications
     this->debug			    = 0;
-    this->nr_components     = this->parameters.get_nr_components();
+    this->nr_components     = parameters.get_nr_components();
+
+    //if precision dependent on L: set L
+    parameters.set_L(this->L);
+
+    //set up parameters
+    parameters.set_parameters(parameterMap);
+    std::cout << "finished parameters..."  <<  std::endl;
+
 
     try	{
         read_braw();
-
         arma::vec diag_regularizer_w 		= arma::vec(400);
         this->regularizer_w =  arma::diagmat(diag_regularizer_w.fill(lambda_w));
     }
@@ -64,6 +71,7 @@ parameters(parameterMap, 0)
         std::cout << "Error reading in braw ("<< protein_id <<") : " << e.what() <<  std::endl;
         exit (EXIT_FAILURE);
     }
+    std::cout << "finished braw..."  <<  std::endl;
 
 
     try {set_qijab();}	//sets qijab and Nij
@@ -71,6 +79,7 @@ parameters(parameterMap, 0)
         std::cout << "Error reading in qijab ("<< protein_id <<"): " << e.what() <<  std::endl;
         exit (EXIT_FAILURE);
     }
+    std::cout << "finished qij..."  <<  std::endl;
 
 
 }
@@ -251,7 +260,7 @@ arma::mat Likelihood_Protein::get_gradient_precisionMatrix_isotrop_Ldependent(in
     //this returns the gradient of the NEGATIVE LOG LIEKLIHOOD
 	arma::mat grad_precMat = this->get_gradient_precisionMatrix_comp(component);
 
-	grad_precMat.diag() *= (this->L-1);
+	grad_precMat.diag() *= this->L;
 	return grad_precMat;
 }
 
@@ -284,10 +293,15 @@ void Likelihood_Protein::set_pairs(arma::uvec &i_indices_in, arma::uvec &j_indic
         std::cout << "contact_in: " << contact_in.n_elem << std::endl;
     }
 
+    if(i_indices_in.n_elem != j_indices_in.n_elem or i_indices_in.n_elem != contact_in.n_elem){
+        throw "Likelihood_Protein::set_pairs: number of indices for i,j or contacts does not match!";
+    }
+
 	int max_i = arma::max(i_indices_in);
 	int max_j = arma::max(j_indices_in);
 
-	if(max_i >= L or max_j >= L ){
+
+	if(max_i >= this->L or max_j >= this->L ){
 		throw "Likelihood_Protein::set_pairs: specified amino acid indices do not exist (> protein length L).";
 	}
 
@@ -595,7 +609,8 @@ double Likelihood_Protein::log_density_gaussian_ratio(	const arma::vec &mu_k,
 */
 void Likelihood_Protein::compute_negLL(int nr_threads_prot)
 {
-
+    //initialize likelihood vector
+    log_likelihood.zeros(this->number_of_pairs);
 
 	#pragma omp parallel for num_threads(nr_threads_prot)
     for(int pair = 0; pair < this->number_of_pairs; pair++){
@@ -610,7 +625,7 @@ void Likelihood_Protein::compute_negLL(int nr_threads_prot)
 
         arma::vec vqij = mq_ij.col(lin_index);
         double N_ij = mN_ij(i,j);
-		arma::vec w_ij = arma::vec(w_ij3d.tube(i,j));
+		arma::vec w_ij = w_ij3d.tube(i,j);
 		//arma::vec vqij = q_ij3d.tube(i,j);
 
 		//diagonal matrix Qij = diag(q'ji)
@@ -627,20 +642,23 @@ void Likelihood_Protein::compute_negLL(int nr_threads_prot)
 		//precompute product H_ij * wij
 		arma::vec Hij_wij_prod = H_ij * w_ij;
 
+
 		for(int k = 0; k < this->nr_components; k++){
+
 
             //gaussian parameters of coupling prior
             double weight_k 		        = this->parameters.get_weight(k, contact);
 			arma::vec mu_k 				    = this->parameters.get_mean(k);
 			arma::mat lambda_k 			    = this->parameters.get_precMat(k);
 
+
             //---------------- simplify computation in case that lambda_k is diagonal matrix
-            //A, A_inv, lambda_k, Qij are diagonal matrices
-            arma::vec Avec = N_ij * vqij + lambda_k.diag();     //represents diagonal matrix
-            arma::vec Avec_inv = 1.0 / Avec;                    //represents diagonal matrix
-            double log_det_A	= arma::sum(arma::log(Avec));
-            arma::vec Avecinv_qij_product  = Avec_inv % vqij;   ////column vector
-            double triple_product 	    = arma::sum(vqij % Avecinv_qij_product);
+            // A, A_inv, lambda_k, Qij are diagonal matrices
+            arma::vec A = N_ij * vqij + lambda_k.diag();     //represents diagonal matrix
+            arma::vec A_inv = 1.0 / A;                    //represents diagonal matrix
+            double log_det_A	= arma::sum(arma::log(A));
+            arma::vec Ainv_qij_product  = A_inv % vqij;   ////column vector
+            double triple_product 	    = arma::sum(vqij % Ainv_qij_product);
             //---------------- matrix computations in case lambda_k is NOT diagonal matrix
 			//A is a diagonal matrix, as Qij and lambda_k are diagonal matrices
 			//arma::mat A 		= N_ij * Qij + lambda_k;                    //diagonal
@@ -653,40 +671,56 @@ void Likelihood_Protein::compute_negLL(int nr_threads_prot)
 			//compute lambda_ij_k_mat
 			arma::mat lambda_ij_k_mat  	= H_ij - regularizer_w + lambda_k;
 
+
+            //debugging: we assume diagonal Hessian ================================================================
+//            arma::mat lambda_ij_k_mat_inv(400,400,arma::fill::zeros);
+//            lambda_ij_k_mat_inv.diag() = 1.0 / lambda_ij_k_mat.diag();
+            //debugging=======================================================================================
 			//compute inverse of lambda_ij_k_mat
 			//---------------- simplify computation in case that lambda_k is diagonal matrix
-			arma::mat lambda_ij_k_mat_inv = arma::diagmat(Avec_inv) + (Avecinv_qij_product * Avecinv_qij_product.t()) / (1.0/N_ij - triple_product);
+			arma::mat lambda_ij_k_mat_inv = arma::diagmat(A_inv) + (Ainv_qij_product * Ainv_qij_product.t()) / (1.0/N_ij - triple_product);
 			//---------------- matrix computations in case lambda_k is NOT diagonal matrix
-			//arma::mat  lambda_ij_k_mat_inv_mat  = A_inv + (Ainv_qij_product * Ainv_qij_product.t()) / (1.0/N_ij - triple_product);
-			//lambda_ij_k_inv.slice(k) 	    = lambda_ij_k_mat_inv;
+			//arma::mat  lambda_ij_k_mat_inv  = A_inv + (Ainv_qij_product * Ainv_qij_product.t()) / (1.0/N_ij - triple_product);
+
 
 
 		    //compute mu_ij_k from precomputed entities
 			arma::vec mu_ij_k_vec      = lambda_ij_k_mat_inv * ( Hij_wij_prod + lambda_k * mu_k);
 
+
+
+            //debugging: we assume diagonal Hessian ================================================================
+//            log_det_lambda_ij_k(k) = arma::sum(arma::log(lambda_ij_k_mat.diag()));
+            //debugging=======================================================================================
 			//save log determinant of lambda_ij_k, see page 16 Saikats theory
 			double log_det_lambda_ij = log(1 - N_ij * triple_product) + log_det_A;
 
 			//ratio of two gaussians in log space
+			//     N(0 | mu_k, lambda_k)
+            //------------------------------
+            //  N(0 | mu_ij_k, lambda_ij,k)
 			double gaussian_ratio_logdensity = log_density_gaussian_ratio(	mu_k,
 																			mu_ij_k_vec,
 																			lambda_k,
 																			lambda_ij_k_mat,
 																			this->parameters.get_log_det_inv_covMat(k),
-																			log_det_lambda_ij );
+																			log_det_lambda_ij);
+
 
             log_density(k) = log(weight_k) + gaussian_ratio_logdensity;
 
 		}//end loop over components k
+
+
 
 		//Johannes suggestion how to precisely compute the responsibilities
 		double a_max = arma::max(log_density);
 		arma::vec resps = arma::exp(log_density - a_max);//r_nk = exp( a_nk - a_max)
 		double sum_resp = arma::sum(resps);    //sum += r_nk
 
-		if(debug  > 1)
+		if(this->debug  > 1)
 		{
-		    for(int k = 0; k < nr_components; k++){
+		    for(int k = 0; k < this->nr_components; k++){
 		        std::cout  << "component " << k << std::endl;
 		        std::cout  << "Responsibilty: " << resps(k)/sum_resp << std::endl;
 		        std::cout  << "log_density: " << log_density(k) << std::endl;
@@ -695,6 +729,7 @@ void Likelihood_Protein::compute_negLL(int nr_threads_prot)
 
 		//save neg likelihood of current pair
 		double f = log(sum_resp) + a_max;
+
 		if(! std::isnormal(f)) {
 				std::cout  << "ERROR: likelihood cannot be computed for protein " << protein_id << ", i " << i << ", j " << j << " ("<< contact <<"): " << f << std::endl;
                 std::cout  << "Nij " << N_ij << std::endl;
@@ -707,7 +742,6 @@ void Likelihood_Protein::compute_negLL(int nr_threads_prot)
                 }
 				continue;
 		} else log_likelihood(pair) = f;
-
 
 	}//end of parallelized for loop over ij pairs
 
@@ -892,10 +926,7 @@ void Likelihood_Protein::compute_f_df(int hessian_pseudocount)
 
 
         // Compute ALL gradients for ALL components
-        // EXCEPT for component 0
-        // - weights are fixed at 1 because of softmax overparametrization
-        // - component 0 is fixed: mu and var will not be changed
-        for(int k = 1; k < this->nr_components; k++){
+        for(int k = 0; k < this->nr_components; k++){
 
             //weights (either for contact or non_contact)
             grad_weight(k, contact) += gradient_weight_comp(k, contact);
@@ -989,6 +1020,8 @@ arma::mat Likelihood_Protein::gradient_precisionMatrix_comp(int k)
 	//grad_precisionMatrix_k *= lambda_k;
 	//in case of diagonal matrix
 	grad_precisionMatrix_k.diag() %= lambda_k.diag();
+
+
 
 //    double max_val = arma::abs(grad_precisionMatrix_k).max();
 //	if(max_val > 1.0){

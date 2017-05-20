@@ -18,8 +18,11 @@ import pandas as pd
 def parse_arguments():
 
     parser = argparse.ArgumentParser(description='Plot various benchmark plots.')
-    parser.add_argument("mat_file",             type=str,   help="contact matrix files")
-    parser.add_argument("braw_file",            type=str,   help="binary raw file")
+
+    action = parser.add_mutually_exclusive_group(required=True)
+    action.add_argument("-mat_file",             type=str,   help="contact matrix files")
+    action.add_argument("-braw_file",            type=str,   help="binary raw file")
+
     parser.add_argument("plot_dir",             type=str,   help="directory for plot")
     parser.add_argument("pdb_file",             type=str,   help="pdb file")
     parser.add_argument("--seqsep",             type=int,   default=6, help="sequence separation")
@@ -55,18 +58,19 @@ def plot_precision_vs_rank(pdb_file, seqsep, contact_thr, mat, plot_out_dir):
     eval_df['class'] = (eval_df['cb_distance'] <= contact_thr) * 1
     eval_df = eval_df[eval_df['j'] >= (eval_df['i'] + seqsep)]
 
-    #define x-axis
+
+    #define x-axis: Ranks dependent on protein length L
     ranks = np.linspace(1, 0, 20, endpoint=False)[::-1]
     L = mat.shape[0]
     ranks_L = np.round(L * ranks).astype(int)
     ranks_L = np.array([rank for rank in ranks_L if rank < len(eval_df)])
+
 
     #compute precision at ranks
     precision, recall, threshold = bu.compute_precision_recall(eval_df['class'], eval_df['score'])
     precision_rank   = [np.nan] * len(ranks)
     for rank_id, rank in enumerate(ranks_L):
         precision_rank[rank_id]   = np.array(precision)[rank]
-
 
     eval_dict = {
         'score': {
@@ -77,9 +81,11 @@ def plot_precision_vs_rank(pdb_file, seqsep, contact_thr, mat, plot_out_dir):
         'rank': ranks
     }
 
+    mean_precision = np.nanmean(precision_rank)
+
     # plot
-    title = "Precision (PPV) vs rank (dependent on L) for {0}".format(protein)
-    title += "<br> L= {0}".format(L)
+    title = "Precision (PPV) vs rank (dependent on protein length L) for {0}".format(protein)
+    title += "<br> L={0}, mean precision over all ranks={1:g}".format(L, mean_precision)
     yaxistitle = 'Precision'
     plotname = plot_out_dir + "/" + protein + "_precision_vs_rank_" + \
                str(seqsep) + "seqsep_" + str(contact_thr) + "contacthr.html"
@@ -101,8 +107,8 @@ def main():
     # apc             = True
 
 
-    mat_file        = str(args.mat_file)
-    braw_file       = str(args.braw_file)
+    mat_file        = args.mat_file
+    braw_file       = args.braw_file
     plot_dir        = str(args.plot_dir)
     pdb_file        = str(args.pdb_file)
     seqsep          = int(args.seqsep)
@@ -121,3 +127,5 @@ def main():
     plot_precision_vs_rank(pdb_file, seqsep, contact_threshold, mat, plot_dir)
 
 
+if __name__ == '__main__':
+    main()

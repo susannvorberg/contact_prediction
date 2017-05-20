@@ -5,8 +5,95 @@ import plotly.graph_objs as go
 from plotly.offline import plot as plotly_plot
 from plotly import tools
 import colorlover as cl
-from io_utils import AMINO_ACIDS
+from io_utils import AMINO_ACIDS, AB_INDICES
 
+
+
+def plot_coupling_vs_neff(coupling_df, feature, plot_file=None):
+
+
+    AB_list = ['A-A', 'E-E', 'E-R', 'R-E', 'K-R', 'E-K', 'C-C', 'I-L', 'L-L', 'V-I']
+
+    data=[]
+    menu=[]
+
+    #plot w_ij(ab)
+    for ab in range(len(AB_list)):
+        name=AB_list[ab]
+        ab_index=AB_INDICES[name]
+
+        data.append(
+            go.Scattergl(
+                x= coupling_df[feature],
+                y= np.abs(coupling_df[ab_index]),
+                mode = 'markers',
+                name='|' + name + '|',
+                visible="legendonly"
+            )
+        )
+
+        # menu.append(
+        #     {
+        #         'args': ['visible', [False] * ab + [True] + [False] * (len(AB_list)-ab) + [False]],
+        #         'label':  '|' + name + '|',
+        #         'method': 'restyle'
+        #     }
+        # )
+
+    #additionally plot sum_wij
+    data.append(
+        go.Scattergl(
+            x=coupling_df[feature],
+            y=np.abs(coupling_df['sum_wij']),
+            mode='markers',
+            visible="legendonly",
+            name='|sum_wij|'
+        )
+    )
+    # menu.append(
+    #     {
+    #         'args': ['visible', [False] * len(AB_list) + [True]],
+    #         'label': '|sum_wij|',
+    #         'method': 'restyle'
+    #     }
+    # )
+
+
+
+    plot = {
+        "data": data,
+        "layout" : go.Layout(
+            title = "Couplings vs " + feature,
+            font = dict(
+                size = 18
+            )
+            ,yaxis1 = dict(
+                title="Coupling",
+                exponentformat="e",
+                showexponent='All'
+            ),
+            xaxis1 = dict(
+                title=feature,
+                exponentformat="e",
+                showexponent='All'
+            )
+        )
+    }
+
+
+    #drop down menu
+    # plot['layout']['updatemenus']=[]
+    # plot['layout']['updatemenus'].append({})
+    # plot['layout']['updatemenus'][0]['x'] = -0.05
+    # plot['layout']['updatemenus'][0]['y'] = 1
+    # plot['layout']['updatemenus'][0]['yanchor'] = 'top'
+    # plot['layout']['updatemenus'][0]['buttons'] = menu
+
+
+    if plot_file is not None:
+        plotly_plot(plot, filename=plot_file, auto_open=False)
+    else:
+        return plot
 
 
 def plot_scatter_meanprecision_per_protein_vs_feature(scatter_dict, title, xaxis_title, log_xaxis=False, plot_out=None):
@@ -141,6 +228,9 @@ def plot_meanprecision_per_protein(scatter_dict, title, plot_out=None):
         )
     }
 
+
+
+
     if plot_out is not None:
         plotly_plot(plot, filename=plot_out, auto_open=False)
     else:
@@ -222,9 +312,8 @@ def plot_evaluationmeasure_vs_rank_plotly(evaluation_dict, title, yaxistitle, pl
     plot = {
         "data": data,
         "layout": go.Layout(title=title,
-                            xaxis1=dict(title='Rank',
-                                        tickvals=[str(rank) + "L" for rank in np.linspace(1, 0, 10, endpoint=False)[
-                                                                              ::-1]]),
+                            xaxis1=dict(title='top ranked contact predictions [fraction of protein length L]',
+                                        tickvals=[str(rank)+"L" for rank in np.linspace(1, 0, 10, endpoint=False)[::-1]]),
                             yaxis1=dict(title=yaxistitle,
                                         range=[0, max_value]
                             ),
@@ -547,14 +636,14 @@ def plot_coupling_matrix(couplings, single_terms_i, single_terms_j, residue_i, r
 
     fig['layout']['xaxis2']['tickmode']="array"
     fig['layout']['xaxis2']['tickvals']=[5, 8,1,20,10,11,13, 15,9, 19,18,14, 2,7,12,4,  6,3,16,17]
-    fig['layout']['xaxis2']['ticktext']=[io.AMINO_ACIDS[a] for a in [5, 8,1,20,10,11,13, 15,9, 19,18,14, 2,7,12,4,  6,3,16,17] ]
+    fig['layout']['xaxis2']['ticktext']=[AMINO_ACIDS[a] for a in [5, 8,1,20,10,11,13, 15,9, 19,18,14, 2,7,12,4,  6,3,16,17] ]
     fig['layout']['xaxis2']['type']="category"
     fig['layout']['xaxis2']['categoryorder']="array"
     fig['layout']['xaxis2']['categoryarray']=[5, 8, 1, 20, 10, 11, 13, 15, 9, 19, 18, 14, 2, 7, 12, 4, 6, 3,16, 17]
 
     fig['layout']['yaxis1']['tickmode']="array"
     fig['layout']['yaxis1']['tickvals']=[5, 8,1,20,10,11,13, 15,9, 19,18,14, 2,7,12,4,  6,3,16,17]
-    fig['layout']['yaxis1']['ticktext']=[io.AMINO_ACIDS[a] for a in [5, 8,1,20,10,11,13, 15,9, 19,18,14, 2,7,12,4,  6,3,16,17] ]
+    fig['layout']['yaxis1']['ticktext']=[AMINO_ACIDS[a] for a in [5, 8,1,20,10,11,13, 15,9, 19,18,14, 2,7,12,4,  6,3,16,17] ]
     fig['layout']['yaxis1']['type']="category"
     fig['layout']['yaxis1']['categoryorder']="array"
     fig['layout']['yaxis1']['categoryarray']=[5, 8, 1, 20, 10, 11, 13, 15, 9, 19, 18, 14, 2, 7, 12, 4, 6, 3,16, 17]

@@ -15,26 +15,20 @@
  *
  * Class constructor
  *
- * @param parameterMap_
- * @param debug_mode
+ * @param nr_components_
  *
  *
  *********************************************************************************************************************************/
 
 
-Parameters::Parameters( std::map<std::string, std::vector<double> > parameterMap,
-                        int debug_
+Parameters::Parameters( int nr_components_
                        )
 {
 
     //set up model specifications
-    debug			= debug_;
-    nr_components	= parameterMap.size()/ 4 ;
-
-	if(debug > 0) {
-	    std::cout << "Setup parameters for gaussian mixture model of coupling prior with " << nr_components << " components." <<  std::endl;
-	}
-
+    nr_components	= nr_components_;
+    L = 0;
+    debug = 0;
 
     //initialize parameters
     mweight.zeros(2, nr_components);
@@ -42,17 +36,6 @@ Parameters::Parameters( std::map<std::string, std::vector<double> > parameterMap
     precMat.zeros(400,400, nr_components);
     covMat.zeros(400,400, nr_components);
     log_det_inverse_covariance.zeros(nr_components);
-
-    try{
-        set_parameters(parameterMap);
-    }/*
-		 * Transform the dictionary/list from python
-         * into a map of std::vec of protein structs
-		 */
-    catch (std::exception& e){
-        std::cout << "Error initialising parameters: " << e.what() <<  std::endl;
-        exit (EXIT_FAILURE);
-    }
 
 }
 
@@ -128,6 +111,20 @@ double Parameters::get_log_det_inv_covMat(int component){
 }
 
 /*
+ * Define the level of debugging information
+ */
+void Parameters::set_L(int L){
+    this->L = L;
+}
+
+/*
+ * Define the level of debugging information
+ */
+void Parameters::set_debug_mode(int debug_mode){
+    this->debug = debug_mode;
+}
+
+/*
  * Set the parameters that will be optimized
  *
  * mweight 	-> component weights: positive and sum up to 1 for each class (contact, bg)
@@ -144,6 +141,7 @@ double Parameters::get_log_det_inv_covMat(int component){
 void Parameters::set_parameters(std::map<std::string, std::vector<double> > &parameterMap){
 
 	if(debug > 0) std::cout << "Initialise parameters..." << std::endl;
+
 
 	typedef std::map<std::string, std::vector<double> >::iterator it_type;
 	for(it_type iterator = parameterMap.begin(); iterator != parameterMap.end(); iterator++) {
@@ -191,48 +189,27 @@ void Parameters::set_parameters(std::map<std::string, std::vector<double> > &par
 			this->mmean.col(component) = arma::vec(parameter);
 		}
 		else if(parameter_name.find("prec") != std::string::npos){
-			if((parameter_len  != 400) and (parameter_len != (400*401)/2) and (parameter_len != 1)){
-				std::cout << "Parameter List for parameter " << parameter_name << " is neither of length 400 (diagonal) nor 80200 (fill covariance Matrix) nor 1(isotrope)! It is of length"<< parameter_len << std::endl;
+			if((parameter_len  != 400)){
+				std::cout << "Parameter List for parameter " << parameter_name << " is neither of length 400 "<< parameter_len << std::endl;
 				return;
 			}
 
-			//isotrope covariance matrix
-			if (parameter_len == 1){
-				this->precMat.slice(component).diag().fill(parameter[0]);
-				//precMat.diag().fill(parameter[0] * (L-1));
-				this->covMat.slice(component) 	= arma::inv( arma::diagmat(this->precMat.slice(component)) );
-			}
 
-			//diagonal covariance matrix
-			if (parameter_len == 400){
-				this->precMat.slice(component)   = arma::diagmat( arma::exp(arma::vec(parameter)) );
-				this->covMat.slice(component) 	= arma::inv( arma::diagmat(this->precMat.slice(component)) );
-				//lower_cholesky = arma::trimatl(arma::diagmat(arma::vec(parameter)));
-				//ccholesky_L.slice(component) 			= lower_cholesky;
-				//precMat =   lower_cholesky * arma::trans(lower_cholesky);
-			}
+            //in case of defining lambda_w depending on L
+            if (this->L > 0 ){
+                std::cout << "lambda_w determined dependent on protein length L= " << this->L << std::endl;
+                this->precMat.slice(component)  = arma::diagmat( arma::exp(arma::vec(parameter)) * this->L  );
+            }else{
+                this->precMat.slice(component)  = arma::diagmat( arma::exp(arma::vec(parameter)) );
+            }
 
-			//full covariance matrix
-			if (parameter_len == (400*401)/2){
-			    arma::mat lower_cholesky(400,400,arma::fill::zeros);
-				//as numpy's triangular function works row-wise, indices for lower triangle in numy == indices for upper triangle in Armadillo
-				//lower_cholesky = arma::trimatl(fill_matrix_from_triangular_indices(arma::vec(parameter), 400, true));
-				//ccholesky_L.slice(component) 			= lower_cholesky;
-				//precMat                 			    = lower_cholesky * arma::trans(lower_cholesky);
-				//ccovariance.slice(component) 			= arma::inv_sympd(precMat	);		//CovMat and PrecMat=LAMBDA are FULL matrices
-			}
+            std::cout << "inverse " << arma::min(this->precMat.slice(component)) << " " << arma::max(this->precMat.slice(component)) << std::endl;
+            this->covMat.slice(component) 	= arma::diagmat(1.0 / this->precMat.slice(component));
 
-
+            std::cout << "log det " << std::endl;
 			//determine the determinant of lambda_k
-			if (parameter_len == 400 or parameter_len == 1){
-				this->log_det_inverse_covariance(component) = arma::sum(arma::log(this->precMat.slice(component).diag()));
+			this->log_det_inverse_covariance(component) = arma::sum(arma::log(this->precMat.slice(component).diag()));
 
-			}else if (parameter_len == (400*401)/2){
-				double val;
-				double sign;
-				arma::log_det(val, sign, this->precMat.slice(component));
-				this->log_det_inverse_covariance(component) = exp(val)*sign;
-			}
 		}
 		else{
 			std::cout << "Parameter name does not fit: " << parameter_name << std::endl;
@@ -240,9 +217,9 @@ void Parameters::set_parameters(std::map<std::string, std::vector<double> > &par
 		}
 
 
-
 	}//end for
 
+    std::cout << "post processing " << std::endl;
 	double sum_expweight_bg 		= 0;
 	double sum_expweight_contact 	= 0;
 	for(int c = 0; c < this->nr_components; c++){

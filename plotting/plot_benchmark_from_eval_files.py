@@ -281,33 +281,61 @@ def plot_benchmark_from_eval_files(eval_dir, plot_out_dir, seqsep, contact_thr, 
             pu.plot_precision_rank_facetted_plotly(precision_rank, title, plotname)
 
 
-def main():
+def parse_args():
     ### Parse arguments =========================================================================================
 
     parser = argparse.ArgumentParser(description='plot benchmark for specified eval files and scores.')
-    parser.add_argument("eval_dir", type=str, help="path to evaluation files")
-    parser.add_argument("plot_out_dir", type=str, help="path to print plot files")
-    parser.add_argument("seqsep", type=int, help="sequence separation")
-    parser.add_argument("contact_thr", type=int, help="contact threshold (contact: d(Cb-Cb) < thr)")
-    parser.add_argument("--methods", type=str, help="list of methods that will be benchmarked (refer to eval-file header)")
+    parser.add_argument("eval_dir",         type=str, help="path to evaluation files")
+    parser.add_argument("--plot_dir",       type=str, help="path to print plot files")
+    parser.add_argument("--seqsep",         type=int, default=12, help="sequence separation")
+    parser.add_argument("--contact_thr",    type=int, default = 8, help="contact threshold (contact: d(Cb-Cb) < thr)")
+    parser.add_argument("--methods",        type=str, help="comma separated method names")
+    parser.add_argument("--print_methods",  action="store_true", default=False, help="Print methods in benchmark suite")
 
     grp_plot = parser.add_argument_group("Plot Types")
-    grp_plot.add_argument("--precision_vs_rank",  dest='precision_vs_rank', action='store_true', help="Plot precision vs rank ")
-    grp_plot.add_argument("--meanerror_vs_rank",  dest='meanerror_vs_rank', action='store_true', help="Plot mean error vs rank ")
-    grp_plot.add_argument("--precision_per_protein",  dest='precision_per_protein', action='store_true', help="Plot precision per protein for all scores at a certain rank ")
-    grp_plot.add_argument("--facetted_by_div",  dest='facetted_by_div', action='store_true', help="Plot evaluation plots dependent on diversity")
-    grp_plot.add_argument("--facetted_by_neff",  dest='facetted_by_neff', action='store_true', help="Plot evaluation plots dependent on neff")
-    grp_plot.add_argument("--facetted_by_cath",  dest='facetted_by_cath', action='store_true', help="Plot evaluation plots dependent on cath")
-    grp_plot.add_argument("--meanprecision_by_neff",  dest='meanprecision_by_neff', action='store_true', help="Plot mean precision per protein vs neff of alignment")
-    grp_plot.add_argument("--meanprecision_by_div",  dest='meanprecision_by_div', action='store_true', help="Plot mean precision per protein vs diversity of alignment")
+    grp_plot.add_argument("--precision_vs_rank", dest='precision_vs_rank', action='store_true',
+                          help="Plot precision vs rank ")
+    grp_plot.add_argument("--meanerror_vs_rank", dest='meanerror_vs_rank', action='store_true',
+                          help="Plot mean error vs rank ")
+    grp_plot.add_argument("--precision_per_protein", dest='precision_per_protein', action='store_true',
+                          help="Plot precision per protein for all scores at a certain rank ")
+    grp_plot.add_argument("--facetted_by_div", dest='facetted_by_div', action='store_true',
+                          help="Plot evaluation plots dependent on diversity")
+    grp_plot.add_argument("--facetted_by_neff", dest='facetted_by_neff', action='store_true',
+                          help="Plot evaluation plots dependent on neff")
+    grp_plot.add_argument("--facetted_by_cath", dest='facetted_by_cath', action='store_true',
+                          help="Plot evaluation plots dependent on cath")
+    grp_plot.add_argument("--meanprecision_by_neff", dest='meanprecision_by_neff', action='store_true',
+                          help="Plot mean precision per protein vs neff of alignment")
+    grp_plot.add_argument("--meanprecision_by_div", dest='meanprecision_by_div', action='store_true',
+                          help="Plot mean precision per protein vs diversity of alignment")
 
 
     args = parser.parse_args()
 
-    eval_dir = args.eval_dir
-    plot_out_dir = args.plot_out_dir
-    seqsep = args.seqsep
-    contact_thr = args.contact_thr
+    if args.methods and not args.plot_dir:
+        parser.error("Plot directory needs to be specified for benchmark!")
+
+    return args
+
+
+def main():
+
+
+    args = parse_args()
+
+    eval_dir        = args.eval_dir
+    plot_out_dir    = args.plot_out_dir
+    seqsep          = args.seqsep
+    contact_thr     = args.contact_thr
+
+    if not os.path.exists(eval_dir):
+        print("Evaluation dir {0} does not exitst!".format(eval_dir))
+        exit()
+
+    if not os.path.exists(plot_out_dir):
+        print("Plot dir {0} does not exitst!".format(plot_out_dir))
+        exit()
 
 
     print ("--------------------------------------------------------")
@@ -316,8 +344,11 @@ def main():
     print ("seqsep: " + str(seqsep))
     print ("contact_thr: " + str(contact_thr))
 
+    # if scores have been specified on command line
+    methods = []
     if args.methods:
         print ("methods: " + args.methods)
+        methods = set(args.methods.strip().split(","))
 
     if args.precision_vs_rank:
         print ("Plot precision vs rank")
@@ -335,10 +366,7 @@ def main():
         print ("Plot mean precision per protein vs diversity of alignment")
     print ("--------------------------------------------------------")
 
-    # if scores have been specified on command line
-    methods = []
-    if args.methods:
-        methods = set(args.methods.split(","))
+
 
     plot_type=[]
     if args.precision_vs_rank:
@@ -358,22 +386,31 @@ def main():
     if args.meanprecision_by_div:
         plot_type.append('meanprecision_by_div')
 
-    ##Create benchmark object =======================================================================================
+
+    ##Create benchmark object ===============================================================================
     b = Benchmark(eval_dir)
-    print(b)
+    b.print_evaluation_file_stats()
 
+    # print available methods
+    if (args.print_methods):
+        for method in sorted(b.methods):
+            print method
+
+
+
+    ##Create benchmark object ============
     if args.methods:
-        b.methods_to_benchmark(methods)
+        b.set_methods_for_benchmark(methods)
 
-    ##Apply filters =================================================================================================
-    filter_optcode_0 = {'key':'opt_code', 'value':0, 'operator':'greater_equal'}
-    b.add_filter(filter_optcode_0)
+        ##Apply filters =================================================================================================
+        filter_optcode_0 = {'key':'opt_code', 'value':0, 'operator':'greater_equal'}
+        b.add_filter(filter_optcode_0)
 
-    #Compute statistics =============================================================================================
-    b.compute_evaluation_statistics(seqsep, contact_thr)
+        #Compute statistics =============================================================================================
+        b.compute_evaluation_statistics(seqsep, contact_thr)
 
-    #Plot ============================================================================================================
-    b.plot(plot_out_dir, plot_type=plot_type)
+        #Plot ============================================================================================================
+        b.plot(plot_out_dir, plot_type=plot_type)
 
 
 

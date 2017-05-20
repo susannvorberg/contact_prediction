@@ -24,24 +24,18 @@
 
 Regularizer::Regularizer(   std::map<std::string, std::vector<double> > parameterMap,
                             double regularization_parameter_mu_,
-                            double regularization_parameter_diagonal_PrecMat_,
-                            int debug_
-                         ):parameters(parameterMap, debug_)
+                            double regularization_parameter_diagonal_PrecMat_
+                         ):parameters(parameterMap.size()/ 4)
 {
 
     //set up model specifications
-    this->debug			= debug_;
     this->regularization_parameter_mu 	= regularization_parameter_mu_;
 	this->regularization_parameter_diagonal_PrecMat 	= regularization_parameter_diagonal_PrecMat_;
-    this->nr_components = this->parameters.get_nr_components();
+	this->nr_components = parameters.get_nr_components();
 
-    if(this->debug > 0) {
-	    std::cout << "Initialized regularizer class." <<  std::endl;
-	    std::cout << "For parameters of Gaussian mixture with " << this->nr_components << " components." <<  std::endl;
 
-		this->print_regularization_parameters();
-	}
-
+	//set up parameters
+    parameters.set_parameters(parameterMap);
 
 }
 
@@ -69,6 +63,8 @@ void Regularizer::print_regularization_parameters(){
 	std::cout << "Regularization coefficient diagonal Precision matrix:  " << this->regularization_parameter_diagonal_PrecMat  << std::endl;
 
 }
+
+
 
 
 /*

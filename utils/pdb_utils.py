@@ -2,6 +2,20 @@ from Bio.PDB import PDBParser
 import numpy as np
 
 
+def read_pdb(pdbfile):
+    '''
+    Read a PDB file as structure file with BIO.PDB
+
+    :param pdbfile: path to pdb file
+    :return:  structure
+    '''
+
+    parser = PDBParser()
+    structure = parser.get_structure('pdb', pdbfile)
+
+    return structure
+
+
 def calc_residue_dist(residue_one, residue_two):
     '''
         Calculate euclidian distance between C-beta (C-alpha in case of Glycine/missing C-beta)
@@ -33,8 +47,7 @@ def distance_map(pdb_file,L=None):
     :return: LxL numpy array with distances (L= protein length)
     '''
 
-    parser = PDBParser()
-    structure = parser.get_structure('pdb_file', pdb_file)
+    structure = read_pdb(pdb_file)
     structure.get_list()
     model = structure[0]
     chain = model.get_list()[0]
@@ -68,3 +81,22 @@ def contact_map(pdb_file, cutoff):
     contact_map = distance_matrix[distance_matrix < cutoff] * 1
 
     return contact_map
+
+def determine_residue_pair_indices(pdb_file, seqsep, non_contact_thr, contact_thr):
+    """
+    Return the indices of residue pairs
+        - within the given distance threshold
+        - within the given separation in sequence
+    """
+    # get distance map
+    dist_matrix = distance_map(pdb_file)
+
+    # get contact map (either 1 encoding a contact or 1 encoding non-contact (according to class variable)
+    contact_map = dist_matrix < contact_thr
+    non_contact_map = dist_matrix > non_contact_thr
+
+    # select all residue pairs within contact Threshold
+    indices_contact = list(np.where(np.triu(contact_map, k=seqsep)))  # leave out diagonal
+    indices_non_contact = list(np.where(np.triu(non_contact_map, k=seqsep)))  # leave out diagonal
+
+    return indices_contact, indices_non_contact

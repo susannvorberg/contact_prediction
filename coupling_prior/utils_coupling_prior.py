@@ -1,5 +1,8 @@
+
+import os
 import numpy as np
 import json
+import pandas as pd
 from scipy.stats import norm, multivariate_normal
 
 
@@ -26,46 +29,40 @@ def gaussian_mixture_density(x, weights, means, sd):
            sum_density +=  weights[component] * norm.pdf(x, means[component], sd[component])
         return sum_density
 
-def init_by_default(initial_weights, initial_means, initial_precision, sigma, fixed_zero_component=True):
+def init_by_default(initial_weights, initial_means, initial_precision, sigma, fixed_parameters):
 
 
     parameters = {}
 
+    for component in range(len(initial_weights)):
 
-    parameters['weight_contact_0'] = [initial_weights[0]]  ##* 400
-    parameters['weight_bg_0'] = [initial_weights[0]]  ##* 400
-    parameters['mu_0'] = [initial_means[0]] * 400
-    parameters['prec_0'] = [initial_precision[0]] * 400
-
-    start_range = 0
-    if(fixed_zero_component):
-        start_range =1
-
-    for component in range(start_range, len(initial_weights)):
 
         parameters['weight_contact_' + str(component)] = [initial_weights[component]]  ##* 400
         parameters['weight_bg_' + str(component)] = [initial_weights[component]]  ##* 400
-        parameters['mu_' + str(component)] = np.random.normal(loc=initial_means[component],
-                                                              scale=0.05,
-                                                              size=400).tolist()
-
-        initial_diagonal = np.random.normal(
-            loc=initial_precision[component],
-            scale=initial_precision[component] / 10,
-            size=400
-        )
-
-        precMat = np.zeros((400, 400))
-        np.fill_diagonal(precMat,initial_diagonal)
 
 
-        if (sigma == 'diagonal'):
-            parameters['prec_' + str(component)] = np.diag(precMat).tolist()
-        if (sigma == 'full'):
-            parameters['prec_' + str(component)] = precMat[np.tril_indices(400)].tolist()
+        if 'mu_' + str(component) in fixed_parameters:
+            parameters['mu_0'] = [initial_means[0]] * 400
+        else:
+            parameters['mu_' + str(component)] = np.random.normal(
+                loc=initial_means[component],
+                scale=0.05,
+                size=400
+            ).tolist()
+
+        if ('prec_' + str(component) in fixed_parameters) or (sigma == 'isotrope'):
+            initial_diagonal = [initial_precision[0]] * 400
+        else:
+            initial_diagonal = np.random.normal(
+                loc=initial_precision[component],
+                scale=initial_precision[component] / 10,
+                size=400
+            ).tolist()
+
+        parameters['prec_' + str(component)] = initial_diagonal
+
 
     return parameters
-
 
 def transform_parameters(parameters_in, weights=True, mean=False, prec=True, back=False):
     """
@@ -123,15 +120,9 @@ def transform_parameters(parameters_in, weights=True, mean=False, prec=True, bac
             prec_columns = [parameter_name for parameter_name in parameters_in.keys() if "prec" in parameter_name]
 
             for name in prec_columns:
-
                 parameter = parameters_in[name]
+                transformed_parameters[name] = np.log(parameter).tolist()  # row-wise
 
-                if (len(parameter) == 1):
-                    transformed_parameters[name] = [np.log(parameter[0])]
-                elif (len(parameter) == 400):
-                    transformed_parameters[name] = np.log(parameter).tolist()  # row-wise
-                else:
-                    print('specified covariance matrix is neither diagonal nor isotrope. Do nothing. ')
 
     else:
         # weights will be backtransformed from softmax representation
@@ -172,15 +163,57 @@ def transform_parameters(parameters_in, weights=True, mean=False, prec=True, bac
             prec_columns = [parameter_name for parameter_name in parameters_in.keys() if "prec" in parameter_name]
 
             for name in prec_columns:
-
                 parameter = parameters_in[name]
+                transformed_parameters[name] = np.exp(parameter).tolist()
 
-                if (len(parameter) == 1):
-                    transformed_parameters[name] = [np.exp(parameter[0])]
-                elif (len(parameter) == 400):
-                    transformed_parameters[name] = np.exp(parameter).tolist()
-                else:
-                    print('specified covariance matrix is neither diagonal nor full. Do nothing. ')
 
     return transformed_parameters
+
+def read_optimization_log_file(optimization_log_file):
+
+    if not os.path.exists(optimization_log_file):
+        print("Optimization log file {0} does not exist!".format(optimization_log_file))
+        return  pd.DataFrame({})
+
+    try:
+        with open(optimization_log_file) as json_data:
+            json_string = json.load(json_data)
+    except Exception as e:
+        print("Optimization log file {0} is not in json format!:{1}".format(optimization_log_file, e))
+        return  pd.DataFrame({})
+
+    log_df = pd.read_json(json_string, orient='split')
+    return log_df
+
+def read_parameter_file(parameter_file):
+
+    parameters={}
+
+    #read parameters
+    if not os.path.exists(parameter_file):
+        print("Parameter file {0} does not exist!".format(parameter_file))
+        return parameters
+
+    try:
+        with open(parameter_file, 'r') as f:
+            parameters = json.load(f)
+    except IOError:
+        print("Cannot open {0} in json format!".format(parameter_file))
+        return parameters
+
+    return parameters
+
+def read_settings_file(settings_file):
+
+    settings = {}
+
+    #read settings
+    if not os.path.exists(settings_file):
+        print("Settings file {0} does not exist!".format(settings_file))
+
+    with open(settings_file, 'r') as f:
+        settings = json.load(f)
+
+
+    return settings
 

@@ -19,17 +19,29 @@ class Optimizer():
 
     def __repr__(self):
 
-        str = "Hyperparameters for Coupling Prior will be inferred using the following settings:\n"
+        str = "\nHyperparameters for Coupling Prior will be inferred using the following settings:\n"
 
         str += self.likelihood.dataset.__repr__()
         str += self.likelihood.__repr__()
 
         str += "\nOptimization specific settings: \n"
-        str += "maxiter: \t\t\t\t\t\t {0} \n".format(self.maxiter)
-        str += "method: \t\t\t\t\t\t {0} \n".format(self.method)
-
+        str += "{0:{1}} {2}\n".format("max nr iterations", '36', self.maxiter)
+        str += "{0:{1}} {2}\n".format("optimizer", '36', self.method)
 
         return(str)
+
+    def set_maxiter(self, maxiter):
+        self.maxiter = int(maxiter)
+
+    def set_method(self, method):
+        if method not in ['L-BFGS-B', 'CG']:
+            self.method = 'L-BFGS-B'
+            print("Method must be one of ['L-BFGS-B', 'CG']!")
+        else:
+            self.method = method
+
+    def set_debug_mode(self, debug_mode):
+        self.debug_mode = int(debug_mode)
 
     def minimize(self):
 
@@ -42,7 +54,10 @@ class Optimizer():
             jac=True,
             options={
                 'maxiter': self.maxiter
-                , 'disp': True
+                , 'disp': False
             }
         )
         print(res)
+
+        parameters_struct = self.likelihood.linear_to_structured(res.x)
+

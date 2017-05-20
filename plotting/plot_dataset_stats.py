@@ -120,21 +120,25 @@ def main():
             cath = row['CATH']
 
             psicov_file = alignment_path + "/" + protein +".filt.psc"
-            alignment = io.read_alignment(psicov_file)
 
-            L = len(alignment[0])
-            N = len(alignment)
+            #if it does not exist, it has been filtered due to
+            #combs ambiguity or alignment filter
+            if os.path.exists(psicov_file):
+                alignment = io.read_alignment(psicov_file)
 
-            percent_gaps = ali_ut.compute_gaps_per_position(alignment)
-            percent_gaps_alignment = np.mean(percent_gaps)
+                L = len(alignment[0])
+                N = len(alignment)
 
-            stats['protein'].append(protein)
-            stats['diversity'].append(np.sqrt(N)/L)
-            stats['N'].append(N)
-            stats['L'].append(L)
-            stats['percent_gaps'].append(percent_gaps_alignment)
-            stats['fold'].append(fold)
-            stats['cath_topology'].append(int(cath.split(".")[0]))
+                percent_gaps = ali_ut.compute_gaps_per_position(alignment)
+                percent_gaps_alignment = np.mean(percent_gaps)
+
+                stats['protein'].append(protein)
+                stats['diversity'].append(np.sqrt(N)/L)
+                stats['N'].append(N)
+                stats['L'].append(L)
+                stats['percent_gaps'].append(percent_gaps_alignment)
+                stats['fold'].append(fold)
+                stats['cath_topology'].append(int(cath.split(".")[0]))
 
     stats_df = pd.DataFrame(stats)
 

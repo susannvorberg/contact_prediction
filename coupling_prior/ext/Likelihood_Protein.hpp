@@ -233,8 +233,6 @@ class Likelihood_Protein{
         arma::mat grad_mu;
         arma::mat grad_precMat;
 
-    	Parameters parameters;
-
         arma::uvec i_indices;
 		arma::uvec j_indices;
 		arma::uvec protein_contacts;
@@ -249,16 +247,10 @@ class Likelihood_Protein{
 		const std::string protein_id;
 		const int N;
 		const int L;
-
-
-
-    //private members cannot be accesssed by derived class
-    private:
-		std::map<std::string, std::vector<double> > parameterMap;
 		double lambda_w;
 		const std::string brawfilename;
 		const std::string qijabfilename;
-
+    	Parameters parameters;
 
 
 };

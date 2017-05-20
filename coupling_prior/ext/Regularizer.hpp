@@ -24,12 +24,11 @@ class Regularizer{
 		//constructor
 		Regularizer(std::map<std::string, std::vector<double> > parameterMap,
 		            double regularization_parameter_mu_,
-                    double regularization_parameter_diagonal_PrecMat_,
-		            int debug_
+                    double regularization_parameter_diagonal_PrecMat_
 		            );
+
 		//default constructor
 		Regularizer();
-
 
 		/*
 		 * Set the regularization parameters prior to calculation of the regularization term
@@ -84,7 +83,6 @@ class Regularizer{
 
 
 	private:
-		int debug;
 		int nr_components;
 	    Parameters parameters;
 		double regularization_parameter_mu;

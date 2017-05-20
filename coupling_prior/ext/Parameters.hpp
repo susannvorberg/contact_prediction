@@ -21,9 +21,7 @@
 class Parameters{
 	public:
 		//constructor
-		Parameters(std::map<std::string, std::vector<double> > parameterMap,
-		            int debug_
-		            );
+		Parameters(int nr_components_);
 
 		//default constructor
 		Parameters();
@@ -33,6 +31,16 @@ class Parameters{
          * Print parameters
          */
         void print(int contact, int component);
+
+        /*
+         * Define the level of debugging information
+         */
+        void set_L(int L);
+
+        /*
+         * Define the level of debugging information
+         */
+        void set_debug_mode(int debug_mode);
 
         /*
          * Set the parameters that will be optimized
@@ -61,6 +69,7 @@ class Parameters{
 	private:
 		int debug;
 		int nr_components;
+	    int L;
 		arma::mat mweight;			//parameters to optimize
 		arma::mat mmean;			//parameters to optimize
 		arma::cube covMat;		//parameters to optimize

@@ -11,7 +11,6 @@
 import argparse
 import os
 import raw
-import numpy as np
 import utils.plot_utils as plots
 
 def main():
@@ -34,8 +33,9 @@ def main():
     #debugging
     # protein = "1h4x_A_00"
     # binary_raw_file = "/home/vorberg/work/data//benchmarkset_cathV4/benchmarkset_cathV4_combs/ccmpred_dev_center_v/l_1772/braw/"+protein+".braw.gz"
-    # residue_i=23
-    # residue_j=97
+    # binary_raw_file = "/home/vorberg/work/data//benchmarkset_cathV4/benchmarkset_cathV4_combs/ccmpred_dev_center_v/l_1772/braw_ccmpredpython_pcratio01/"+protein+".braw.gz"
+    # residue_i=24
+    # residue_j=104
     # plot_out='/home/vorberg/'
 
 

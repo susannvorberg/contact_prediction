@@ -301,9 +301,9 @@ void Likelihood_Dataset::compute_f_df(int hessian_pseudocount)
 			//mu
 			grad_mu_cube.tube(p,component)          = protein.get_gradient_mu_comp(component);
 			//precMat - diagonal or isotrope
-			grad_precMat_cube.tube(p,component)     = protein.get_gradient_precisionMatrix_comp(component);
+			//grad_precMat_cube.tube(p,component)     = protein.get_gradient_precisionMatrix_comp(component);
             //precMat - isotrope (dependentL)
-            //grad_precMat_cube.tube(p,component)     = protein.get_gradient_precisionMatrix_isotrop_Ldependent(component);
+            grad_precMat_cube.tube(p,component)     = protein.get_gradient_precisionMatrix_isotrop_Ldependent(component);
 		}
 
 	}//end proteins

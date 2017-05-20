@@ -52,8 +52,8 @@ boost::python::list std_string_vector_to_py_list(std::vector<std::string> &v);
 /*
  * convert arma::mat to boost::python::list
  */
-boost::python::list std_vectorvector_to_py_list(std::vector<std::vector<double> > &v);
-
+template <typename T>
+boost::python::list std_vectorvector_to_py_list(std::vector<std::vector<T> > v);
 
 /*
  * Convert a boost::python::list to arma::vec

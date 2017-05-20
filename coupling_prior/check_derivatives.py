@@ -89,37 +89,39 @@ def main():
     reg_coeff_mu                = opt.reg_coeff_mu
     reg_coeff_diagPrec          = opt.reg_coeff_diagPrec
 
-    data_dir    = os.environ['DATA']
+
     parameter_dir           = "/home/vorberg/"
     plot_dir                = "/home/vorberg/"
 
+    data_dir    = os.environ['DATA']
     braw_dir                = data_dir + "/benchmarkset_cathV4.1/contact_prediction/ccmpredpy_cd/braw/"
     qijab_dir               = data_dir + "/benchmarkset_cathV4.1/contact_prediction/ccmpredpy_cd/qij/"
     pdb_dir                 = data_dir + "/benchmarkset_cathV4.1/pdb_renum_combs/"
     psicov_dir              = data_dir + "/benchmarkset_cathV4.1/psicov/"
-    sigma = 'diagonal'
-    nr_components = 2
+    sigma = 'isotrope'
+    nr_components = 1
     reg_coeff_mu = 0
     reg_coeff_diagPrec = 0
 
 
 
 
-    nr_crossval_pairs       = 10
-    nr_training_pairs       = 10
-    debug_mode              = 0
-    diversity_thr           = 0.3
-    fixed_parameters        = ['weight_bg_0', 'weight_contact_0']
-    seed = 123
-    contact_thr = 8
-    non_contact_thr = 25
-    sequence_separation = 8
-    max_gap_percentage = 0.5
-    filter_gap_columns = True
-    filter_pairs_by_Nij = True
-    filter_best_pairs = False
-    maxcontacts_per_protein     = 10
-    maxnoncontacts_per_protein  = 10
+    nr_crossval_pairs           = 10
+    nr_training_pairs           = 100
+    maxcontacts_per_protein     = 100
+    maxnoncontacts_per_protein  = 100
+    debug_mode                  = 0
+    diversity_thr               = 0.3
+    fixed_parameters            = ['weight_bg_0', 'weight_contact_0']
+    seed                        = 123
+    contact_thr                 = 8
+    non_contact_thr             = 25
+    sequence_separation         = 8
+    max_gap_percentage          = 0.5
+    filter_gap_columns          = True
+    filter_pairs_by_Nij         = True
+    filter_best_pairs           = False
+
     balance = 1
     nr_threads = 1
 

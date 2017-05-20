@@ -2,6 +2,7 @@ import os
 import json
 import numpy as np
 import gzip
+import Bio.AlignIO as aio
 
 AMINO_INDICES = {
      'A' : 1,
@@ -34,6 +35,17 @@ AMINO_INDICES = {
 
 AMINO_ACIDS = "-ARNDCQEGHILKMFPSTWYV"
 
+AB = [0] * 400
+AB_INDICES = {}
+
+for a in range(20):
+    for b in range(20):
+        ab              = AMINO_ACIDS[a+1] + "-" + AMINO_ACIDS[b+1]
+        index           = a * 20 + b
+        AB[index]       = ab
+        AB_INDICES[ab]  = index
+        
+
 def read_json_from_mat(matfile):
     '''
         Read the specified keys from the json data
@@ -62,7 +74,7 @@ def read_json_from_mat(matfile):
 
     return meta
 
-def read_alignment(alignment_file):
+def read_alignment(alignment_file, format="psicov"):
     """
     Read alignment file (Psicov Format)
 
@@ -71,14 +83,20 @@ def read_alignment(alignment_file):
     """
     alignment = None
 
-    try:
-        f = open(alignment_file)
-        alignment = np.array([[AMINO_INDICES[c] for c in x.strip()] for x in f], dtype=np.uint8)
+    if format == "psicov":
+        try:
+            f = open(alignment_file)
+            alignment = np.array([[AMINO_INDICES[c] for c in x.strip()] for x in f], dtype=np.uint8)
+            f.close()
+        except IOError:
+            print ("Could not open psicov file: " + alignment_file )
 
-        f.close()
-    except IOError:
-        print ("Could not open psicov file: " + alignment_file )
+    else:
 
+        records = list(aio.read(alignment_file, format))
+
+        alignment = [r.seq._data for r in records]
+        alignment = np.array([[AMINO_INDICES[c] for c in x.strip()] for x in alignment], dtype=np.uint8)
 
     return alignment
 
@@ -98,3 +116,14 @@ def read_matfile(matfile):
 
     return mat
 
+def read_fasta(fasta_file):
+    try:
+        aln_iterator = aio.read(fasta_file, format='fasta', seq_count=1)
+    except ValueError as e:
+        print e
+        return
+
+    seq = list(aln_iterator)[0].seq._data
+    id  = list(aln_iterator)[0].id
+
+    return id, seq

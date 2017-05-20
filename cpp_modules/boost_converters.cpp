@@ -230,17 +230,17 @@ boost::python::list std_string_vector_to_py_list(std::vector<std::string> &v){
 }
 
 
-
-
 /*
  * convert arma::mat to boost::python::list
  */
-boost::python::list std_vectorvector_to_py_list(std::vector<std::vector<double> > &v){
+template <typename T>
+boost::python::list std_vectorvector_to_py_list(std::vector<std::vector<T> > v){
 
 	boost::python::list result;
 
-	std::vector< std::vector<double> >::iterator it;
-	std::vector<double>::iterator row_it;
+    typename std::vector< std::vector<T> >::iterator it;
+    typename std::vector<T>::iterator row_it;
+
 
 	for (it = v.begin(); it != v.end(); ++it){
 
@@ -253,6 +253,10 @@ boost::python::list std_vectorvector_to_py_list(std::vector<std::vector<double> 
 	}
 	return result;
 }
+template boost::python::list std_vectorvector_to_py_list(std::vector<std::vector<double> > vector);
+template boost::python::list std_vectorvector_to_py_list(std::vector<std::vector<int> > vector);
+
+
 
 /*
  * Convert arma::mat to boost::python::list

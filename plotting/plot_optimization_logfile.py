@@ -1,8 +1,14 @@
-
+import argparse
 import pandas as pd
+import glob
+import os
+
+import utils.pdb_utils as pdb
 from utils.plot_utils import *
 from utils.io_utils import AB, AB_INDICES
-from coupling_prior.utils_coupling_prior import gaussian_mixture_density, gaussian_mixture_density_2d
+import coupling_prior.utils_coupling_prior
+import raw
+
 from scipy.stats import norm
 from plotly.offline import plot as plotly_plot
 from scipy.optimize import curve_fit
@@ -13,7 +19,14 @@ def plot_convergence_trace_plotly(negll_trace_df, name, plot_title, plot_out=Non
     """
     Define a plot in plotly dictionary style
     Either plot it or return dictionary
+
+    :param negll_trace_df:  Pandas Dataframe with columns: pass, step, col1, col2
+    :param name:            List of column names for plotting, e.g [cols, col2]
+    :param plot_title:      title
+    :param plot_out:        Path to HTML output file
+    :return:
     """
+
 
     data = []
     for trace in name:
@@ -36,7 +49,7 @@ def plot_convergence_trace_plotly(negll_trace_df, name, plot_title, plot_out=Non
             xaxis1 = dict(title="step",
                           exponentformat="e",
                           showexponent='All'),
-            yaxis1 = dict(title=name,
+            yaxis1 = dict(title="neg LL",
                           exponentformat="e",
                           showexponent='All'
                           ),
@@ -64,9 +77,9 @@ def plot_exponentialFit_negLL(negll_trace_df, plot_title='exponential Fit neg LL
         yn = np.array(negll_trace_df['negLL'][-npoints:].tolist())
         try:
             popt, pcov = curve_fit(func, x, yn, p0=popt)
+            print('Exponential curve was fitted to neg LL with ' + str(npoints) + ' points')
             break
         except:
-            print('Exponential curve cannot bet fitted to neg LL with ' + str(npoints) + ' points')
             npoints += 1
             if npoints > len(negll_trace_df):
                 break
@@ -142,8 +155,10 @@ def plot_gradient_ab_trace(gradient_df, ab_list, colors, plot_out=None):
     nr_components = len(gradient_df.columns)
 
     for ab in ab_list:
+
         for parameter in gradient_df.columns.tolist():
             component = int(parameter.split("_")[-1])
+
             plot['data'].append(
                 go.Scatter(
                     x=range(1, len(gradient_df) + 1),
@@ -157,6 +172,8 @@ def plot_gradient_ab_trace(gradient_df, ab_list, colors, plot_out=None):
                     visible=False
                 )
             )
+
+        #every component will have a gradient trace
         plot['layout']['updatemenus'][0]['buttons'].append(
             {
                 'args': ['visible', [False] * (nr_components) * ab_list.index(ab) + [True] * (nr_components) + [False] * (nr_components) * (len(ab_list) - ab_list.index(ab) - 1)],
@@ -186,7 +203,7 @@ def get_coordinates_for_1d_gaussian(min, max, mean, sd):
 
 def get_coordinates_for_1d_gaussian_mixture(min, max, weights, means, sd):
     x_coord = np.arange(min, max, 0.01)
-    y_coord = [gaussian_mixture_density(x, weights, means, sd) for x in x_coord]
+    y_coord = [coupling_prior.utils_coupling_prior.gaussian_mixture_density(x, weights, means, sd) for x in x_coord]
 
     return x_coord, y_coord
 
@@ -220,36 +237,15 @@ def plot_parameter_visualisation_1d(parameters_dict, evaluation_set, settings, a
                                     'active': 0,
                                     }]
 
-    # determine component weights
-    weights_bg      = [parameters_dict[parameter_name][0] for parameter_name in sorted(parameters_dict.keys()) if
-                        "weight_bg" in parameter_name]
-    weights_contact = [parameters_dict[parameter_name][0] for parameter_name in sorted(parameters_dict.keys()) if
-                        "weight_contact" in parameter_name]
+    # component weights
+    weights_bg = []
+    weights_contact = []
+    for component in range(nr_components):
+        weights_bg.append(parameters_dict['weight_bg_'+str(component)][0])
+        weights_contact.append(parameters_dict['weight_contact_'+str(component)][0])
 
 
     for ab in ab_list:
-
-        means = [parameters_dict[parameter_name][ab] for parameter_name in sorted(parameters_dict.keys()) if
-                 "mu" in parameter_name]
-
-        prec_parameter_names = [parameter_name for parameter_name in sorted(parameters_dict.keys()) if
-                               "prec" in parameter_name]
-        sd = [0] * nr_components
-        for prec_ind in range(nr_components):
-            if (settings['sigma'] == 'isotrop'):
-                # lambda_w is dependent on protein length L
-                # 123 is the median protein length over all folds
-                # 142 is the mean protein length over all folds
-                #precision = (1.0 / parameters_dict[var_parameter_names[var_ind]][0]) * 141
-                #sd[var_ind] = float(np.sqrt(1 / precision))
-                #lambda_w is independent of L
-                sd[prec_ind] = float(np.sqrt(1.0/parameters_dict[prec_parameter_names[prec_ind]][0]))
-            if (settings['sigma'] == 'diagonal'):
-                sd[prec_ind] = np.sqrt(1.0/parameters_dict[prec_parameter_names[prec_ind]][ab])
-            if (settings['sigma'] == 'full'):
-                mat = np.zeros((400, 400))
-                mat[np.tril_indices(400)] = parameters_dict[prec_parameter_names[prec_ind]]
-                sd[prec_ind] = np.sqrt(1.0/np.diag(mat)[ab])
 
         ### add example data points
         plot['data'].append(go.Scatter(x=evaluation_set['contact'][ab].tolist(),
@@ -276,6 +272,14 @@ def plot_parameter_visualisation_1d(parameters_dict, evaluation_set, settings, a
                                        visible=False
                                        ))
 
+        means = []
+        sd = []
+        for component in range(nr_components):
+            means.append(parameters_dict['mu_'+str(component)][ab])
+            #sd.append(np.sqrt(1.0/parameters_dict['prec_'+str(component)][ab]))
+            sd.append(np.sqrt(1.0/(parameters_dict['prec_'+str(component)][ab] * 142) )) #in case precision is spec depending on L=142
+
+
         ### add components
         for component in range(nr_components):
             gaussian_component_density = get_coordinates_for_1d_gaussian(-1, 1, means[component], sd[component])
@@ -292,7 +296,7 @@ def plot_parameter_visualisation_1d(parameters_dict, evaluation_set, settings, a
 
         ### add mixture if there are more than one component
         if (nr_components > 1):
-            gaussian_mixture_x_contact, gaussian_mixture_y_contact = get_coordinates_for_1d_gaussian_mixture(-1, 1,
+            gaussian_mixture_x_contact, gaussian_mixture_y_contact =get_coordinates_for_1d_gaussian_mixture(-1, 1,
                                                                                                      weights_contact,
                                                                                                      means,
                                                                                                      sd)
@@ -324,14 +328,19 @@ def plot_parameter_visualisation_1d(parameters_dict, evaluation_set, settings, a
                                 )
 
         #set up drop down option
+        nr_plots_per_ab = 2 + nr_components
+        if (nr_components > 1):
+            nr_plots_per_ab += 2
+
         plot['layout']['updatemenus'][0]['buttons'].append(
             {
-                'args':['visible',  [False] * (nr_components + 4) * ab_list.index(ab) +
-                                [True] * (nr_components + 4) +
-                                [False] * (nr_components + 4) * (len(ab_list) - ab_list.index(ab) - 1) ] ,
+                'args':['visible',  [False] * (nr_plots_per_ab) * ab_list.index(ab) +
+                                    [True] * (nr_plots_per_ab) +
+                                    [False] * (nr_plots_per_ab) * (len(ab_list) - ab_list.index(ab) - 1) ] ,
                 'label': AB[ab],
                 'method':'restyle'
         })
+
 
 
     plot['layout'].update({'title': 'Coupling prior as a gaussian mixture'})
@@ -358,7 +367,7 @@ def contour_plot_2d_for_GaussianMixture(parameters_dict, ab, cd, evaluation_set,
                 "mu" in parameter_name]
 
     var_parameter_names = [parameter_name for parameter_name in sorted(parameters_dict.keys()) if
-                           "var" in parameter_name]
+                           "prec" in parameter_name]
     covMats = [0] * len(var_parameter_names)
     for var_ind in range(len(var_parameter_names)):
         CovMat = np.zeros((400, 400))
@@ -521,7 +530,6 @@ def plot_evaluation(parameters_dict, log_df, settings, evaluation_set, plotname)
     #     parameters_dict_ordered['mu_'+str(component)] = parameters_dict['mu_'+str(
     #         sorted_components[component])]
     # parameters_dict = parameters_dict_ordered
-    #
 
 
 
@@ -534,22 +542,23 @@ def plot_evaluation(parameters_dict, log_df, settings, evaluation_set, plotname)
         colors = cl.interp(cl.scales['10']['qual']['Paired'], 20)
 
     #list of ab pairs in dropdown menu
-    ab_list = [AB_INDICES['A-A'],
-           AB_INDICES['C-C'],
-           AB_INDICES['E-R'],
-           AB_INDICES['R-E'],
-           AB_INDICES['E-E'],
-           AB_INDICES['V-I'],
-           AB_INDICES['I-L'],
-           AB_INDICES['K-E'],
-           AB_INDICES['S-T'],
-           AB_INDICES['K-P'],
-           AB_INDICES['N-N'],
-           AB_INDICES['K-K'],
-           AB_INDICES['K-R'],
-           AB_INDICES['S-S'],
-           AB_INDICES['G-F']
-               ]
+    ab_list = [
+        AB_INDICES['A-A'],
+        AB_INDICES['C-C'],
+        AB_INDICES['E-R'],
+        AB_INDICES['R-E'],
+        AB_INDICES['E-E'],
+        AB_INDICES['V-I'],
+        AB_INDICES['I-L'],
+        AB_INDICES['K-E'],
+        AB_INDICES['S-T'],
+        AB_INDICES['K-P'],
+        AB_INDICES['N-N'],
+        AB_INDICES['K-K'],
+        AB_INDICES['K-R'],
+        AB_INDICES['S-S'],
+        AB_INDICES['G-F']
+    ]
 
     ####################### plotting of settings
     print_to_table = {}
@@ -631,9 +640,10 @@ def plot_evaluation(parameters_dict, log_df, settings, evaluation_set, plotname)
         colors=colors
     )
 
-    #variances
+    #std deviation
     prec_df = pd.DataFrame.from_dict(dict((k, parameters_dict[k]) for k in sorted(parameters_dict.keys()) if 'prec' in k))
-    std_dev = prec_df.apply(lambda v: np.sqrt(1.0/v))
+    #std_dev = prec_df.apply(lambda p: np.sqrt(1.0/p))
+    std_dev = prec_df.apply(lambda p: np.sqrt(1.0/(p*142))) #in case precision is specified depending on L=142
     std_dev.columns = [column_name.replace("prec", "std") for column_name in std_dev.columns]
     plot_stddev = plot_boxplot(
         std_dev,
@@ -666,7 +676,7 @@ def plot_evaluation(parameters_dict, log_df, settings, evaluation_set, plotname)
     plots.append(plot_mu_vs_stddev)
 
 
-    ############################################## plotting of gradient
+    ############################################## plotting of gradient norms
     #gradients for mu
     mu_grad_dict = {}
     annotations_dict = {}
@@ -712,10 +722,11 @@ def plot_evaluation(parameters_dict, log_df, settings, evaluation_set, plotname)
     plots.append(plot_gradient_mu_ab_trace)
 
     gradient_df = log_df.filter(regex=("prec_[0-9]*"))
-    plot_gradient_prec_ab_trace = plot_gradient_ab_trace(gradient_df,
-                                                        ab_list,
-                                                        colors
-                                                        )
+    plot_gradient_prec_ab_trace = plot_gradient_ab_trace(
+        gradient_df,
+        ab_list,
+        colors
+    )
     plots.append(plot_gradient_prec_ab_trace)
 
 
@@ -732,7 +743,6 @@ def plot_evaluation(parameters_dict, log_df, settings, evaluation_set, plotname)
             [AB_INDICES['E-E'], AB_INDICES['R-E']],
             [AB_INDICES['V-I'], AB_INDICES['I-L']],
         ]
-
         for abcd in ab_cd_list:
             plots.append(contour_plot_2d_for_GaussianMixture(parameters_dict, abcd[0], abcd[1], evaluation_set))
 
@@ -815,5 +825,97 @@ def plot_evaluation(parameters_dict, log_df, settings, evaluation_set, plotname)
 
     plotly_plot(fig, filename=plotname, auto_open=False)
 
+def generate_coupling_decoy_set(size, braw_dir, pdb_dir):
+
+    seqsep =  8
+    non_contact_thr = 25
+    contact_thr = 8
+
+    couplings = []
+    non_couplings = []
+
+    braw_files = glob.glob(braw_dir + "/*braw*")
 
 
+    for braw_file in braw_files[:size]:
+        p = os.path.basename(braw_file).split(".")[0]
+
+        pdb_file = pdb_dir      + "/" + p + ".pdb"
+        try:
+            braw = raw.parse_msgpack(braw_file)
+        except:
+            print("Problems reading {0}".format(braw_file))
+            continue
+
+        indices_contact, indices_non_contact = pdb.determine_residue_pair_indices(
+            pdb_file, seqsep, non_contact_thr, contact_thr
+        )
+
+
+        if (len(couplings) < size and len(indices_contact) > 0):
+            for index in range(min(len(indices_contact[0]), 100)):
+                i = indices_contact[0][index]
+                j = indices_contact[1][index]
+                couplings.append(braw.x_pair[i, j][:20, :20].flatten())
+
+            if (len(non_couplings) < size and len(indices_non_contact) > 0):
+                for index in range(min(len(indices_non_contact[0]), 100)):
+                    i = indices_non_contact[0][index]
+                    j = indices_non_contact[1][index]
+                    non_couplings.append(braw.x_pair[i, j][:20, :20].flatten())
+
+            # stop condition
+            if (len(non_couplings) >= size and len(couplings) >= size):
+                break
+
+
+    evaluation_set = {}
+    evaluation_set['contact']   = np.array(couplings[:size]).transpose()
+    evaluation_set['bg']        = np.array(non_couplings[:size]).transpose()
+
+    return evaluation_set
+
+
+def main():
+
+    ### Parse arguments
+    parser = argparse.ArgumentParser(description='Plot parameters and optimization log.')
+    parser.add_argument("parameter_file",           type=str,   help="path to parameter file")
+    parser.add_argument("optimization_log_file",    type=str,   help="path to optimization log")
+    parser.add_argument("braw_dir",                 type=str,   help="path to braw files")
+    parser.add_argument("pdb_dir",                  type=str,   help="path to pdb files")
+    parser.add_argument("plot_file",                type=str,   help="path to output plot file")
+    parser.add_argument("--size",  dest="size", type=int, default=1000,   help="size of test set of couplings for plotting")
+
+    args = parser.parse_args()
+    parameter_file          = args.parameter_file
+    optimization_log_file   = args.optimization_log_file
+    plot_file               = args.plot_file
+    braw_dir                = args.braw_dir
+    pdb_dir                 = args.pdb_dir
+    size                    = args.size
+
+    #teating
+    # optimization_log_file = "/home/vorberg/parameters.log"
+    # parameter_file = "/home/vorberg/parameters"
+    # plot_file = "/home/vorberg/test.html"
+    # braw_dir = "/home/vorberg/work/data/benchmarkset_cathV4.1/ccmpred/ccmpredpy_cd/braw/"
+    # pdb_dir= "/home/vorberg/work/data/benchmarkset_cathV4.1/pdb_renum_combs/"
+    # size=100
+
+
+    log_df      = coupling_prior.utils_coupling_prior.read_optimization_log_file(optimization_log_file)
+    parameters  = coupling_prior.utils_coupling_prior.read_parameter_file(parameter_file)
+    settings    = coupling_prior.utils_coupling_prior.read_settings_file(parameter_file + ".settings")
+
+    evaluation_set = generate_coupling_decoy_set(size, braw_dir, pdb_dir )
+    #evaluation_set = {'contact':[], 'bg':[]}
+
+    plot_evaluation(parameters, log_df, settings, evaluation_set, plot_file)
+
+
+
+
+
+if __name__ == '__main__':
+    main()

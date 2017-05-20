@@ -9,47 +9,56 @@
 #===============================================================================
 import argparse
 import os
-from collections import Counter
+import numpy as np
+
 import plotly.graph_objs as go
 from plotly.offline import plot as plotly_plot
 import utils.io_utils as io
+import utils.alignment_utils as ali_ut
 
 
-def plot_percentage_gaps_per_position(alignment_file, plot_dir=None):
 
-    # read alignment
-    protein = os.path.basename(alignment_file).split(".")[0]
-    alignment = io.read_alignment(alignment_file)
+
+def plot_percentage_gaps_per_position(alignment, plot_file=None):
+
     N = float(len(alignment))
     L = len(alignment[0])
 
-    # compute percentage of gaps per position
-    alignment = alignment.transpose()
-    gaps = [Counter(alignment[pos])[0] / N for pos in range(L)]
+    gaps = ali_ut.compute_gaps_per_position(alignment)
+    entropy_per_position = ali_ut.compute_entropy_per_position(alignment)
 
     #create plot
     data = []
     data.append(
         go.Scatter(
-            x=[x for x in range(L)],
+            x=[x for x in range(1,L+1)],
             y=gaps,
             name = "percentage of gaps",
             mode="Lines"
         )
     )
 
+    data.append(
+        go.Scatter(
+            x=[x for x in range(1,L+1)],
+            y=entropy_per_position,
+            name = "relative Entropy",
+            mode="Lines"
+        )
+    )
+
+
     layout = {
-        'title':"Percentage of gaps in alignment of " + str(protein) + "<br> N="+str(N) + ", L="+str(L),
+        'title':"Percentage of gaps and Entropy in alignment <br> N="+str(N) + ", L="+str(L),
         'xaxis':{'title':"Alignment Position"},
-        'yaxis':{'title':"Percentage of Gaps"},
+        'yaxis':{'title':"Percentage of Gaps/Entropy"},
         'font':{'size':18}
     }
 
     plot = {'data': data, 'layout': layout}
-    if plot_dir is None:
+    if plot_file is None:
         return plot
     else:
-        plot_file = plot_dir +"/alignment_percentage_gaps_" + protein + ".html"
         plotly_plot(plot, filename=plot_file, auto_open=False)
 
 
@@ -69,7 +78,13 @@ def main():
     #alignment_file = "/home/vorberg/work/data/benchmarkset_cathV4/benchmarkset_cathV4_combs/psc_eval01/1h4x_A_00.psc"
     #plot_dir = "/home/vorberg/"
 
-    plot_percentage_gaps_per_position(alignment_file, plot_dir)
+    protein = os.path.basename(alignment_file).split(".")[0]
+    alignment = io.read_alignment(alignment_file)
+
+    protein = os.path.basename(alignment).split(".")[0]
+    plot_file = plot_dir + "/" + protein +"_alignment_gaps_entropy.html"
+
+    plot_percentage_gaps_per_position(alignment, plot_file)
 
 if __name__ == '__main__':
     main()
