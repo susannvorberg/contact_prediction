@@ -4,43 +4,25 @@ import numpy as np
 import gzip
 import Bio.AlignIO as aio
 
-AMINO_INDICES = {
-     'A' : 1,
-     'B' : 0,
-     'C' : 5,
-     'D' : 4,
-     'E' : 7,
-     'F' : 14,
-     'G' : 8,
-     'H' : 9,
-     'I' : 10,
-     'J' : 0,
-     'K' : 12,
-     'L' : 11,
-     'M' : 13,
-     'N' : 3,
-     'O' : 0,
-     'P' : 15,
-     'Q' : 6,
-     'R' : 2,
-     'S' : 16,
-     'T' : 17,
-     'U' : 0,
-     'V' : 20,
-     'W' : 18,
-     'X' : 0,
-     'Y' : 19,
-     'Z' : 0,
-     '-' : 0}
 
-AMINO_ACIDS = "-ARNDCQEGHILKMFPSTWYV"
+AMINO_ACIDS = "ARNDCQEGHILKMFPSTWYV-"
 
-AB = [0] * 400
+AMINO_INDICES = {}
+for a in range(21):
+    AMINO_INDICES[AMINO_ACIDS[a]] = a
+AMINO_INDICES['B'] = 20
+AMINO_INDICES['J'] = 20
+AMINO_INDICES['O'] = 20
+AMINO_INDICES['U'] = 20
+AMINO_INDICES['X'] = 20
+AMINO_INDICES['Z'] = 20
+
+
+AB = {}
 AB_INDICES = {}
-
 for a in range(20):
     for b in range(20):
-        ab              = AMINO_ACIDS[a+1] + "-" + AMINO_ACIDS[b+1]
+        ab              = AMINO_ACIDS[a] + "-" + AMINO_ACIDS[b]
         index           = a * 20 + b
         AB[index]       = ab
         AB_INDICES[ab]  = index
