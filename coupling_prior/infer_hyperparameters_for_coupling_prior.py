@@ -4,9 +4,9 @@ import argparse
 import os
 import sys
 
-from coupling_prior.coupling_data import CouplingData
-from coupling_prior.likelihood import LikelihoodFct
-from coupling_prior.optimizer import Optimizer
+from coupling_data import CouplingData
+from likelihood import LikelihoodFct
+from optimizer import Optimizer
 
 
 def parse_args():
