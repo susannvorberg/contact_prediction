@@ -448,7 +448,8 @@ def plot_precision_rank_facetted_plotly(precision_rank, title, plot_out=None):
     # make subplot for each facet
     fig = tools.make_subplots(rows=nr_rows,
                               cols=nr_cols,
-                              subplot_titles=tuple(sorted(precision_rank.keys()))
+                              subplot_titles=tuple(sorted(precision_rank.keys())),
+                              print_grid=False
                               )
 
     for plot_id, facet in enumerate(sorted(precision_rank.keys())):
