@@ -6,7 +6,6 @@ from plotly.offline import plot as plotly_plot
 from plotly import tools
 import colorlover as cl
 from io_utils import AMINO_ACIDS, AB_INDICES
-import plotly.figure_factory as ff
 
 def plot_pairwise_couplings_density(scatter_dict, title, plot_out=None):
 
