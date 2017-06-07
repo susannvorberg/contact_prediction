@@ -13,8 +13,9 @@
 import argparse
 import os
 import pandas as pd
-
-from benchmark.benchmark import Benchmark
+import numpy as np
+import contact_prior.ext.weighting as weighting
+from . import Benchmark
 import utils.io_utils as io
 
 def parse_args():
@@ -25,7 +26,6 @@ def parse_args():
     parser.add_argument("-p",  dest="pdb_dir",              default=None, help="Path to pdb files", required = True)
     parser.add_argument("-d",  dest="property_files_dir",   default=None, help="Path to dataset fold property files", required = True)
     parser.add_argument("-e",  dest="evaluation_dir",       default=None, help="Path to evaluation directory", required = True)
-    parser.add_argument("-c",  dest="contact_prediction_dir", default=None, help="Path to contact prediction methods")
     parser.add_argument("-s",  dest="min_seqsep", type=int, default=6, help="minimum seqsep to use in eval files")
 
     args = parser.parse_args()
@@ -41,7 +41,6 @@ def main():
     pdb_dir                 = opt.pdb_dir
     property_files_dir      = opt.property_files_dir
     evaluation_dir          = opt.evaluation_dir
-    contact_prediction_dir  = opt.contact_prediction_dir
     min_seqsep              = opt.min_seqsep
 
 
@@ -57,40 +56,40 @@ def main():
     for fold, file in enumerate(sorted(os.listdir(property_files_dir))):
         print fold, file
         fold_df = pd.read_table(property_files_dir +"/" + file, skipinitialspace=True)
-        fold_df['fold'] = fold
+        fold_df['fold'] = fold+1
         dataset_folds = dataset_folds.append(fold_df, ignore_index=True)
 
 
     # Initialise benchmark object
     b = Benchmark(evaluation_dir)
-    b.print_evaluation_file_stats()
 
     # Create evaluation files
     b.create_evaluation_files(pdb_dir, alignment_dir, min_seqsep, dataset_folds['domains'].tolist())
 
-    # Annotate eval_meta files with cath
+    # Annotate eval_meta files with cath and fold
     for eval_file in b.eval_files:
         meta_file = eval_file.replace(".eval", ".meta")
         protein_name=os.path.basename(eval_file).split(".")[0]
 
         cath_class= dataset_folds[dataset_folds['#  domain'] == protein_name]['CATH-topology'].values[0].lstrip()
-        meta_cath = {'cath class': cath_class}
-        b.add_meta_data(meta_file, meta_cath)
+        fold = dataset_folds[dataset_folds['#  domain'] == protein_name]['fold'].values[0]
 
-    # Annotate eval_meta files with neff
-    mat_ccmpred_vanilla = "/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/ccmpred-vanilla"
-    for eval_file in b.eval_files:
-        meta_file = eval_file.replace(".eval", ".meta")
-        protein_name = os.path.basename(eval_file).split(".")[0]
+        alignment_file=alignment_dir+"/"+protein_name+".filt.psc"
+        if not os.path.exists(alignment_file):
+            print("Alignment File {0} does not exist (used for annotating eval file with Neff). Skip.".format(alignment_file))
+            continue
+        alignment = io.read_alignment(alignment_file)
+        weights = weighting.calculate_weights_simple(alignment, 0.8, True)
+        neff=np.sum(weights)
 
-        ccmpred_vanilla_matfile = mat_ccmpred_vanilla+"/"+protein_name+".noAPC.mat"
-        if not os.path.exists(ccmpred_vanilla_matfile):
-            print("Matfile {0} does not exist (used for annotating eval file with Neff). Skip.".format(ccmpred_vanilla_matfile))
-        meta = io.read_json_from_mat(ccmpred_vanilla_matfile)
-        neff = meta['workflow'][0]['parameters']['msafile']['neff']
 
-        meta_neff = {'neff' : neff}
-        b.add_meta_data(meta_file, meta_neff)
+        annotation = {
+            'cath class': cath_class,
+            'fold': fold,
+            'neff' : neff
+        }
+        b.add_meta_data(meta_file, annotation)
+
 
 
 
