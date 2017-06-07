@@ -2,10 +2,7 @@
 
 import argparse
 import os
-import glob
-import pandas as pd
-import json
-from benchmark.benchmark import Benchmark
+from . import Benchmark
 
 
 
@@ -31,6 +28,9 @@ def main():
     b = Benchmark(eval_dir)
     print(b)
 
+
+
+    #remove specified method
     b.remove_method_from_evaluation_files(method)
 
 

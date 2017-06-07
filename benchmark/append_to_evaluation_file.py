@@ -1,8 +1,7 @@
 #!/usr/bin/env python
-
 import os
 import argparse
-from benchmark.benchmark import Benchmark
+from . import Benchmark
 
 def parse_args():
 
@@ -41,7 +40,6 @@ def main():
         exit()
 
     b = Benchmark(eval_dir)
-    b.print_evaluation_file_stats()
 
     #Add method to benchmark set ===============================================================================
     b.add_method_to_evaluation_files(method_name, method_dir, is_mat_file=mat_file, apc=apc, update=update)
