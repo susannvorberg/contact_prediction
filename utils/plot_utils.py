@@ -6,7 +6,99 @@ from plotly.offline import plot as plotly_plot
 from plotly import tools
 import colorlover as cl
 from io_utils import AMINO_ACIDS, AB_INDICES
+import plotly.figure_factory as ff
 
+def plot_pairwise_couplings_density(scatter_dict, title, plot_out=None):
+
+    x_axis_title  = scatter_dict.keys()[0]
+    y_axis_title  = scatter_dict.keys()[1]
+
+    x = scatter_dict[x_axis_title]
+    y = scatter_dict[y_axis_title]
+
+
+    colorscale = [
+        [0, '#7A4579'],        #0
+        [1./10000, '#D56073'], #10
+        [1./1000, 'rgb(236,158,105)'],  #100
+        [1./100, (1, 1, 0.2)],   #1000
+        [1./10, (0.98,0.98,0.98)],       #10000
+        [1., 'rgb(0, 0, 0)']              #100000
+    ]
+
+
+
+    trace1 = go.Scatter(
+        x=x, y=y, mode='markers', name='points',
+        marker=dict(color='rgb(102,0,0)', size=5, opacity=0.4),
+        hoverinfo='text',
+        text=[x_axis_title + ": " + str(a) + "<br>" + y_axis_title + ": " + str(b) for a, b in zip(x, y)]
+    )
+    trace2 = go.Histogram2dcontour(
+        x=x, y=y, name='density', ncontours=50,
+        colorscale='Hot',  # choose a pre-defined color scale
+        reversescale=True,
+        showscale=False
+    )
+    trace3 = go.Histogram(
+        x=x, name='x density',
+        marker=dict(color='rgb(255, 237, 222)'),
+        yaxis='y2'
+    )
+    trace4 = go.Histogram(
+        y=y, name='y density', marker=dict(color='rgb(255, 237, 222)'),
+        xaxis='x2'
+    )
+    data = [trace1, trace2, trace3, trace4]
+
+    layout = go.Layout(
+        title=title,
+        font = dict(size = 18),
+        showlegend=False,
+        #autosize=False,
+        #width=1000,
+        #height=900,
+        xaxis=dict(
+            title=x_axis_title,
+            exponentformat="e",
+            showexponent='All',
+            domain=[0, 0.85],
+            showgrid=False,
+            zeroline=False
+        ),
+        yaxis=dict(
+            title=y_axis_title,
+            exponentformat="e",
+            showexponent='All',
+            domain=[0, 0.85],
+            showgrid=False,
+            zeroline=False
+        ),
+        margin=dict(
+            t=150
+        ),
+        hovermode='closest',
+        bargap=0,
+        xaxis2=dict(
+            domain=[0.85, 1],
+            showgrid=False,
+            zeroline=False
+        ),
+        yaxis2=dict(
+            domain=[0.85, 1],
+            showgrid=False,
+            zeroline=False
+        )
+    )
+
+    fig = go.Figure(
+        data=data, layout=layout
+    )
+
+    if plot_out is not None:
+        plotly_plot(fig, filename=plot_out, auto_open=False)
+    else:
+        return fig
 
 
 def plot_coupling_vs_neff(coupling_df, feature, plot_file=None):
@@ -302,7 +394,7 @@ def plot_evaluationmeasure_vs_rank_plotly(evaluation_dict, title, yaxistitle, pl
 
     for method in methods:
         max_value = np.max([max_value, np.max(evaluation_dict[method]['mean'])])
-        data.append(go.Scatter(x=[str(rank) + "L" for rank in np.round(evaluation_dict['rank'], decimals=2)],
+        data.append(go.Scatter(x=[str(rank) for rank in np.round(evaluation_dict['rank'], decimals=2)],
                                y=evaluation_dict[method]['mean'],
                                name=method + "("+str(evaluation_dict[method]['size'],)+" proteins)",
                                mode='lines'
@@ -313,7 +405,7 @@ def plot_evaluationmeasure_vs_rank_plotly(evaluation_dict, title, yaxistitle, pl
         "data": data,
         "layout": go.Layout(title=title,
                             xaxis1=dict(title='top ranked contact predictions [fraction of protein length L]',
-                                        tickvals=[str(rank)+"L" for rank in np.linspace(1, 0, 10, endpoint=False)[::-1]]),
+                                        tickvals=[str(rank) for rank in np.linspace(1, 0, 10, endpoint=False)[::-1]]), #tickvals=[str(rank)+"L" for rank in np.linspace(1, 0, 10, endpoint=False)[::-1]])
                             yaxis1=dict(title=yaxistitle,
                                         range=[0, max_value]
                             ),
