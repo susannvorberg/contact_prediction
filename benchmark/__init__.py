@@ -617,9 +617,7 @@ class Benchmark():
                 return
 
             l = list(u.gen_dict_extract('fold', self.evaluation_statistics))
-            print l
-
-            bins = range(10)
+            bins = [0] + np.unique(l)
 
             if 'precision_vs_rank' in plot_type:
                 precision_rank = bu.subset_evaluation_dict(
