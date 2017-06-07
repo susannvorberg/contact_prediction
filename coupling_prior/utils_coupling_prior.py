@@ -50,8 +50,10 @@ def init_by_default(initial_weights, initial_means, initial_precision, sigma, fi
                 size=400
             ).tolist()
 
-        if ('prec_' + str(component) in fixed_parameters) or (sigma == 'isotrope'):
-            initial_diagonal = [initial_precision[0]] * 400
+        if ('prec_' + str(component) in fixed_parameters):
+            initial_diagonal = initial_precision[component] * 400
+        elif sigma == 'isotrope':
+            initial_diagonal = [1.0/0.05] * 400
         else:
             initial_diagonal = np.random.normal(
                 loc=initial_precision[component],
