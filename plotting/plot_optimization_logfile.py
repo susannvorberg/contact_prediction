@@ -277,8 +277,11 @@ def plot_parameter_visualisation_1d(parameters_dict, evaluation_set, settings, a
         for component in range(nr_components):
             means.append(parameters_dict['mu_'+str(component)][ab])
             #sd.append(np.sqrt(1.0/parameters_dict['prec_'+str(component)][ab]))
-            sd.append(np.sqrt(1.0/(parameters_dict['prec_'+str(component)][ab] * 142) )) #in case precision is spec depending on L=142
-
+            try:
+                sd.append(np.sqrt(1.0/(parameters_dict['prec_'+str(component)][ab] * 142) )) #in case precision is spec depending on L=142
+            except ZeroDivisionError as e:
+                print(e)
+                sd.append(0) #in case prec is zero bc optimizer tries strange values
 
         ### add components
         for component in range(nr_components):
@@ -643,7 +646,12 @@ def plot_evaluation(parameters_dict, log_df, settings, evaluation_set, plotname)
     #std deviation
     prec_df = pd.DataFrame.from_dict(dict((k, parameters_dict[k]) for k in sorted(parameters_dict.keys()) if 'prec' in k))
     #std_dev = prec_df.apply(lambda p: np.sqrt(1.0/p))
-    std_dev = prec_df.apply(lambda p: np.sqrt(1.0/(p*142))) #in case precision is specified depending on L=142
+    try:
+        std_dev = prec_df.apply(lambda p: np.sqrt(1.0/(p*142))) #in case precision is specified depending on L=142
+    except ZeroDivisionError as e:
+        print(e)
+        std_dev=prec_df
+
     std_dev.columns = [column_name.replace("prec", "std") for column_name in std_dev.columns]
     plot_stddev = plot_boxplot(
         std_dev,
