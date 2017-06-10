@@ -1,3 +1,6 @@
 [submodule "raw"]
 	path = raw
 	url = git@bitbucket.org:sseemayer/ccmpred-raw.git
+[submodule "pycoevol"]
+	path = pycoevol
+	url = git://github.com/biomadeira/pycoevol
