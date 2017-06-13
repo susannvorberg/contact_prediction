@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import utils.io_utils as io
-
+import numpy as np
 
 # D. M. Engelman; T. A. Steitz & A. Goldman:
 # Identifying nonpolar transbilayer helices in amino acid sequences of
@@ -53,10 +53,10 @@ atchley_factor_1_alph = {
     'M': -0.663, 'L': -1.019, 'N': 0.945,
     'Q': 0.931, 'P': 0.189, 'S': -0.228,
     'R': 1.538, 'T': -0.032, 'W': -0.595,
-    'V': -1.337, 'Y': 0.26
+    'V': -1.337, 'Y': 0.26, '-':np.nan
 }
 
-atchley_factor_1 = [atchley_factor_1_alph[io.AMINO_ACIDS[a]] for a in range(20)]
+atchley_factor_1 = [atchley_factor_1_alph[io.AMINO_ACIDS[a]] for a in range(21)]
 
 atchley_factor_2_alph = {
     'A': -1.302, 'C': 0.465, 'E': -1.453,
@@ -65,9 +65,9 @@ atchley_factor_2_alph = {
     'M': -1.524, 'L': -0.987, 'N': 0.828,
     'Q': -0.179, 'P': 2.081, 'S': 1.399,
     'R': -0.055, 'T': 0.326, 'W': 0.009,
-    'V': -0.279, 'Y': 0.83
+    'V': -0.279, 'Y': 0.83, '-':np.nan
 }
-atchley_factor_2 = [atchley_factor_2_alph[io.AMINO_ACIDS[a]] for a in range(20)]
+atchley_factor_2 = [atchley_factor_2_alph[io.AMINO_ACIDS[a]] for a in range(21)]
 
 atchley_factor_3_alph = {
     'A': -0.733, 'C': -0.862, 'E': 1.477,
@@ -76,9 +76,9 @@ atchley_factor_3_alph = {
     'M': 2.219, 'L': -1.505, 'N': 1.299,
     'Q': -3.005, 'P': -1.628, 'S': -4.76,
     'R': 1.502, 'T': 2.213, 'W': 0.672,
-    'V': -0.544, 'Y': 3.097
+    'V': -0.544, 'Y': 3.097, '-':np.nan
 }
-atchley_factor_3 = [atchley_factor_3_alph[io.AMINO_ACIDS[a]] for a in range(20)]
+atchley_factor_3 = [atchley_factor_3_alph[io.AMINO_ACIDS[a]] for a in range(21)]
 
 atchley_factor_4_alph = {
     'A': 1.57, 'C': -1.02, 'E': 0.113,
@@ -87,9 +87,9 @@ atchley_factor_4_alph = {
     'M': -1.005, 'L': 1.266, 'N': -0.169,
     'Q': -0.503, 'P': 0.421, 'S': 0.67,
     'R': 0.44, 'T': 0.908, 'W': -2.128,
-    'V': 1.242, 'Y': -0.838
+    'V': 1.242, 'Y': -0.838, '-':np.nan
 }
-atchley_factor_4 = [atchley_factor_4_alph[io.AMINO_ACIDS[a]] for a in range(20)]
+atchley_factor_4 = [atchley_factor_4_alph[io.AMINO_ACIDS[a]] for a in range(21)]
 
 atchley_factor_5_alph = {
     'A': -0.146, 'C': -0.255, 'E': -0.837,
@@ -98,9 +98,9 @@ atchley_factor_5_alph = {
     'M': 1.212, 'L': -0.912, 'N': 0.933,
     'Q': -1.853, 'P': -1.392, 'S': -2.647,
     'R': 2.897, 'T': 1.313, 'W': -0.184,
-    'V': -1.262, 'Y': 1.512
+    'V': -1.262, 'Y': 1.512, '-':np.nan
 }
-atchley_factor_5 = [atchley_factor_5_alph[io.AMINO_ACIDS[a]] for a in range(20)]
+atchley_factor_5 = [atchley_factor_5_alph[io.AMINO_ACIDS[a]] for a in range(21)]
 
 
 #### Polarity ----------------------------------------------------------------------------------------------
@@ -115,9 +115,9 @@ polarity_grantham_alph = {
     'L':4.9,'M':5.7,'N':11.6,
     'P':8.0,'Q':10.5,'R':10.5,
     'S':9.2,'T':8.6,'V':5.9,
-    'Y':6.2,'W':5.4
+    'Y':6.2,'W':5.4, '-':np.nan
 }
-polarity_grantham = [polarity_grantham_alph[io.AMINO_ACIDS[a]] for a in range(20)]
+polarity_grantham = [polarity_grantham_alph[io.AMINO_ACIDS[a]] for a in range(21)]
 
 # Polarity (Zimmerman et al., 1968)
 # Zimmerman, J.M., Eliezer, N. and Simha, R.
@@ -130,9 +130,9 @@ polarity_zimmermann_alph = {
     'L':0.13,'M':1.43,'N':3.38,
     'P':1.58,'Q':3.53,'R':52.00,
     'S':1.67,'T':1.66,'V':0.13,
-    'Y':1.61,'W':2.10
+    'Y':1.61,'W':2.10, '-':np.nan
 }
-polarity_zimmermann = [polarity_zimmermann_alph[io.AMINO_ACIDS[a]] for a in range(20)]
+polarity_zimmermann = [polarity_zimmermann_alph[io.AMINO_ACIDS[a]] for a in range(21)]
 
 
 # Mean polarity (Radzicka-Wolfenden, 1988)
@@ -147,7 +147,7 @@ polarity_radzicka = {
     'L':1.21,'M':1.27,'N':-0.48,
     'P':0.0,'Q':-0.73,'R':-0.84,
     'S':-0.5,'T':-0.27,'V': 1.09,
-    'Y':0.33,'W':0.88
+    'Y':0.33,'W':0.88, '-':np.nan
 }
 
 
@@ -162,9 +162,9 @@ isoelectric_point_zimmermann_alph = {
     'L':5.98,'M':5.74,'N':5.41,
     'P':6.30,'Q':5.65,'R':10.76,
     'S':5.68,'T':5.66,'V':5.96,
-    'Y':5.66,'W':5.89
+    'Y':5.66,'W':5.89, '-':np.nan
 }
-isoelectric_point_zimmermann = [isoelectric_point_zimmermann_alph[io.AMINO_ACIDS[a]] for a in range(20)]
+isoelectric_point_zimmermann = [isoelectric_point_zimmermann_alph[io.AMINO_ACIDS[a]] for a in range(21)]
 
 
 
@@ -182,9 +182,9 @@ wimley_white_alph = {
     'L':0.56,'M':0.23,'N':-0.42,
     'P':-0.45,'Q':-0.58,'R':-0.81,
     'S':-0.13,'T':-0.14,'V':-0.07,
-    'Y':0.94,'W':1.85
+    'Y':0.94,'W':1.85, '-':np.nan
 }
-wimley_white = [wimley_white_alph[io.AMINO_ACIDS[a]] for a in range(20)]
+wimley_white = [wimley_white_alph[io.AMINO_ACIDS[a]] for a in range(21)]
 
 # Hydropathy index (Kyte-Doolittle, 1982)
 # Kyte, J. and Doolittle, R.F.
@@ -197,9 +197,9 @@ kyte_doolittle_alph = {
     'L':3.8,'M':1.9,'N':-3.5,
     'P':-1.6,'Q':-3.5,'R':-4.5,
     'S':-0.8,'T':-0.7,'V':4.2,
-    'Y':-1.3,'W':-0.9
+    'Y':-1.3,'W':-0.9, '-':np.nan
 }
-kyte_doolittle = [kyte_doolittle_alph[io.AMINO_ACIDS[a]] for a in range(20)]
+kyte_doolittle = [kyte_doolittle_alph[io.AMINO_ACIDS[a]] for a in range(21)]
 
 
 # J. L. Cornette; K. B. Cease; H. Margalit; J. L. Spouge; J. A. Berzofsky & C. DeLisi:
@@ -212,9 +212,9 @@ cornette_alph = {
     'L':5.7,'M':4.2,'N':-0.5,
     'P':-2.2,'Q':-2.8,'R':1.4,
     'S':-0.5,'T':-1.9,'V':4.7,
-    'Y':1.0,'W':3.2
+    'Y':1.0,'W':3.2, '-':np.nan
 }
-cornette = [cornette_alph[io.AMINO_ACIDS[a]] for a in range(20)]
+cornette = [cornette_alph[io.AMINO_ACIDS[a]] for a in range(21)]
 
 #### Amino Acid size ----------------------------------------------------------------------------------------------
 
@@ -231,9 +231,9 @@ bulkiness_zimmerman_alph = {
     'L':21.40,'M':16.25,'N':12.82,
     'P':17.43,'Q':14.45,'R':14.28,
     'S':9.47,'T':15.77,'V':21.57,
-    'Y':18.03,'W':21.67
+    'Y':18.03,'W':21.67, '-':np.nan
 }
-bulkiness_zimmerman = [bulkiness_zimmerman_alph[io.AMINO_ACIDS[a]] for a in range(20)]
+bulkiness_zimmerman = [bulkiness_zimmerman_alph[io.AMINO_ACIDS[a]] for a in range(21)]
 
 
 
@@ -246,9 +246,9 @@ volume_esque_alph = {
     'E': 134.8,'V': 134.5, 'F': 192.0,
     'W': 227.3,'G': 65.3,  'H': 159.2,
     'Y': 197.6,'I': 157.7, 'K': 164.2,
-    'L': 158.7,'M': 164.9
+    'L': 158.7,'M': 164.9, '-':np.nan
 }
-volume_esque = [volume_esque_alph[io.AMINO_ACIDS[a]] for a in range(20)]
+volume_esque = [volume_esque_alph[io.AMINO_ACIDS[a]] for a in range(21)]
 
 
 # Average volumes of residues (Pontius et al., 1996)
@@ -262,5 +262,5 @@ volume_pontius = {
     'E': 154.6,'V': 138.4, 'F': 198.8,
     'W': 209.8,'G': 67.5,  'H': 163.2,
     'Y': 237.2,'I': 162.6, 'K': 162.5,
-    'L': 163.4,'M': 165.9
+    'L': 163.4,'M': 165.9, '-':np.nan
 }
