@@ -37,12 +37,19 @@ def main():
         AF.read_features(feature_file)
         print(AF)
 
-    AF.get_basic_features()
-    AF.get_mean_physico_chem_properties()
+    AF.compute_basic_features()
+    AF.compute_mean_physico_chem_properties()
+    AF.compute_correlation_physico_chem_properties()
+    AF.compute_entropy()
+    AF.compute_mutual_info()
+    AF.compute_pssm()
+
     print(AF)
 
-
     feature_df = AF.get_feature_matrix()
+    class_df = AF.get_class_matrix()
+    print("Feature matrix contains {0} features.".format(len(feature_df)))
+
 
 
 if __name__ == '__main__':
