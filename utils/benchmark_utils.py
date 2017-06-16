@@ -276,8 +276,8 @@ def compute_l2norm_from_braw(braw, apc=False):
     :return: l2norm (-apc) score matrix
     '''
 
-    #compute l2norm
-    mat = np.sqrt(np.sum(braw.x_pair * braw.x_pair, axis=(2, 3)))
+    #compute l2norm without gap state
+    mat = np.sqrt(np.sum(braw.x_pair[:,:,:20,:20] * braw.x_pair[:,:,:20,:20], axis=(2, 3)))
 
     #apply apc)
     if(apc):
