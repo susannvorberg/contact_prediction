@@ -14,6 +14,21 @@ import utils.utils as u
 import utils.pdb_utils as pdb
 import raw
 
+from json import JSONEncoder
+import pickle
+
+class PythonObjectEncoder(JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, (list, dict, str, unicode, int, float, bool, type(None))):
+            return JSONEncoder.default(self, obj)
+        return {'_python_object': pickle.dumps(obj)}
+
+def as_python_object(dct):
+    if '_python_object' in dct:
+        return pickle.loads(str(dct['_python_object']))
+    return dct
+
+
 
 class Benchmark():
     """
@@ -44,17 +59,13 @@ class Benchmark():
         self.eval_meta_files = glob.glob(self.eval_dir + "/*.meta")
         print("There are {0} evaluation files in {1}".format(len(self.eval_files), self.eval_dir))
 
-        if (len(self.eval_files) != 0 ):
-            for eval_file in self.eval_files:
-                eval = pd.read_table(eval_file)
-                self.methods.update(eval.columns.values)
+        self.evaluation_meta_file = glob.glob(self.eval_dir + "/evaluation.meta")[0]
+        with open(self.evaluation_meta_file, 'r') as fp:
+            self.evaluation_meta = json.load(fp, object_hook=as_python_object)
+        self.methods = self.evaluation_meta['methods'].keys()
 
-            for m in ['i', 'j', 'cb_distance']:
-                self.methods.remove(m)
+        self.print_evaluation_file_stats()
 
-            print("The following methods exist: ")
-            for m in sorted(self.methods):
-                print(m)
 
     def __repr__(self):
         return("Benchmark suite for contact prediction.\n"
@@ -98,7 +109,7 @@ class Benchmark():
         # write evaluation dataframe to file
         eval_df.to_csv(evaluation_file, sep="\t", header=True, index=False)
 
-    def __add_method_to_evaluation_file(self, eval_file, method_file, method_name, is_mat_file=True, apc=False, update=True):
+    def __add_method_to_evaluation_file(self, eval_file, method_name, mat, meta, update=True):
         """
             Open evaluation file and append a new column SCORE_NAME with the contact scores wither
             computed from BRAW_FILE file or read from MAT_FILE
@@ -118,9 +129,6 @@ class Benchmark():
         eval_meta_file = eval_file.replace(".eval", ".meta")
         if not os.path.exists(eval_meta_file):
             raise IOError("Meta File " + str(eval_meta_file) + "cannot be found. ")
-
-        if not os.path.exists(method_file):
-            raise IOError("Score File " + str(method_file) + "cannot be found. ")
 
         ### load eval file
         eval_df = pd.read_table(eval_file, sep="\t")
@@ -145,20 +153,11 @@ class Benchmark():
             if 'cath' in eval_meta['protein']:
                 info_str += " cath: " + str(eval_meta['protein']['cath'])
 
-        ## Get residue (must be resolved in PDB File AND minimum sequence sep)
-        ij_indices = zip(eval_df['i'], eval_df['j'])
-
-        if is_mat_file:
-            mat = io.read_matfile(method_file)
-            if(apc):
-                mat = bu.compute_apc_corrected_matrix(mat)
-            eval_meta[method_name] = io.read_json_from_mat(method_file)
-        else:
-            braw = raw.parse_msgpack(method_file)
-            mat = bu.compute_l2norm_from_braw(braw, apc)
-            eval_meta[method_name] = braw.meta
+        #add meta information for method for this protein
+        eval_meta[method_name] = meta
 
         # append score to evaluation df
+        ij_indices = zip(eval_df['i'], eval_df['j'])
         eval_df[method_name] = mat[list(zip(*ij_indices)[0]), list(zip(*ij_indices)[1])]
 
         ### write evaluation dataframe and  meta_data to file
@@ -168,9 +167,19 @@ class Benchmark():
         with open(eval_meta_file, 'w') as fp:
             json.dump(eval_meta, fp)
 
+        #new method for the dataset
+        if method_name not in self.methods:
+            self.methods.append(method_name)
+            self.evaluation_meta['methods'][method_name]=set()
+
+        #update evaluation meta data
+        self.evaluation_meta['methods'][method_name].add(protein_name)
+        with open(self.evaluation_meta_file, 'w') as fp:
+            json.dump(self.evaluation_meta, fp, cls=PythonObjectEncoder)
+
+
+
         print("Successfully added method {0} for protein {1}!".format(method_name, protein_name))
-
-
 
     def __remove_method_from_evaluation_file(self, eval_file, method_name):
         """
@@ -182,30 +191,37 @@ class Benchmark():
         """
 
         if not os.path.exists(eval_file):
-            raise IOError("Evaluation File " + str(eval_file) + "cannot be found. ")
+            raise IOError("Evaluation File {0} cannot be found. ".format(eval_file))
         protein_name = os.path.basename(eval_file).split(".")[0]
 
         eval_meta_file = eval_file.replace(".eval", ".meta")
         if not os.path.exists(eval_meta_file):
-            raise IOError("Meta File " + str(eval_meta_file) + "cannot be found. ")
+            raise IOError("Meta File {0} cannot be found. ".format(eval_meta_file))
 
         ### load eval file and eval meta file
         eval_df = pd.read_table(eval_file, sep="\t")
         with open(eval_meta_file, 'r') as fp:
             eval_meta = json.load(fp)
 
-        # delete score from eval file and meta file
+        # delete score from eval file
         if method_name in eval_df.columns:
             del eval_df[method_name]
             eval_df.to_csv(eval_file, sep="\t", header=True, index=False)
 
+        # delete score from  meta file
         if method_name in eval_meta.keys():
             del eval_meta[method_name]
             with open(eval_meta_file, 'w') as fp:
                 json.dump(eval_meta, fp)
 
+        #update evaluation meta data
+        self.evaluation_meta['methods'][method_name].remove(protein_name)
+        if len(self.evaluation_meta['methods'][method_name]) == 0:
+            self.evaluation_meta['methods'].pop(method_name, None)
+        with open(self.evaluation_meta_file, 'w') as fp:
+            json.dump(self.evaluation_meta, fp, cls=PythonObjectEncoder)
 
-        print("Removed method " + method_name + " for protein " + protein_name)
+        print("Removed method {0} for protein {1}.".format(method_name,protein_name ))
 
     def __apply_filter(self, eval_meta):
 
@@ -236,18 +252,10 @@ class Benchmark():
 
     def print_evaluation_file_stats(self):
 
-        count_methods = {}
-        for m in self.methods:
-            count_methods[m] = 0
 
-        for eval_file in self.eval_files:
-                eval = pd.read_table(eval_file)
-                for m in self.methods:
-                    if m in eval.columns.tolist() :
-                        count_methods[m] += 1
-
-        for m, value  in count_methods.iteritems():
-            print("{0} : {1}".format(m, value))
+        print "{0:>32}: {1:>8}".format("method", "number of proteins")
+        for method, proteins in self.evaluation_meta['methods'].iteritems():
+            print "{0:>32}: {1:>8}".format(method, len(proteins))
 
     def add_meta_data(self, meta_file, meta_data):
 
@@ -268,8 +276,6 @@ class Benchmark():
 
         with open(meta_file, 'w') as fp:
             json.dump(meta, fp)
-
-
 
     def create_evaluation_files(self, pdb_dir, alignment_dir, seqsep, protein_list=[]):
         """
@@ -325,7 +331,7 @@ class Benchmark():
         self.eval_files = glob.glob(self.eval_dir + "/*eval")
         self.eval_meta_files = glob.glob(self.eval_dir + "/*.meta")
 
-    def add_method_to_evaluation_files(self, method_name, method_dir, is_mat_file, apc=True, update=True):
+    def add_method_from_file(self, method_name, method_dir, is_mat_file, apc=True, update=True):
 
         extension="braw"
         if (is_mat_file):
@@ -343,11 +349,34 @@ class Benchmark():
             if(len(method_file) == 0):
                 continue
 
-            self.__add_method_to_evaluation_file(eval_file, method_file[0], method_name,
-                                                 is_mat_file=is_mat_file, apc=apc, update=update)
+            if not os.path.exists(method_file[0]):
+             raise IOError("Score File " + str(method_file[0]) + "cannot be found. ")
 
-        #Add method name to available methods
-        self.methods.update([method_name])
+            if is_mat_file:
+                mat = io.read_matfile(method_file[0])
+                if(apc):
+                    mat = bu.compute_apc_corrected_matrix(mat)
+                meta = io.read_json_from_mat(method_file[0])
+            else:
+                braw = raw.parse_msgpack(method_file[0])
+                mat = bu.compute_l2norm_from_braw(braw, apc)
+                meta = braw.meta
+
+
+            self.__add_method_to_evaluation_file(eval_file, method_name, mat, meta, update=update)
+
+
+    def add_method(self, protein, method_name, mat, meta, apc=True, update=True):
+
+        eval_file = self.eval_files[protein in self.eval_files]
+        if len(eval_file) == 0:
+            print("There is not evaluation fiel for protein {0}".format(protein))
+            return
+
+        if(apc):
+            mat = bu.compute_apc_corrected_matrix(mat)
+
+        self.__add_method_to_evaluation_file(eval_file, method_name, mat, meta, update=update)
 
 
     def remove_method_from_evaluation_files(self, method_name):
