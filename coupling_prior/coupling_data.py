@@ -11,7 +11,7 @@ import utils.benchmark_utils as bu
 import utils.io_utils as io
 import utils.pdb_utils as pdb
 import raw
-import build.libio as cppio
+import utils.ext.libio as cppio
 
 class CouplingData():
     """
@@ -285,8 +285,20 @@ class CouplingData():
 
 
             # check if braw file exists, otherwise continue
-            if not os.path.isfile(braw_file_gz) or not os.path.isfile(psicov_file) or not os.path.isfile(qijabfile):
-                print("Some file (braw, psicov, qijab) for protein {0} could not be found!".format(p))
+            if not os.path.isfile(braw_file_gz):
+                print("Binary raw file {0} for protein {1} could not be found!".format(braw_file_gz, p))
+                continue
+
+            if not os.path.isfile(psicov_file):
+                print("Alignment file {0} for protein {1} could not be found!".format(psicov_file, p))
+                continue
+
+            if not os.path.isfile(qijabfile):
+                print("qij file {0} for protein {1} could not be found!".format(qijabfile, p))
+                continue
+
+            if not os.path.isfile(pdb_file):
+                print("PDB file {0} for protein {1} could not be found!".format(pdb_file, p))
                 continue
 
             psicov = io.read_alignment(psicov_file)
@@ -295,7 +307,7 @@ class CouplingData():
             diversity = np.sqrt(N) / L
 
             # skip proteins with low diversities
-            if (diversity < self.diversity_thr):
+            if diversity < self.diversity_thr:
                 continue
 
             indices_contact, indices_non_contact = self.get_residue_pairs_from_protein(
