@@ -21,8 +21,7 @@
  *********************************************************************************************************************************/
 
 
-Parameters::Parameters( int nr_components_
-                       )
+Parameters::Parameters( int nr_components_)
 {
 
     //set up model specifications
@@ -190,23 +189,24 @@ void Parameters::set_parameters(std::map<std::string, std::vector<double> > &par
 		}
 		else if(parameter_name.find("prec") != std::string::npos){
 			if((parameter_len  != 400)){
-				std::cout << "Parameter List for parameter " << parameter_name << " is neither of length 400 "<< parameter_len << std::endl;
+				std::cout << "Parameter List for parameter " << parameter_name << " is not of length 400 "<< parameter_len << std::endl;
 				return;
 			}
 
 
             //in case of defining lambda_w depending on L
             if (this->L > 0 ){
-                std::cout << "lambda_w determined dependent on protein length L= " << this->L << std::endl;
+                //std::cout << "lambda_w determined wrt protein length L= " << this->L << std::endl;
+                //std::cout << "parameter " << arma::min(arma::vec(parameter)) << " " << arma::max(arma::vec(parameter)) << std::endl;
                 this->precMat.slice(component)  = arma::diagmat( arma::exp(arma::vec(parameter)) * this->L  );
             }else{
+                //std::cout << "lambda_w is NOT determined wrt protein length L " << this->L << std::endl;
                 this->precMat.slice(component)  = arma::diagmat( arma::exp(arma::vec(parameter)) );
             }
 
-            std::cout << "inverse " << arma::min(this->precMat.slice(component)) << " " << arma::max(this->precMat.slice(component)) << std::endl;
-            this->covMat.slice(component) 	= arma::diagmat(1.0 / this->precMat.slice(component));
+            this->covMat.slice(component) 	= arma::diagmat(1.0 / this->precMat.slice(component).diag());
 
-            std::cout << "log det " << std::endl;
+            //std::cout << "log det " << std::endl;
 			//determine the determinant of lambda_k
 			this->log_det_inverse_covariance(component) = arma::sum(arma::log(this->precMat.slice(component).diag()));
 
@@ -219,7 +219,7 @@ void Parameters::set_parameters(std::map<std::string, std::vector<double> > &par
 
 	}//end for
 
-    std::cout << "post processing " << std::endl;
+    //std::cout << "post processing " << std::endl;
 	double sum_expweight_bg 		= 0;
 	double sum_expweight_contact 	= 0;
 	for(int c = 0; c < this->nr_components; c++){

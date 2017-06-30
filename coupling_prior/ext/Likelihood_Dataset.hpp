@@ -22,7 +22,8 @@ class Likelihood_Dataset{
 	public:
 		//constructor
 		Likelihood_Dataset(	boost::python::dict pairs_per_protein_,
-						    boost::python::dict parameters_
+						    boost::python::dict parameters_,
+						    bool L_dependent_
 						);
 
 
@@ -72,11 +73,10 @@ class Likelihood_Dataset{
 		int nr_components;
 		int debug_mode;
 		int nr_threads_prot;
+		bool L_dependent;
 
 		struct myProtein {
 		  std::string name;
-		  int N;
-		  int L;
 		  std::string brawfilename;
 		  std::string qijabfilename;
 		  arma::uvec residue_i;

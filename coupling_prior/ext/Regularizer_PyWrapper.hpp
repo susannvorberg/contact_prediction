@@ -18,7 +18,8 @@
  */
 Regularizer* Regularizer_PyWrapper(	boost::python::dict parameters_,
                                     double regularization_parameter_mu_,
-                                    double regularization_parameter_diagonal_PrecMat_
+                                    double regularization_parameter_diagonal_PrecMat_,
+                                    bool L_dependent
                                     );
 
 

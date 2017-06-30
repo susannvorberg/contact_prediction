@@ -24,8 +24,9 @@
 
 Regularizer::Regularizer(   std::map<std::string, std::vector<double> > parameterMap,
                             double regularization_parameter_mu_,
-                            double regularization_parameter_diagonal_PrecMat_
-                         ):parameters(parameterMap.size()/ 4)
+                            double regularization_parameter_diagonal_PrecMat_,
+                            bool L_dependent
+                         ):parameters(parameterMap.size()/ 4), L_dependent(L_dependent)
 {
 
     //set up model specifications
@@ -33,6 +34,13 @@ Regularizer::Regularizer(   std::map<std::string, std::vector<double> > paramete
 	this->regularization_parameter_diagonal_PrecMat 	= regularization_parameter_diagonal_PrecMat_;
 	this->nr_components = parameters.get_nr_components();
 
+    //determine precision dependent on protein length L
+    if (L_dependent) {
+        std::cout << "Precision depends on protein length."  <<  std::endl;
+        /////////////todo
+        this->L=0;
+        parameters.set_L(this->L);
+    }
 
 	//set up parameters
     parameters.set_parameters(parameterMap);
@@ -49,6 +57,7 @@ Regularizer::Regularizer(   std::map<std::string, std::vector<double> > paramete
  *********************************************************************************************************************************/
 
 Regularizer::Regularizer()
+:L_dependent(0)
 {
 }
 

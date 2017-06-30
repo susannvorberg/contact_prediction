@@ -25,8 +25,10 @@ using namespace boost::python;
 */
 BOOST_PYTHON_MODULE(libll){
 
-	boost::python::class_<Likelihood_Dataset>("Likelihood_Dataset",
-	                                            boost::python::init<boost::python::dict, boost::python::dict>())
+	boost::python::class_<Likelihood_Dataset>(
+	    "Likelihood_Dataset",
+	    boost::python::init<boost::python::dict, boost::python::dict, bool>()
+	)
 
     .def("get_f", &Likelihood_Dataset::get_f)
 	.def("get_gradient_dict", &Likelihood_Dataset::get_gradient_dict)
