@@ -1,15 +1,15 @@
 
 import numpy.distutils.intelccompiler
 from setuptools import setup, Extension, find_packages
-
+import os
 
 
 #-D_GLIBCXX_USE_CXX11_ABI=0: because GCC 5 issue with dual ABI: https://gcc.gnu.org/onlinedocs/gcc-5.2.0/libstdc++/manual/manual/using_dual_abi.html
 
-def ext(name,
+def extcpp(name,
         sources=[],
-        include_dirs=['utils/ext/', '/home/vorberg/anaconda2/envs/py27/include/python2.7', '/home/vorberg/anaconda2/envs/py27/include', '/usr/local/include'],
-        library_dirs=['/home/vorberg/anaconda2/envs/py27/lib'],
+        include_dirs=['utils/ext/', os.environ['ANACONDA_ENV']+'/include/python2.7', os.environ['ANACONDA_ENV']+'/include', '/usr/local/include'],
+        library_dirs=[os.environ['ANACONDA_ENV']+'/lib'],
         libraries=[],
         extra_compile_args=['-Wall -g -shared -O2 -fPIC -fopenmp -Wl,--export-dynamic -std=c++11 -D_GLIBCXX_USE_CXX11_ABI=0'],
         extra_link_args=['-lpython2.7 -lboost_python -lboost_iostreams -lpthread -larmadillo -lmsgpack -fopenmp']):
@@ -20,6 +20,11 @@ def ext(name,
                      sources=sources,
                      extra_compile_args=extra_compile_args,
                      extra_link_args=extra_link_args)
+
+def extc(name, sources=[], include_dirs=[], library_dirs=[], libraries=[], extra_compile_args=['-g -fopenmp -std=c99'], extra_link_args=['-g -fopenmp']):
+    return Extension(name, include_dirs=include_dirs, library_dirs=library_dirs, libraries=libraries, sources=sources, extra_compile_args=extra_compile_args, extra_link_args=extra_link_args)
+
+
 
 utils = ext(
             'utils.ext.libcontactutils',
@@ -54,13 +59,13 @@ likelihood = ext(
                      ]
         )
 
-counts = ext(
+counts = extc(
             'contact_prior.ext.counts.libmsacounts',
             sources=['contact_prior/ext/counts/msacounts.c']
         )
 
 
-weighting = ext(
+weighting = extc(
             'contact_prior.ext.weighting.libweighting',
             sources=['contact_prior/ext/weighting/weighting.c']
         )
