@@ -40,7 +40,7 @@ echo "plot dir: "$PLOTS
 # start script
 #------------------------------------------------------------------------------
 
-for nrcontacts in "100 1000 10000 100000";
+for nrcontacts in 100 1000 10000 100000;
 do
 
 
@@ -99,6 +99,6 @@ do
     settings=$settings" --debug_mode 0"
 
 
-    python $CONTACT_PREDICTION_PATH/coupling_prior/infer_hyperparameters_for_coupling_prior.py $settings > $PARAM_DIR"/infer_lambda_prior.log"
+    python ../coupling_prior/infer_hyperparameters_for_coupling_prior.py $settings > $PARAM_DIR"/infer_lambda_prior.log"
 
 done
