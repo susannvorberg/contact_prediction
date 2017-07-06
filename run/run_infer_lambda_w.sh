@@ -99,6 +99,6 @@ do
     settings=$settings" --debug_mode 0"
 
 
-    python ../coupling_prior/infer_hyperparameters_for_coupling_prior.py $settings > $PARAM_DIR"/infer_lambda_prior.log"
+    python $CONTACT_PREDICTION_PATH/coupling_prior/infer_hyperparameters_for_coupling_prior.py $settings > $PARAM_DIR"/infer_lambda_prior.log"
 
 done
