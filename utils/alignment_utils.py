@@ -35,3 +35,4 @@ def compute_entropy_per_position(alignment):
     entropy_per_position /= np.max(entropy_per_position)
 
     return entropy_per_position
+

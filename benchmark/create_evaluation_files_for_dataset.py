@@ -15,7 +15,7 @@ import os
 import pandas as pd
 import numpy as np
 import contact_prior.ext.weighting as weighting
-from . import Benchmark
+from benchmark import Benchmark
 import utils.io_utils as io
 
 def parse_args():
@@ -54,9 +54,10 @@ def main():
     #read dataset fold information
     dataset_folds = pd.DataFrame()
     for fold, file in enumerate(sorted(os.listdir(property_files_dir))):
-        print fold, file
+        print fold+1 , file
         fold_df = pd.read_table(property_files_dir +"/" + file, skipinitialspace=True)
         fold_df['fold'] = fold+1
+        print len(fold_df)
         dataset_folds = dataset_folds.append(fold_df, ignore_index=True)
 
 
@@ -64,7 +65,7 @@ def main():
     b = Benchmark(evaluation_dir)
 
     # Create evaluation files
-    b.create_evaluation_files(pdb_dir, alignment_dir, min_seqsep, dataset_folds['domains'].tolist())
+    b.create_evaluation_files(pdb_dir, alignment_dir, min_seqsep, dataset_folds['#  domain'].tolist())
 
     # Annotate eval_meta files with cath and fold
     for eval_file in b.eval_files:
@@ -78,17 +79,18 @@ def main():
         if not os.path.exists(alignment_file):
             print("Alignment File {0} does not exist (used for annotating eval file with Neff). Skip.".format(alignment_file))
             continue
+
         alignment = io.read_alignment(alignment_file)
         weights = weighting.calculate_weights_simple(alignment, 0.8, True)
         neff=np.sum(weights)
 
-
-        annotation = {
+        meta={}
+        meta['protein'] = {
             'cath class': cath_class,
             'fold': fold,
             'neff' : neff
         }
-        b.add_meta_data(meta_file, annotation)
+        b.add_meta_data(meta_file, meta)
 
 
 

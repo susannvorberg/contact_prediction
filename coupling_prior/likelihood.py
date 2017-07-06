@@ -186,7 +186,7 @@ class LikelihoodFct():
         initial_weights     = [1.0 / self.nr_components] *  self.nr_components
         initial_precision   = [1/0.0005]  + [1/0.05] * (self.nr_components-1) #precision  = 1/variance
         if self.prec_wrt_L:
-            initial_precision   = [1/0.2] + [1/0.5]* (self.nr_components-1) #precision  = 1/variance * L
+            initial_precision   = [1/0.05] + [1/0.5]* (self.nr_components-1) #precision  = 1/variance * L
 
 
         parameters = {}

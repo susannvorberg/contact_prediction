@@ -6,9 +6,10 @@
 # ===============================================================================
 
 ### load libraries ===============================================================================
+
 import os
 import argparse
-from benchmark.benchmark import Benchmark
+from benchmark import Benchmark
 
 def parse_args():
     ### Parse arguments =========================================================================================
@@ -38,6 +39,8 @@ def parse_args():
                           help="Plot evaluation plots dependent on cath")
     grp_plot.add_argument("--facetted_by_fold", dest='facetted_by_fold', action='store_true',
                           help="Plot evaluation plots dependent on fold")
+    grp_plot.add_argument("--facetted_by_percentgap", dest='facetted_by_percentgap', action='store_true',
+                          help="Plot evaluation plots dependent on percentage of gaps")
     grp_plot.add_argument("--meanprecision_by_neff", dest='meanprecision_by_neff', action='store_true',
                           help="Plot mean precision per protein vs neff of alignment")
     grp_plot.add_argument("--meanprecision_by_div", dest='meanprecision_by_div', action='store_true',
@@ -61,6 +64,13 @@ def main():
     plot_dir        = args.plot_dir
     seqsep          = args.seqsep
     contact_thr     = args.contact_thr
+
+
+    #debugging
+    # eval_dir="/home/vorberg/work/data/benchmarkset_cathV4.1/evaluation/"
+    # plot_dir="/home/vorberg/"
+    # seqsep=12
+    # contact_thr=8
 
     if not os.path.exists(eval_dir):
         print("Evaluation dir {0} does not exitst!".format(eval_dir))
@@ -108,6 +118,9 @@ def main():
     if args.facetted_by_fold:
         print ("Plots will be facetted by fold")
         plot_type.append('facetted_by_fold')
+    if args.facetted_by_percentgap:
+        print ("Plots will be facetted by percentage of gaps")
+        plot_type.append('facetted_by_percentgap')
     if args.meanprecision_by_neff:
         print ("Plot mean precision vs neff")
         plot_type.append('meanprecision_by_neff')
@@ -123,7 +136,7 @@ def main():
     # print available methods
     if (args.print_methods):
         for method in sorted(b.methods):
-            print method
+            print(method)
 
 
     ##Create benchmark object ============

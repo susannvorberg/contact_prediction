@@ -218,7 +218,7 @@ def get_densities_for_2d_gaussian_mixture(min_range, max_range, weights, means_a
 
     return x, y, z_densities
 
-def plot_parameter_visualisation_1d(parameters_dict, evaluation_set, settings, ab_list, colors, plot_out=None):
+def plot_parameter_visualisation_1d(parameters_dict, evaluation_set, settings, ab_list, colors, prec_wrt_L=False, plot_out=None):
     """
     Plot density estimate for test data
     Plot gaussian density according to parameters for each component and the mixture
@@ -276,9 +276,11 @@ def plot_parameter_visualisation_1d(parameters_dict, evaluation_set, settings, a
         sd = []
         for component in range(nr_components):
             means.append(parameters_dict['mu_'+str(component)][ab])
-            #sd.append(np.sqrt(1.0/parameters_dict['prec_'+str(component)][ab]))
             try:
-                sd.append(np.sqrt(1.0/(parameters_dict['prec_'+str(component)][ab] * 142) )) #in case precision is spec depending on L=142
+                if prec_wrt_L:
+                    sd.append(np.sqrt(1.0/(parameters_dict['prec_'+str(component)][ab] * 142) )) #in case precision is spec depending on L=142
+                else:
+                    sd.append(np.sqrt(1.0/parameters_dict['prec_'+str(component)][ab]))
             except ZeroDivisionError as e:
                 print(e)
                 sd.append(0) #in case prec is zero bc optimizer tries strange values
@@ -507,7 +509,7 @@ def plot_settings_table(settings, table_nr=1, plot_out=None):
     else:
         return plot
 
-def plot_evaluation(parameters_dict, log_df, settings, evaluation_set, plotname):
+def plot_evaluation(parameters_dict, log_df, settings, evaluation_set, prec_wrt_L, plotname):
     """
     Interactive Plotly Figure within HTML with Evaluations
     """
@@ -645,9 +647,10 @@ def plot_evaluation(parameters_dict, log_df, settings, evaluation_set, plotname)
 
     #std deviation
     prec_df = pd.DataFrame.from_dict(dict((k, parameters_dict[k]) for k in sorted(parameters_dict.keys()) if 'prec' in k))
-    #std_dev = prec_df.apply(lambda p: np.sqrt(1.0/p))
     try:
-        std_dev = prec_df.apply(lambda p: np.sqrt(1.0/(p*142))) #in case precision is specified depending on L=142
+        std_dev = prec_df.apply(lambda p: np.sqrt(1.0/p))
+        if prec_wrt_L:
+            std_dev = prec_df.apply(lambda p: np.sqrt(1.0/(p*142))) #in case precision is specified depending on L=142
     except ZeroDivisionError as e:
         print(e)
         std_dev=prec_df
@@ -742,7 +745,7 @@ def plot_evaluation(parameters_dict, log_df, settings, evaluation_set, plotname)
     if len(evaluation_set['contact']) == 0 or len(evaluation_set['bg']) == 0:
         print "Evaluation set is empty. Cannot plot Mixture Visualization."
     else:
-        plots.append(plot_parameter_visualisation_1d(parameters_dict, evaluation_set, settings, ab_list, colors))
+        plots.append(plot_parameter_visualisation_1d(parameters_dict, evaluation_set, settings, ab_list, colors, prec_wrt_L))
 
     ######################################### plotting of bivariate mixtures
     if settings['sigma'] == 'full':

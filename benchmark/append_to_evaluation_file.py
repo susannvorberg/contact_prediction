@@ -16,7 +16,7 @@ def parse_args():
     group_append.add_argument("--braw_file", dest="mat_file", action='store_false', help="compute score from binary raws")
 
     parser.add_argument('--apc', dest='apc', action='store_true', help="Appply average product correction")
-    parser.add_argument('--no_update', dest='update', action='store_false', help="Do not update evaluation file if method_name already exists")
+    parser.add_argument('--no_update', dest='update', action='store_false', default=True, help="Do not update evaluation file if method_name already exists")
 
     args = parser.parse_args()
 

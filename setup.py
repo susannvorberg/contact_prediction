@@ -8,7 +8,7 @@ from setuptools import setup, Extension, find_packages
 
 def ext(name,
         sources=[],
-        include_dirs=['cpp_modules', '/home/vorberg/anaconda2/envs/py27/include/python2.7', '/home/vorberg/anaconda2/envs/py27/include', '/usr/local/include'],
+        include_dirs=['utils/ext/', '/home/vorberg/anaconda2/envs/py27/include/python2.7', '/home/vorberg/anaconda2/envs/py27/include', '/usr/local/include'],
         library_dirs=['/home/vorberg/anaconda2/envs/py27/lib'],
         libraries=[],
         extra_compile_args=['-Wall -g -shared -O2 -fPIC -fopenmp -Wl,--export-dynamic -std=c++11 -D_GLIBCXX_USE_CXX11_ABI=0'],
@@ -21,47 +21,56 @@ def ext(name,
                      extra_compile_args=extra_compile_args,
                      extra_link_args=extra_link_args)
 
-module1 = ext(
-            'build.libcontactutils',
-            sources=['cpp_modules/contactutils.cpp',
-                     'cpp_modules/boost_converters.cpp'
+utils = ext(
+            'utils.ext.libcontactutils',
+            sources=['utils/ext/contactutils.cpp',
+                     'utils/ext/boost_converters.cpp'
                      ]
         )
 
-module2 = ext(
-            'build.libio',
-            sources=['cpp_modules/io.cpp',
-                     'cpp_modules/boost_converters.cpp'
+io = ext(
+            'utils.ext.libio',
+            sources=['utils/ext/io.cpp',
+                     'utils/ext/boost_converters.cpp'
                      ]
         )
 
-module3 = ext(
+regularizer = ext(
             'coupling_prior.ext.libreg',
             sources=['coupling_prior/ext/Regularizer_PyWrapper.cpp',
                      'coupling_prior/ext/Regularizer.cpp',
                      'coupling_prior/ext/Parameters.cpp',
-                     'cpp_modules/boost_converters.cpp'
+                     'utils/ext/boost_converters.cpp'
                      ]
         )
 
-module4 = ext(
+likelihood = ext(
             'coupling_prior.ext.libll',
             sources=['coupling_prior/ext/Likelihood_Dataset_PyWrapper.cpp',
                      'coupling_prior/ext/Likelihood_Dataset.cpp',
                      'coupling_prior/ext/Likelihood_Protein.cpp',
                      'coupling_prior/ext/Parameters.cpp',
-                     'cpp_modules/boost_converters.cpp'
+                     'utils/ext/boost_converters.cpp'
                      ]
         )
 
+counts = ext(
+            'contact_prior.ext.counts.libmsacounts',
+            sources=['contact_prior/ext/counts/msacounts.c']
+        )
 
 
+weighting = ext(
+            'contact_prior.ext.weighting.libweighting',
+            sources=['contact_prior/ext/weighting/weighting.c']
+        )
 
 setup(
-    name="Contact Prediction Extension Modules",
+    name="contact_prediction",
     version="1.0.0",
     description="cpp utils",
     license="AGPLv3",
     packages=find_packages(),
-    ext_modules=[module1, module2, module3, module4]
+    ext_modules=[utils, io, regularizer, likelihood, counts, weighting],
+    scripts=['contact_prior/grid_search_RF.py']
 )

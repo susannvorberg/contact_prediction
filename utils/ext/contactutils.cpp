@@ -983,7 +983,6 @@ arma::vec compute_Ni(int N, int L, std::string msafilename, std::string seqweigh
 }
 
 
-
 /********************************************************************************************************************************
  *
  * Python-Boost Wrapper Functions

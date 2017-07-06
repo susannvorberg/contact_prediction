@@ -12,6 +12,7 @@ import utils.io_utils as io
 import utils.benchmark_utils as bu
 import utils.utils as u
 import utils.pdb_utils as pdb
+import utils.alignment_utils as ali_ut
 import raw
 
 from json import JSONEncoder
@@ -59,10 +60,15 @@ class Benchmark():
         self.eval_meta_files = glob.glob(self.eval_dir + "/*.meta")
         print("There are {0} evaluation files in {1}".format(len(self.eval_files), self.eval_dir))
 
-        self.evaluation_meta_file = glob.glob(self.eval_dir + "/evaluation.meta")[0]
-        with open(self.evaluation_meta_file, 'r') as fp:
-            self.evaluation_meta = json.load(fp, object_hook=as_python_object)
-        self.methods = self.evaluation_meta['methods'].keys()
+        self.evaluation_meta_file = self.eval_dir + "/evaluation.meta"
+        if os.path.exists(self.evaluation_meta_file):
+            self.eval_meta_files.pop([self.eval_meta_files.index(i) for i in self.eval_meta_files if 'evaluation.meta' in i][0])
+            with open(self.evaluation_meta_file, 'r') as fp:
+                self.evaluation_meta = json.load(fp, object_hook=as_python_object)
+            self.methods = self.evaluation_meta['methods'].keys()
+        else:
+            self.evaluation_meta={"methods":{}}
+            self.methods = []
 
         self.print_evaluation_file_stats()
 
@@ -123,12 +129,12 @@ class Benchmark():
         """
 
         if not os.path.exists(eval_file):
-            raise IOError("Evaluation File " + str(eval_file) + "cannot be found. ")
+            raise IOError("Evaluation file " + str(eval_file) + "cannot be found. ")
         protein_name = os.path.basename(eval_file).split(".")[0]
 
         eval_meta_file = eval_file.replace(".eval", ".meta")
         if not os.path.exists(eval_meta_file):
-            raise IOError("Meta File " + str(eval_meta_file) + "cannot be found. ")
+            raise IOError("Evaluation meta file " + str(eval_meta_file) + "cannot be found. ")
 
         ### load eval file
         eval_df = pd.read_table(eval_file, sep="\t")
@@ -137,35 +143,16 @@ class Benchmark():
         if method_name in eval_df.columns and not update:
             return
 
-        ### load eval meta file
-        with open(eval_meta_file, 'r') as fp:
-            eval_meta = json.load(fp)
-
-        ### Get alignment properties
-        info_str = ""
-        if 'protein' in eval_meta:
-            if 'L' in eval_meta['protein']:
-                info_str += " L: " + str(eval_meta['protein']['L'])
-            if 'N' in eval_meta['protein']:
-                info_str += " N: " + str(eval_meta['protein']['N'])
-            if 'div' in eval_meta['protein']:
-                info_str += " div: " + str(eval_meta['protein']['div'])
-            if 'cath' in eval_meta['protein']:
-                info_str += " cath: " + str(eval_meta['protein']['cath'])
-
-        #add meta information for method for this protein
-        eval_meta[method_name] = meta
-
-        # append score to evaluation df
+        ### append score to evaluation df
         ij_indices = zip(eval_df['i'], eval_df['j'])
         eval_df[method_name] = mat[list(zip(*ij_indices)[0]), list(zip(*ij_indices)[1])]
-
-        ### write evaluation dataframe and  meta_data to file
+        # write evaluation dataframe
         eval_df.to_csv(eval_file, sep="\t", header=True, index=False)
 
-        # Add score meta data to file
-        with open(eval_meta_file, 'w') as fp:
-            json.dump(eval_meta, fp)
+
+        ### add score meta data to meta_data file
+        self.add_meta_data(eval_meta_file, {method_name: meta})
+
 
         #new method for the dataset
         if method_name not in self.methods:
@@ -215,7 +202,8 @@ class Benchmark():
                 json.dump(eval_meta, fp)
 
         #update evaluation meta data
-        self.evaluation_meta['methods'][method_name].remove(protein_name)
+        if protein_name in self.evaluation_meta['methods'][method_name]:
+            self.evaluation_meta['methods'][method_name].remove(protein_name)
         if len(self.evaluation_meta['methods'][method_name]) == 0:
             self.evaluation_meta['methods'].pop(method_name, None)
         with open(self.evaluation_meta_file, 'w') as fp:
@@ -253,26 +241,31 @@ class Benchmark():
     def print_evaluation_file_stats(self):
 
 
-        print "{0:>32}: {1:>8}".format("method", "number of proteins")
+        print "{0:>48}: {1:>12}".format("method", "number of proteins")
         for method, proteins in self.evaluation_meta['methods'].iteritems():
-            print "{0:>32}: {1:>8}".format(method, len(proteins))
+            print "{0:>48}: {1:>12}".format(method, len(proteins))
 
     def add_meta_data(self, meta_file, meta_data):
 
+        if not isinstance(meta_data, dict):
+            print("meta_data must be a dictionary!")
+            return
+
         meta={}
-        meta['protein'] = {}
-
         if os.path.exists(meta_file):
-            print(meta_file + " already exists and will be updated.")
-
             try:
                 with open(meta_file, 'r') as fp:
                     meta = json.load(fp)
             except ValueError, e:
-                print("Metafile does not contain data in JSON format!")
+                print("meta_file {0} does not contain data in JSON format!".format(meta_file))
                 return
 
-        meta['protein'].update(meta_data)
+        #update meta data for all keys in meta_data
+        for key, value in meta_data.iteritems():
+            if key not in meta.keys():
+                meta[key] = {}
+            meta[key].update(value)
+
 
         with open(meta_file, 'w') as fp:
             json.dump(meta, fp)
@@ -305,22 +298,32 @@ class Benchmark():
 
         print("Initialize evaluation files in {0}.".format(self.eval_dir))
         for ind, protein in enumerate(protein_list):
+
             pdb_file = glob.glob(pdb_dir + "/" + protein.replace("_", "") + "*")
             if len(pdb_file) == 0:
                 print("PDB file for {0} does not exist. Skip this protein".format(protein))
                 continue
-            evaluation_file = self.eval_dir + "/" + protein + ".eval"
-            self.__create_evaluation_file(evaluation_file, pdb_file[0], seqsep)
 
             psc_file = glob.glob(alignment_dir + "/" + protein + "*")
             if len(psc_file) == 0:
                 print("Alignment file for {0} does not exist. Skip this protein".format(protein))
                 continue
+
             psc = io.read_alignment(psc_file[0])
-            meta = {'name': protein,
-                    'L': psc.shape[1],
-                    'N': psc.shape[0],
-                    'diversity': np.sqrt(psc.shape[0]) / psc.shape[1]}
+            percent_gaps = np.mean(ali_ut.compute_gaps_per_position(psc))
+
+            meta={}
+            meta['protein'] = {
+                'name': protein,
+                'L': psc.shape[1],
+                'N': psc.shape[0],
+                'diversity': np.sqrt(psc.shape[0]) / psc.shape[1],
+                'gap_percentage': percent_gaps
+            }
+
+
+            evaluation_file = self.eval_dir + "/" + protein + ".eval"
+            self.__create_evaluation_file(evaluation_file, pdb_file[0], seqsep)
 
             meta_file = evaluation_file.replace(".eval", ".meta")
             self.add_meta_data(meta_file, meta)
@@ -342,7 +345,7 @@ class Benchmark():
 
         for i, eval_file in enumerate(self.eval_files):
             protein_name = os.path.basename(eval_file).split(".")[0]
-            print("{0}/{1}".format(i+1, len(self.eval_files)))
+            print("{0}/{1} {2}".format(i+1, len(self.eval_files), protein_name))
 
             method_file = glob.glob(method_dir+"/"+protein_name+"*"+extension+"*")
 
@@ -365,7 +368,6 @@ class Benchmark():
 
             self.__add_method_to_evaluation_file(eval_file, method_name, mat, meta, update=update)
 
-
     def add_method(self, protein, method_name, mat, meta, apc=True, update=True):
 
         eval_file = self.eval_files[protein in self.eval_files]
@@ -377,7 +379,6 @@ class Benchmark():
             mat = bu.compute_apc_corrected_matrix(mat)
 
         self.__add_method_to_evaluation_file(eval_file, method_name, mat, meta, update=update)
-
 
     def remove_method_from_evaluation_files(self, method_name):
         """
@@ -532,12 +533,41 @@ class Benchmark():
             plotname = plot_out_dir + "/meanerror_vs_rank_.html"
             pu.plot_evaluationmeasure_vs_rank_plotly(meanerror_rank, title, yaxistitle, plotname)
 
+        if 'facetted_by_percentgap' in plot_type:
+
+            gap_values = list(u.gen_dict_extract('gap_percentage', self.evaluation_statistics))
+
+            if len(gap_values) == 0:
+                print("Cannot facet plot by percetnage of gaps as it is not annotated in meta data")
+                return
+
+            bins = np.percentile([0]+gap_values, [0, 25, 50, 75, 100])
+
+
+            if 'precision_vs_rank' in plot_type:
+                precision_rank = bu.subset_evaluation_dict(
+                    self.evaluation_statistics, bins, 'gap_percentage', self.benchmark_methods, 'precision')
+
+                title = 'Precision (PPV) vs rank (dependent on L) facetted by percentage of gaps'
+                title += title_description
+                plotname  = plot_out_dir + "/precision_vs_rank_facetted_by_percentgaps.html"
+                pu.plot_precision_rank_facetted_plotly(precision_rank, title, plotname)
+
+            if 'meanerror_rank' in plot_type:
+                mean_error_rank = bu.subset_evaluation_dict(
+                    self.evaluation_statistics, bins, 'gap_percentage', self.benchmark_methods, 'mean_error')
+
+                title = 'Mean Error vs rank (dependent on L) facetted by percentage of gaps'
+                plotname = plot_out_dir + "/meanerror_vs_rank_facetted_by_percentgaps.html"
+                pu.plot_precision_rank_facetted_plotly(mean_error_rank, title, plotname)
+
+
         if 'facetted_by_L' in plot_type:
             # compute mean precision over all ranks - for diversity bins
             L_values = list(u.gen_dict_extract('L', self.evaluation_statistics))
 
             if len(L_values) == 0:
-                print("Cannot facet plot by diversity as diversity is not annotated in meta data")
+                print("Cannot facet plot by protein length as L is not annotated in meta data")
                 return
 
             bins = np.percentile([0]+L_values, [0, 25, 50, 75, 100])

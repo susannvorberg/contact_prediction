@@ -208,6 +208,7 @@ def mean_precision_per_protein(evaluation_statistics, methods):
             ", N: " + str(protein_eval_metrics['N']) +
             ", neff: " + str(np.round(protein_eval_metrics['neff'], decimals=3)) +
             ", cath: " + str(protein_eval_metrics['cath class']) +
+            ", percentage_gaps: " + str(np.round(protein_eval_metrics['gap_percentage'], decimals=3)) +
             ", diversity: " + str(np.round(protein_eval_metrics['diversity'], decimals=3))
             for protein, protein_eval_metrics in evaluation_statistics['proteins'].iteritems()]
 

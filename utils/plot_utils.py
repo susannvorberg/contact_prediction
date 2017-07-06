@@ -5,7 +5,7 @@ import plotly.graph_objs as go
 from plotly.offline import plot as plotly_plot
 from plotly import tools
 import colorlover as cl
-from utils.io_utils import AMINO_ACIDS, AB_INDICES
+from io_utils import AMINO_ACIDS
 
 
 def plot_feature_importance(features, feature_importance, number_features=20, plot_out=None):
@@ -528,9 +528,6 @@ def plot_precision_rank_facetted_plotly(precision_rank, title, plot_out=None):
     #global layout settings
     fig['layout']['font'] = {'size': 18}  # set global font size
     fig['layout']['title'] = title
-
-    fig['layout']['legend']['x']=0
-    fig['layout']['legend']['y']=0
 
     if plot_out is not None:
         plotly_plot(fig, filename=plot_out, auto_open=False)

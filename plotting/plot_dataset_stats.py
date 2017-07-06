@@ -93,7 +93,7 @@ def main():
 
     #plot_out           = "/home/vorberg/work/plots/bayesian_framework/dataset_statistics/dataset_cath4.1/"
     #alignment_path     = "/home/vorberg/work/data/benchmarkset_cathV4.1/psicov/"
-    #dataset_files      = "/home/vorberg/work/data/benchmarkset_cathV4.1/dataset_properties/"
+    #dataset_files      = "/home/vorberg/work/data/benchmarkset_cathV4.1/dataset/dataset_properties/"
 
 
     dataset_folds={}

@@ -58,6 +58,8 @@ def plot_precision_vs_rank(pdb_file, seqsep, contact_thr, mat, plot_out_dir):
     eval_df['class'] = (eval_df['cb_distance'] <= contact_thr) * 1
     eval_df = eval_df[eval_df['j'] >= (eval_df['i'] + seqsep)]
 
+    eval_df = eval_df.sort_values(by=['i', 'j'])
+    eval_df.reset_index(inplace=True)
 
     #define x-axis: Ranks dependent on protein length L
     ranks = np.linspace(1, 0, 20, endpoint=False)[::-1]
