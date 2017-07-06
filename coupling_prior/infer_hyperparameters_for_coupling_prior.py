@@ -4,7 +4,7 @@ import argparse
 import os
 import sys
 
-from coupling_data import CouplingData
+import coupling_data
 from likelihood import LikelihoodFct
 from optimizer import Optimizer
 
@@ -158,7 +158,7 @@ def main():
 
 
     #create dataset
-    data = CouplingData(braw_dir, qijab_dir, psicov_dir, pdb_dir)
+    data = coupling_data.CouplingData(braw_dir, qijab_dir, psicov_dir, pdb_dir)
     data.set_seed(seed)
     data.set_nr_residue_pairs_for_crossval(nr_crossval_pairs)
     data.set_nr_residue_pairs_for_training(nr_training_pairs)
