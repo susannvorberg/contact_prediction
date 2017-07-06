@@ -6,17 +6,21 @@ method=$1
 nr_pairs=$2
 nr_components=$3
 
+
+echo "data dir: "$DATA
+echo "plot dir: "$PLOTS
+
 ###careful!
-rm -rf /home/vorberg/work/data/bayesian_framework/infer_lambdaw_benchmarkset_cath4.1/$method/parameters*
+rm -rf $DATA/bayesian_framework/infer_lambdaw_benchmarkset_cath4.1/$method/parameters*
 
 
 #------------------------------------
-settings="-o /home/vorberg/work/plots/bayesian_framework/infer_lambdaw_benchmarkset_cath4.1/$method/"
-settings=$settings" -p /home/vorberg/work/data/bayesian_framework/infer_lambdaw_benchmarkset_cath4.1/$method/"
-settings=$settings" -b /home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/$method/braw/"
-settings=$settings" -q /home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/$method/qij/"
-settings=$settings" -a /home/vorberg/work/data/benchmarkset_cathV4.1/psicov/"
-settings=$settings" -s /home/vorberg/work/data/benchmarkset_cathV4.1/pdb_renum_combs/"
+settings="-o $PLOTS/bayesian_framework/infer_lambdaw_benchmarkset_cath4.1/$method/"
+settings=$settings" -p $DATA/bayesian_framework/infer_lambdaw_benchmarkset_cath4.1/$method/"
+settings=$settings" -b $DATA/benchmarkset_cathV4.1/contact_prediction/$method/braw/"
+settings=$settings" -q $DATA/benchmarkset_cathV4.1/contact_prediction/$method/qij/"
+settings=$settings" -a $DATA/benchmarkset_cathV4.1/psicov/"
+settings=$settings" -s $DATA/benchmarkset_cathV4.1/pdb_renum_combs/"
 #------------------------------------
 
 
@@ -52,4 +56,4 @@ settings=$settings" --balance 20"
 settings=$settings" --debug_mode 0"
 
 
-python ../coupling_prior/infer_hyperparameters_for_coupling_prior.py $settings
+python $CONTACT_PREDICTION_PATH/coupling_prior/infer_hyperparameters_for_coupling_prior.py $settings
