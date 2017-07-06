@@ -26,21 +26,21 @@ def extc(name, sources=[], include_dirs=[], library_dirs=[], libraries=[], extra
 
 
 
-utils = ext(
+utils = extcpp(
             'utils.ext.libcontactutils',
             sources=['utils/ext/contactutils.cpp',
                      'utils/ext/boost_converters.cpp'
                      ]
         )
 
-io = ext(
+io = extcpp(
             'utils.ext.libio',
             sources=['utils/ext/io.cpp',
                      'utils/ext/boost_converters.cpp'
                      ]
         )
 
-regularizer = ext(
+regularizer = extcpp(
             'coupling_prior.ext.libreg',
             sources=['coupling_prior/ext/Regularizer_PyWrapper.cpp',
                      'coupling_prior/ext/Regularizer.cpp',
@@ -49,7 +49,7 @@ regularizer = ext(
                      ]
         )
 
-likelihood = ext(
+likelihood = extcpp(
             'coupling_prior.ext.libll',
             sources=['coupling_prior/ext/Likelihood_Dataset_PyWrapper.cpp',
                      'coupling_prior/ext/Likelihood_Dataset.cpp',
