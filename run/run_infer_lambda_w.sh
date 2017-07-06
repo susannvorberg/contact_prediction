@@ -6,8 +6,10 @@
 
 module load anaconda/2
 source activate py27
+
 module load C/msgpack
 module load C/armadillo
+
 module load contactprediction/contact_prediction
 
 #------------------------------------------------------------------------------
@@ -41,17 +43,23 @@ echo "plot dir: "$PLOTS
 for nrcontacts in "100 1000 10000 100000";
 do
 
+
+    PARAM_DIR=$DATA"/bayesian_framework/infer_lambdaw_benchmarkset_cath4.1/"$method"/isotrope1_"$nrcontacts"contacts"
+
+    if [ ! -d "$PARAM_DIR" ]; then
+      mkdir $PARAM_DIR
+    fi
+
     echo "nr contacts: " $nrcontacts
-    param_dir = $DATA"/bayesian_framework/infer_lambdaw_benchmarkset_cath4.1/"$method"/isotrope1_"$nrcontacts"contacts/"
-    echo "dir : "$param_dir
+    echo "dir : "$PARAM_DIR
 
     ###careful!
-    rm -rf $param_dir"/parameters*"
+    rm -rf $PARAM_DIR"/parameters*"
 
 
     #------------------------------------
     settings="-o "$PLOTS"/bayesian_framework/infer_lambdaw_benchmarkset_cath4.1/"$method"/isotrope1_"$nrcontacts"contacts/"
-    settings=$settings" -p "$param_dir
+    settings=$settings" -p "$PARAM_DIR
     settings=$settings" -b $DATA/benchmarkset_cathV4.1/contact_prediction/$method/braw/"
     settings=$settings" -q $DATA/benchmarkset_cathV4.1/contact_prediction/$method/qij/"
     settings=$settings" -a $DATA/benchmarkset_cathV4.1/psicov/"
@@ -91,6 +99,6 @@ do
     settings=$settings" --debug_mode 0"
 
 
-    python $CONTACT_PREDICTION_PATH/coupling_prior/infer_hyperparameters_for_coupling_prior.py $settings > $param_dir"/infer_lambda_prior.log"
+    python $CONTACT_PREDICTION_PATH/coupling_prior/infer_hyperparameters_for_coupling_prior.py $settings > $PARAM_DIR"/infer_lambda_prior.log"
 
 done
