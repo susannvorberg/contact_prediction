@@ -7,7 +7,8 @@ import random
 import glob
 import json
 
-import utils.benchmark_utils as bu
+
+import contact_prediction.utils.benchmark_utils as bu
 import utils.io_utils as io
 import utils.pdb_utils as pdb
 import raw
