@@ -45,9 +45,14 @@ do
 
 
     PARAM_DIR=$DATA"/bayesian_framework/infer_lambdaw_benchmarkset_cath4.1/"$method"/isotrope1_"$nrcontacts"contacts"
+    PLOT_DIR=$PLOTS"/bayesian_framework/infer_lambdaw_benchmarkset_cath4.1/"$method"/isotrope1_"$nrcontacts"contacts/"
 
     if [ ! -d "$PARAM_DIR" ]; then
       mkdir $PARAM_DIR
+    fi
+
+    if [ ! -d "$PLOT_DIR" ]; then
+      mkdir $PLOT_DIR
     fi
 
     echo "nr contacts: " $nrcontacts
@@ -58,7 +63,7 @@ do
 
 
     #------------------------------------
-    settings="-o "$PLOTS"/bayesian_framework/infer_lambdaw_benchmarkset_cath4.1/"$method"/isotrope1_"$nrcontacts"contacts/"
+    settings="-o "$PLOT_DIR
     settings=$settings" -p "$PARAM_DIR
     settings=$settings" -b $DATA/benchmarkset_cathV4.1/contact_prediction/$method/braw/"
     settings=$settings" -q $DATA/benchmarkset_cathV4.1/contact_prediction/$method/qij/"
