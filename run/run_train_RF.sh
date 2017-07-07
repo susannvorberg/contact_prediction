@@ -33,8 +33,8 @@ classifier=$3
 # ex call
 #------------------------------------------------------------------------------
 
-#bsub -q mpi -m "mpi mpi2 mpi3_all hh sa" -n 8 -R span[hosts=1] -a openmp  -J trainRF -o job-trainRF-%J.out bash ~/opt/contactprediction/contact_prediction/run/run_train_RF.sh 20000 100000 random_forest
-#bsub -q mpi -m "mpi mpi2 mpi3_all hh sa" -n 8 -R span[hosts=1] -a openmp  -J trainRF -o job-trainRF-%J.out bash ~/opt/contactprediction/contact_prediction/run/run_train_RF.sh 20000 100000 xgb
+#bsub -W 48:00 -q mpi -m "mpi mpi2 mpi3_all hh sa" -n 8 -R span[hosts=1] -a openmp  -J trainRF -o job-trainRF-%J.out bash ~/opt/contactprediction/contact_prediction/run/run_train_RF.sh 20000 100000 random_forest
+#bsub -W 48:00 -q mpi -m "mpi mpi2 mpi3_all hh sa" -n 8 -R span[hosts=1] -a openmp  -J trainRF -o job-trainRF-%J.out bash ~/opt/contactprediction/contact_prediction/run/run_train_RF.sh 20000 100000 xgb
 
 
 #------------------------------------------------------------------------------
