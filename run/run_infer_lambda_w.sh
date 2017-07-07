@@ -33,7 +33,7 @@ echo "plot dir: "$PLOTS
 # ex call
 #------------------------------------------------------------------------------
 
-#bsub -q mpi -m "mpi mpi2 mpi3_all hh sa" -n 8 -R span[hosts=1] -a openmp  -J infer_lambda_w -o job-infer_lambda_w-%J.out bash run_infer_lambda_w.sh ccmpredpy_pcd_gd 1
+#bsub -q mpi -m "mpi mpi2 mpi3_all hh sa" -n 8 -R span[hosts=1] -a openmp  -J infer_lambda_w -o job-infer_lambda_w-%J.out bash ~/opt/contactprediction/contact_prediction/run/run_infer_lambda_w.sh ccmpredpy_pcd_gd 1
 
 
 #------------------------------------------------------------------------------
