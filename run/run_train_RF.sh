@@ -20,6 +20,8 @@ module load contactprediction/contact_prediction
 #------------------------------------------------------------------------------
 export OMP_NUM_THREADS=8
 echo "using " $OMP_NUM_THREADS "threads for omp parallelization"
+#8 cores are fixed in contact_prior/TrainContactPriorModel.py
+
 
 #------------------------------------------------------------------------------
 # command line arguments
