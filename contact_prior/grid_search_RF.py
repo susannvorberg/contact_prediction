@@ -118,7 +118,7 @@ def main():
         sequence_separation=seq_separation,  contact_threshold=contact_threshold,
         non_contact_threshold=non_contact_threshold, window_size=window_size,
         nr_contacts_train=nr_contacts, nr_non_contacts_train=nr_non_contacts,
-        nr_contacts_test = 1000, nr_non_contacts_test = 5000,
+        nr_contacts_test = 1000, nr_non_contacts_test = 20000,
         max_nr_contacts_per_protein = max_nr_contacts,  max_nr_non_contacts_per_protein=max_nr_noncontacts
     )
 
