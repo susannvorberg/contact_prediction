@@ -47,9 +47,9 @@ class TrainContactPriorModel():
         self.non_contact_threshold = 20
         self.window_size = 5
         self.nr_contacts_train  = 1000
-        self.nr_non_contacts_train = 2000
+        self.nr_non_contacts_train = 5000
         self.nr_contacts_test  = 100
-        self.nr_non_contacts_test = 200
+        self.nr_non_contacts_test = self.nr_contacts_test * 20 #test on real world scenario
         self.max_nr_contacts_per_protein = 100
         self.max_nr_non_contacts_per_protein = 500
 
@@ -61,13 +61,15 @@ class TrainContactPriorModel():
             'xgboost': xgb.XGBClassifier(seed=123, silent=False, nthread=self.cores)
         }
 
+
+
         self.param_grid = {
             'random_forest': {
                 'n_estimators': [100, 1000],
                 'min_samples_leaf': [1, 100],
                 'max_depth': [None, 100],
                 'criterion': ["gini", "entropy"],
-                'class_weight': [None, "balanced"],
+                'class_weight': [None, "balanced", {0:0.525, 1:10.5}], #{0:0.525, 1:10.5} ==> n_samples/(n_classes * np.bincount(y) fuer ratio 1:20
                 'min_samples_split': [2, 10, 100]
             },
             'xgboost': {
@@ -76,7 +78,7 @@ class TrainContactPriorModel():
                 'n_estimators': [100, 1000],
                 'subsample': [0.8, 1],
                 'min_child_weight' : [0.5, 1, 2],
-                'scale_pos_weight' : [0.5, 1, 2]
+                'scale_pos_weight' : [1, 5, 20]
             }
         }
 
@@ -325,9 +327,9 @@ class TrainContactPriorModel():
 
         # Compute evaluation metrics
         true_class = self.class_df_test['contact'].values
-        avg_precision = sklearn.metrics.average_precision_score(true_class, pred_prob)
+        precision = sklearn.metrics.precision_score(true_class, pred_prob, pos_label=1, average='binary')
         f1 = sklearn.metrics.f1_score(true_class, pred_class, average='binary', pos_label=1)
-        prec, recall, thresholds = sklearn.metrics.precision_recall_curve(true_class, pred_prob)
+        prec, recall, thresholds = sklearn.metrics.precision_recall_curve(true_class, pred_prob, pos_label=1)
         print(sklearn.metrics.classification_report(true_class, pred_class))
 
         precision_recall_dict = {}
@@ -340,7 +342,7 @@ class TrainContactPriorModel():
         title = "{0} classifier <br>".format(self.model)
         title += "train: #contacts: {0} #non-contacts: {1}".format(self.class_df_train['contact'].sum(), self.class_df_train['nocontact'].sum())
         title += " test: #contacts: {0} #non-contacts: {1}".format(self.class_df_test['contact'].sum(), self.class_df_test['nocontact'].sum())
-        title += "<br> f1 score={0} avg_precision={1}".format(np.round(f1, decimals=3), np.round(avg_precision, decimals=3))
+        title += "<br> f1 score={0} precision={1}".format(np.round(f1, decimals=3), np.round(precision, decimals=3))
 
         plot_file = plot_dir +"/precision_recall_"+ self.model
         for param in self.param_grid[self.model].keys():
@@ -419,7 +421,33 @@ class TrainContactPriorModel():
         with open(param_dir+"/" + self.model +".metadata", 'w') as fp:
             json.dump(model_meta_data, fp)
 
+    def _extract_feature_importances(self):
 
+        if self.clf is None:
+            print("You first need to learn a model with train_model()")
+            exit()
+
+        self.feature_importance_mean = self.clf.feature_importances_.tolist()
+        self.feature_importance_median = None
+        if self.model == "random_forest":
+            self.feature_importance_median = list(
+                np.median([tree.feature_importances_ for tree in self.clf.estimators_], axis=0))
+
+    def _save_model(self, parameters, param_dir):
+
+        if self.clf is None:
+            print("You first need to learn a model with train_model()")
+            exit()
+
+        # save model settings
+        self.__write_model_metadata(param_dir)
+
+        # save model
+        model_out = param_dir + "/" + self.model
+        for param, value in parameters.iteritems():
+            model_out += "_" + param.replace("_", "") + str(value)
+
+        joblib.dump(self.clf, model_out + ".pkl")
 
     def specify_paths_to_data(self, alignment_dir, pdb_dir, psipred_dir, netsurfp_dir, mi_dir, omes_dir, braw_dir):
 
@@ -483,8 +511,9 @@ class TrainContactPriorModel():
             estimator=self.estimator[self.model],
             param_grid = self.param_grid[self.model],
             cv=cv.split(),
-            scoring="average_precision",
-            verbose=1
+            scoring=sklearn.metrics.precision_score, #precision of class=contact
+            verbose=1,
+            refit=True #refit the best estimator with the entire dataset
         )
         self.clf_gridcv.fit(self.feature_df_train.as_matrix(), self.class_df_train['contact'].values)
 
@@ -493,8 +522,11 @@ class TrainContactPriorModel():
         self.__plot_gridSearchCV(self.clf_gridcv.cv_results_, plot_dir)
         self.__write_gridsearchcv_metadata(param_dir)
 
-        #retrain best model on whole training set
-        self.train_model(self.clf_gridcv.best_params_, param_dir)
+        #best model that has been retrained on whole data using refit=True
+        self.clf = self.clf_gridcv.best_estimator_
+
+        #extract feature importances from classifier model
+        self._extract_feature_importances()
 
         #evaluate this model
         self.evaluate_model(plot_dir)
@@ -510,19 +542,13 @@ class TrainContactPriorModel():
         self.clf.set_params(**parameters)
         self.clf.fit(self.feature_df_train.as_matrix(), self.class_df_train['contact'].values)
 
-        self.feature_importance_mean = self.clf.feature_importances_.tolist()
-        self.feature_importance_median = None
-        if self.model == "random_forest":
-            self.feature_importance_median = list(np.median([tree.feature_importances_ for tree in self.clf.estimators_], axis=0))
-
-        self.__write_model_metadata(param_dir)
+        #extract feature importances from classifier model
+        self._extract_feature_importances()
 
         if save_model:
-            model_out = param_dir+"/" + self.model
-            for param, value in parameters.iteritems():
-                model_out += "_"+param.replace("_","")+str(value)
+            self._save_model(parameters, param_dir)
 
-            joblib.dump(self.clf, model_out +".pkl")
+
 
 
     def evaluate_model(self, plot_dir):
