@@ -28,14 +28,14 @@ echo "using " $OMP_NUM_THREADS "threads for omp parallelization"
 classifier=$1
 nr_contacts=$2
 nr_noncontacts=$3
-window_size=3
+window_size=5
 
 #------------------------------------------------------------------------------
 # example call
 #------------------------------------------------------------------------------
 
-#bash ~/opt/contactprediction/contact_prediction/run/run_train_RF.sh random_forest
-#bash ~/opt/contactprediction/contact_prediction/run/run_train_RF.sh xgb
+#bash ~/opt/contactprediction/contact_prediction/run/run_grid_search_RF.sh random_forest 10000 50000
+#bash ~/opt/contactprediction/contact_prediction/run/run_grid_search_RF.sh xgb 10000 50000
 
 #------------------------------------------------------------------------------
 # script
@@ -80,13 +80,14 @@ settings=$settings" --max_nr_contacts 100 --max_nr_noncontacts 500"
 
 if [ "$classifier" == "random_forest" ];
 then
-    settings=$settings" --random-forest --rf_nestimators 1000 --rf_min_samples_leaf 1 --rf_criterion entropy --rf_min_samples_split 100 --rf_max_depth 100 --rf_class_weight balanced"
+    settings=$settings" --random-forest"
 elif [ "$classifier" == "xgb" ];
 then
-    settings=$settings" --xgboost --xgb_nestimators 1000 --xgb_learning_rate 0.01 --xgb_max_depth 2 --xgb_subsample 0.8 --xgb_min_child_weight 1 --xgb_scale_pos_weight 2"
+    settings=$settings" --xgboost"
 fi;
 
+
 echo "Settings: "$settings
-jobname=train.$classifier.win$window_size
+jobname=gridsearchCV.$classifier.nrc$nr_contacts.nrnc$nr_noncontacts
 bsub -W 48:00 -q mpi -m "mpi mpi2 mpi3_all hh sa" -n 8 -R span[hosts=1] -a openmp  -J $jobname -o job-$jobname-%J.out python $CONTACT_PREDICTION_PATH/contact_prior/grid_search_RF.py $settings
 

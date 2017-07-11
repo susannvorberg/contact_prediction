@@ -1,24 +1,7 @@
 #!/usr/bin/env python
 import TrainContactPriorModel as CPM
 import argparse
-
-
-#command
-#python /home/vorberg/Documernts/contact_prediction/contact_prior/grid_search_RF.py
-# /home/vorberg/work/data/benchmarkset_cathV4.1/dataset/dataset_properties/
-# /home/vorberg/work/data/benchmarkset_cathV4.1/psicov/
-# /home/vorberg/work/data/benchmarkset_cathV4.1/pdb_renum_combs/
-# /home/vorberg/work/data/benchmarkset_cathV4.1/psipred/hhfilter_results_n5e01/
-# /home/vorberg/work/data/benchmarkset_cathV4.1/netsurfp/
-# /home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/local_methods/mi_pc/
-# /home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/local_methods/omes_fodoraldrich/
-# /home/vorberg/work/data/bayesian_framework/contact_prior/random_forest/new_pipeline_5folds/gridsearch/
-# /home/vorberg/work/plots/bayesian_framework/contact_prior/random_forest/new_pipeline_5folds/gridsearch/
-# --nr_contacts 10000 --nr_non_contacts 20000 --window_size 3 --seq_separation 12
-# --contact_threshold 8 --non_contact_threshold 20
-# --max_nr_contacts 100 --max_nr_noncontacts 500
-## --random-forest
-## --xgboost
+import sys
 
 
 def parse_args():
@@ -47,10 +30,10 @@ def parse_args():
     dataset.add_argument("--nr_contacts",      type=int, default=10000, help="contacts: pairs with Cb < X")
     dataset.add_argument("--nr_non_contacts",  type=int, default=20000, help="non-contacts: pairs with Cb > X")
     dataset.add_argument("--braw_dir",       type=str, default=None,     help="path to braw files")
-    dataset.add_argument("--window_size",    type=int, default=3,        help="compute certain features over a window")
+    dataset.add_argument("--window_size",    type=int, default=5,        help="compute certain features over a window")
     dataset.add_argument("--seq_separation",         type=int, default=12,    help="minimal separation for pairs in sequence ")
     dataset.add_argument("--contact_threshold",      type=int, default=8,    help="contacts: pairs with Cb < X")
-    dataset.add_argument("--non_contact_threshold",  type=int, default=25,   help="non-contacts: pairs with Cb > X")
+    dataset.add_argument("--non_contact_threshold",  type=int, default=20,   help="non-contacts: pairs with Cb > X")
     dataset.add_argument("--max_nr_contacts",           type=int, default=100,    help="max nr contacts per protein")
     dataset.add_argument("--max_nr_noncontacts",        type=int, default=500,   help="max nr non-contact per protein")
 
@@ -115,30 +98,32 @@ def main():
     contact_prior_model.specify_dataset_ids(property_files_dir)
     contact_prior_model.specify_paths_to_data(alignment_dir, pdb_dir, psipred_dir, netsurfp_dir, mi_dir, omes_dir, braw_dir)
     contact_prior_model.specify_dataset_properties(
-        sequence_separation=seq_separation,  contact_threshold=contact_threshold,
-        non_contact_threshold=non_contact_threshold, window_size=window_size,
-        nr_contacts_train=nr_contacts, nr_non_contacts_train=nr_non_contacts,
-        nr_contacts_test = 1000, nr_non_contacts_test = 20000,
+        sequence_separation=seq_separation, window_size=window_size,
         max_nr_contacts_per_protein = max_nr_contacts,  max_nr_non_contacts_per_protein=max_nr_noncontacts
     )
 
     #setup the training and test set
-    contact_prior_model.generate_data()
-
-    ###for testing: less parameters
-    # contact_prior_model.print_param_grid()
-    # param_grid={'n_estimators': [100],
-    #             "criterion": ['gini', 'entropy']
-    #             }
-    # contact_prior_model.update_param_grid(param_grid)
+    contact_prior_model.generate_training_data(
+        contact_threshold=contact_threshold, non_contact_threshold=non_contact_threshold,
+        nr_contacts_train=nr_contacts, nr_non_contacts_train=nr_non_contacts)
 
 
-    ###for testing: less parameters
-    # contact_prior_model.print_param_grid()
-    # param_grid={'max_depth': [2, 4],
-    #             'n_estimators': [100, 1000]
-    #             }
-    # contact_prior_model.update_param_grid(param_grid)
+    # ##for testing: less parameters
+    # if est == "random_forest":
+    #     contact_prior_model.print_param_grid()
+    #     param_grid={'n_estimators': [100],
+    #                 "criterion": ['gini', 'entropy']
+    #                 }
+    #     contact_prior_model.update_param_grid(param_grid)
+    #
+    #
+    # ##for testing: less parameters
+    # if est == "xgboost":
+    #     contact_prior_model.print_param_grid()
+    #     param_grid={'max_depth': [2, 4],
+    #                 'n_estimators': [100, 1000]
+    #                 }
+    #     contact_prior_model.update_param_grid(param_grid)
 
 
     contact_prior_model.print_param_grid()
@@ -146,7 +131,25 @@ def main():
     #do grid search on predefined parameter grid
     contact_prior_model.gridsearch_modelhyperparameters(plot_dir, parameter_dir)
 
+    #evaluate the model on test data
+    print("\nCompute features for testset with contacts:noncontact ratio 1:20 ...")
+    sys.stdout.flush()
+    contact_prior_model.generate_test_data(
+        nr_contacts_test=1000, nr_non_contacts_test=20000, nr_proteins_test=None,
+        contact_threshold_test=8, non_contact_threshold_test=8)
+    print("\nEvaluate model on testset ...")
+    sys.stdout.flush()
+    contact_prior_model.evaluate_model(plot_dir)
 
+    # evaluate the model on whole protein test set
+    print("\nCompute features for testset from whole proteins...")
+    sys.stdout.flush()
+    contact_prior_model.generate_test_data(
+        nr_contacts_test=0, nr_non_contacts_test=0, nr_proteins_test=50,
+        contact_threshold_test=8, non_contact_threshold_test=8)
+    print("\nEvaluate model on testset ...")
+    sys.stdout.flush()
+    contact_prior_model.evaluate_model(plot_dir)
 
 if __name__ == '__main__':
     main()
