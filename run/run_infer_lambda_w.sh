@@ -30,17 +30,17 @@ echo "data dir: "$DATA
 echo "plot dir: "$PLOTS
 
 #------------------------------------------------------------------------------
-# ex call
+# example call
 #------------------------------------------------------------------------------
 
-#bsub -W 48:00 -q mpi -m "mpi mpi2 mpi3_all hh sa" -n 8 -R span[hosts=1] -a openmp  -J infer_lambda_w -o job-infer_lambda_w-%J.out bash run_infer_lambda_w.sh ccmpredpy_pcd_gd 1
+#bash ~/opt/contactprediction/contact_prediction/run/run_infer_lambda_w.sh ccmpredpy_pcd_gd 1
 
 
 #------------------------------------------------------------------------------
 # start script
 #------------------------------------------------------------------------------
 
-for nrcontacts in 100 1000 10000 100000;
+for nrcontacts in 100 1000 10000 15000 30000;
 do
 
 
@@ -104,6 +104,8 @@ do
     settings=$settings" --debug_mode 0"
 
 
-    python $CONTACT_PREDICTION_PATH/coupling_prior/infer_hyperparameters_for_coupling_prior.py $settings > $PARAM_DIR"/infer_lambda_prior.log"
+    jobname=lambdaw.$method.$nrcontacts
+    bsub -W 48:00 -q mpi -m "mpi mpi2 mpi3_all hh sa" -n 8 -R span[hosts=1] -a openmp  -J $jobname -o job-$jobname-%J.out python $CONTACT_PREDICTION_PATH/coupling_prior/infer_hyperparameters_for_coupling_prior.py $settings
+    ##> $PARAM_DIR"/infer_lambda_prior.log" 2>&1
 
 done

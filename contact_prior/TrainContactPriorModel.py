@@ -12,6 +12,7 @@ import utils.plot_utils as plot
 import json
 import sklearn.metrics
 from sklearn.externals import joblib
+import utils.benchmark_utils as bu
 
 class TrainContactPriorModel():
     """
@@ -48,10 +49,17 @@ class TrainContactPriorModel():
         self.window_size = 5
         self.nr_contacts_train  = 1000
         self.nr_non_contacts_train = 5000
-        self.nr_contacts_test  = 100
-        self.nr_non_contacts_test = self.nr_contacts_test * 20 #test on real world scenario
         self.max_nr_contacts_per_protein = 100
         self.max_nr_non_contacts_per_protein = 500
+
+        #test dataset properties
+        self.contact_threshold = 8
+        self.non_contact_threshold = 8 #to simlate real proteins
+        self.nr_contacts_test  = 100
+        self.nr_non_contacts_test = self.nr_contacts_test * 20 #test on real world scenario
+        self.nr_proteins_test = None #alternatively: take all contacts/noncontacts from this many proteins
+
+
 
         self.cores = 8
 
@@ -107,11 +115,14 @@ class TrainContactPriorModel():
         for param in ["self.sequence_separation",
                       "self.contact_threshold",
                       "self.non_contact_threshold",
+                      "self.contact_threshold_test",
+                      "self.non_contact_threshold_test",
                       "self.window_size",
                       "self.nr_contacts_train",
                       "self.nr_non_contacts_train",
                       "self.nr_contacts_test",
                       "self.nr_non_contacts_test",
+                      "self.nr_proteins_test",
                       "self.max_nr_contacts_per_protein",
                       "self.max_nr_non_contacts_per_protein"]:
             repr_string += "{0:{1}} {2}\n".format(param.split(".")[1], '36', eval(param))
@@ -120,7 +131,9 @@ class TrainContactPriorModel():
         return repr_string
 
 
-    def __get_features_for_protein(self, alignment_file, pdb_file, psipred_file, netsurfp_file, mi_file, omes_file, braw_file):
+    def __get_features_for_protein(self, alignment_file, pdb_file, psipred_file, netsurfp_file, mi_file, omes_file, braw_file,
+                                   contact_threshold, non_contact_threshold ,
+                                   max_nr_contacts_per_protein, max_nr_non_contacts_per_protein):
 
         # protein="2ynaA01"
         # alignment_file="/home/vorberg/work/data/benchmarkset_cathV4.1/psicov/" + protein + ".filt.psc"
@@ -141,9 +154,9 @@ class TrainContactPriorModel():
         protein = os.path.basename(alignment_file).split(".")[0]
         print("    compute features for protein {0}".format(protein))
 
-        AF = AlignmentFeatures(alignment_file, pdb_file, self.sequence_separation, self.contact_threshold,
-                               self.non_contact_threshold, self.max_nr_contacts_per_protein,
-                               self.max_nr_non_contacts_per_protein
+        AF = AlignmentFeatures(alignment_file, pdb_file, self.sequence_separation,
+                               contact_threshold, non_contact_threshold,
+                               max_nr_contacts_per_protein, max_nr_non_contacts_per_protein
                                )
         AF.compute_mean_physico_chem_properties()
         AF.compute_correlation_physico_chem_properties()
@@ -152,7 +165,7 @@ class TrainContactPriorModel():
         AF.compute_pssm()
         AF.compute_mean_pairwise_potentials()
         AF.compute_omes(omes_file)
-        AF.compute_contact_prior_given_L(contact_thr=self.contact_threshold, seqsep=self.sequence_separation)
+        AF.compute_contact_prior_given_L(contact_thr=contact_threshold, seqsep=self.sequence_separation)
         AF.compute_psipred_features(psipred_file)
         AF.compute_netsurfp_features(netsurfp_file)
         if braw_file:
@@ -162,7 +175,7 @@ class TrainContactPriorModel():
         #print(AF)
         return(AF.get_feature_matrix())
 
-    def __generate_dataset(self, nr_contacts_per_dataset, nr_non_contacts_per_dataset, dataset_ids):
+    def __generate_dataset(self, nr_contacts, nr_non_contacts, nr_proteins, dataset_ids, contact_threshold, non_contact_threshold):
 
         feature_df  = pd.DataFrame()
         class_df    = pd.DataFrame()
@@ -171,15 +184,35 @@ class TrainContactPriorModel():
             print("You need to specify paths to data first with specify_paths_to_data()!")
             exit()
 
+        # generate data for a fixed number of contacts/noncontacts
+        # or
+        # generate data from fixed nr of proteins
+        if nr_proteins is not None:
+            nr_contacts_per_dataset = np.inf
+            nr_non_contacts_per_dataset = np.inf
+            max_nr_contacts_protein = None
+            max_nr_noncontacts_protein = None
+            nr_proteins_per_dataset = nr_proteins / len(dataset_ids)
+        else:
+            nr_contacts_per_dataset = nr_contacts / len(dataset_ids)
+            nr_non_contacts_per_dataset = nr_non_contacts / len(dataset_ids)
+            max_nr_contacts_protein = self.max_nr_contacts_per_protein
+            max_nr_noncontacts_protein = self.max_nr_non_contacts_per_protein
+
+
+
         #iterate over proteins of dataset 1-$x_fold_crossvalidation:
         for dataset_id in dataset_ids:
             feature_df_dataset_id  = pd.DataFrame()
             class_df_dataset_id    = pd.DataFrame()
             current_nr_contacts = 0
             current_nr_noncontacts = 0
+            if nr_proteins is None:
+                nr_proteins_per_dataset = len(self.dataset_properties.query('dataset_id == '+str(dataset_id)))
             print("Compute features for dataset {0}".format(dataset_id))
 
-            for protein in self.dataset_properties.query('dataset_id == '+str(dataset_id))['protein']:
+
+            for protein in self.dataset_properties.query('dataset_id == '+str(dataset_id))['protein'].values[:nr_proteins_per_dataset]:
                 alignment_file = self.alignment_dir + "/" + protein.strip() + ".filt.psc"
                 pdb_file = self.pdb_dir + "/" + protein.strip() + ".pdb"
                 psipred_file = self.psipred_dir + "/" + protein.strip() + ".filt.withss.a3m.ss2"
@@ -218,6 +251,8 @@ class TrainContactPriorModel():
 
                 feature_df_protein, class_df_protein = self.__get_features_for_protein(
                     alignment_file, pdb_file, psipred_file, netsurfp_file, mi_file, omes_file, braw_file,
+                    contact_threshold, non_contact_threshold,
+                    max_nr_contacts_protein, max_nr_noncontacts_protein
                 )
                 if len(class_df_protein) == 0:
                     continue
@@ -241,11 +276,21 @@ class TrainContactPriorModel():
                 current_nr_contacts = class_df_dataset_id['contact'].sum()
                 current_nr_noncontacts = class_df_dataset_id['nocontact'].sum()
 
-                print("    dataset {0} #contacts: {1}/{2}  #non-contacts: {3}/{4}".format(dataset_id, current_nr_contacts, nr_contacts_per_dataset, current_nr_noncontacts, nr_non_contacts_per_dataset))
+                if nr_proteins is None:
+                    print("    dataset {0} #contacts: {1}/{2}  #non-contacts: {3}/{4}".format(
+                        dataset_id, current_nr_contacts, nr_contacts_per_dataset,
+                        current_nr_noncontacts, nr_non_contacts_per_dataset))
+                else:
+                    print("    dataset {0} #contacts: {1}  #non-contacts: {2}".format(
+                        dataset_id, current_nr_contacts,current_nr_noncontacts))
+
                 if current_nr_contacts >= nr_contacts_per_dataset and current_nr_noncontacts >= nr_non_contacts_per_dataset:
-                    feature_df  = feature_df.append(feature_df_dataset_id, ignore_index=True)
-                    class_df    = class_df.append(class_df_dataset_id, ignore_index=True)
                     break
+
+            #Finished iterating over current dataset: append to
+            feature_df = feature_df.append(feature_df_dataset_id, ignore_index=True)
+            class_df = class_df.append(class_df_dataset_id, ignore_index=True)
+
 
         self.features = self.feature_df_train.columns.values
         return feature_df, class_df
@@ -261,7 +306,7 @@ class TrainContactPriorModel():
         for i in range(1, n_top + 1):
             candidates = np.flatnonzero(results['rank_test_score'] == i)
             for candidate in candidates:
-                print("Model with rank: {0}".format(i))
+                print("\nModel with rank: {0}".format(i))
                 print("Mean validation score: {0:.3f} (std: {1:.3f})".format(
                     results['mean_test_score'][candidate],
                     results['std_test_score'][candidate]))
@@ -293,7 +338,7 @@ class TrainContactPriorModel():
     def __plot_feature_importance(self, plot_dir):
 
         if self.clf is None:
-            print("You first need to learn a model with train_model()")
+            print("You first need to learn a model with train_model() before plotting feature importances!")
             exit()
 
         #plot important features
@@ -310,26 +355,78 @@ class TrainContactPriorModel():
             plot_out=plot_file
         )
 
-    def __plot_precision_vs_recall(self, plot_dir):
+    def __plot_precision_vs_rank(self, plot_dir):
 
         if self.clf is None:
-            print("You first need to learn a model with train_model()")
+            print("You first need to learn a model with train_model() before plotting precision vs recall!")
             exit()
 
         if len(self.class_df_test) == 0:
-            print("you need to generate a dataset first with generate_data()")
+            print("You need to generate a dataset with generate_data() before plotting precision vs recall!")
             exit()
+
+        # define general proportions of protein length
+        ranks = np.linspace(1, 0, 20, endpoint=False)[::-1]
+        precision_rank = {'rank': ranks}
+
+        proteins = np.unique(self.class_df_test['protein'].values)
+
+        precision_rank[self.model] = {}
+        precision_rank[self.model]['size'] = len(proteins)
+        precision_rank[self.model]['precision_per_protein'] = []
+
+        for protein in proteins:
+            protein_features = self.feature_df_test.iloc[self.class_df_test.query('protein == @protein').index.values]
+            true_class = self.class_df_test.query('protein == @protein')['contact'].values
+            pred_prob = self.clf.predict_proba(protein_features.as_matrix()).transpose()[1]
+            prec, _, _ = bu.compute_precision_recall(true_class, pred_prob)
+
+            L = protein_features['L'].values[0]
+            ranks_L = np.round(L * ranks).astype(int)
+            ranks_L = np.array([rank for rank in ranks_L if rank < len(protein_features)])
+
+            precision_per_protein = [np.nan] * len(ranks)
+            for rank_id, rank in enumerate(ranks_L):
+                precision_per_protein[rank_id] = np.array(prec)[rank]
+            precision_rank[self.model]['precision_per_protein'].append(precision_per_protein)
+
+        precision_rank[self.model]['mean'] = np.nanmean(precision_rank[self.model]['precision_per_protein'], axis=0)
+
+        # plot
+        title = 'Precision (PPV) vs rank (dependent on L) <br>'
+        title += "{0} classifier <br>".format(self.model)
+        title += "train: #contacts: {0} #non-contacts: {1} test on {2} proteins".format(self.class_df_train['contact'].sum(), self.class_df_train['nocontact'].sum(), len(proteins))
+
+        yaxistitle = 'Mean Precision over Proteins'
+
+        plot_file = plot_dir + "/precision_vs_rank_" + self.model
+        for param in self.param_grid[self.model].keys():
+            plot_file += "_" + param.replace("_", "") + str(self.clf.get_params()[param])
+        plot_file += ".html"
+
+        plot.plot_evaluationmeasure_vs_rank_plotly(precision_rank, title, yaxistitle, plot_file)
+
+    def __plot_precision_vs_recall(self, plot_dir):
+
+        if self.clf is None:
+            print("You first need to learn a model with train_model() before plotting precision vs recall!")
+            exit()
+
+        if len(self.class_df_test) == 0:
+            print("You need to generate a dataset with generate_data() before plotting precision vs recall!")
+            exit()
+
+        # Compute evaluation metrics
+        true_class = self.class_df_test['contact'].values
 
         # predict test data
         pred_prob = self.clf.predict_proba(self.feature_df_test.as_matrix()).transpose()[1]
         pred_class = self.clf.predict(self.feature_df_test.as_matrix())
 
-
-        # Compute evaluation metrics
-        true_class = self.class_df_test['contact'].values
-        precision = sklearn.metrics.precision_score(true_class, pred_prob, pos_label=1, average='binary')
+        precision = sklearn.metrics.precision_score(true_class, pred_class, pos_label=1, average='binary')
         f1 = sklearn.metrics.f1_score(true_class, pred_class, average='binary', pos_label=1)
         prec, recall, thresholds = sklearn.metrics.precision_recall_curve(true_class, pred_prob, pos_label=1)
+
         print(sklearn.metrics.classification_report(true_class, pred_class))
 
         precision_recall_dict = {}
@@ -466,36 +563,36 @@ class TrainContactPriorModel():
             properties.columns = ['protein', 'resol', 'CATH-topology', 'domlength', 'alilength', 'dataset_id']
             self.dataset_properties = self.dataset_properties.append(properties, ignore_index=True)
 
-    def specify_dataset_properties(self, sequence_separation=12, contact_threshold=8, non_contact_threshold=20,
-                                   window_size=5,
-                                   nr_contacts_train=1000, nr_non_contacts_train=2000, nr_contacts_test=100,
-                                   nr_non_contacts_test=200, max_nr_contacts_per_protein=100,
-                                   max_nr_non_contacts_per_protein=500
-                                   ):
+    def specify_dataset_properties(self, sequence_separation=12, window_size=5,
+                                   max_nr_contacts_per_protein=100, max_nr_non_contacts_per_protein=500):
 
         self.sequence_separation = sequence_separation
-        self.contact_threshold = contact_threshold
-        self.non_contact_threshold = non_contact_threshold
         self.window_size = window_size
-        self.nr_contacts_train = nr_contacts_train
-        self.nr_non_contacts_train = nr_non_contacts_train
-        self.nr_contacts_test = nr_contacts_test
-        self.nr_non_contacts_test = nr_non_contacts_test
         self.max_nr_contacts_per_protein = max_nr_contacts_per_protein
         self.max_nr_non_contacts_per_protein = max_nr_non_contacts_per_protein
 
-    def generate_data(self):
-        nr_contacts_per_dataset = self.nr_contacts_train / len(self.dataset_ids_training)
-        nr_non_contacts_per_dataset = self.nr_non_contacts_train / len(self.dataset_ids_training)
+    def generate_training_data(self, nr_contacts_train=1000, nr_non_contacts_train=2000, contact_threshold=8, non_contact_threshold=20):
 
+        self.contact_threshold = contact_threshold
+        self.non_contact_threshold = non_contact_threshold
+        self.nr_contacts_train = nr_contacts_train
+        self.nr_non_contacts_train = nr_non_contacts_train
+
+        print("\n Generate training data...")
         self.feature_df_train, self.class_df_train = self.__generate_dataset(
-            nr_contacts_per_dataset, nr_non_contacts_per_dataset, self.dataset_ids_training)
+            self.nr_contacts_train, self.nr_non_contacts_train, None, self.dataset_ids_training, self.contact_threshold, self.non_contact_threshold)
 
-        nr_contacts_per_dataset = self.nr_contacts_test / len(self.dataset_ids_crossval)
-        nr_non_contacts_per_dataset = self.nr_non_contacts_test / len(self.dataset_ids_crossval)
+    def generate_test_data(self, nr_contacts_test=1000, nr_non_contacts_test=20000, nr_proteins_test=None, contact_threshold_test=8, non_contact_threshold_test=8):
 
+        self.nr_contacts_test = nr_contacts_test
+        self.nr_non_contacts_test = nr_non_contacts_test
+        self.nr_proteins_test = nr_proteins_test
+        self.contact_threshold_test = contact_threshold_test
+        self.non_contact_threshold_test = non_contact_threshold_test
+
+        print("\n Generate test data...")
         self.feature_df_test, self.class_df_test = self.__generate_dataset(
-            nr_contacts_per_dataset, nr_non_contacts_per_dataset, self.dataset_ids_crossval)
+            self.nr_contacts_test, self.nr_non_contacts_test, self.nr_proteins_test, self.dataset_ids_crossval, self.contact_threshold_test, self.non_contact_threshold_test)
 
     def gridsearch_modelhyperparameters(self, plot_dir, param_dir):
 
@@ -511,7 +608,7 @@ class TrainContactPriorModel():
             estimator=self.estimator[self.model],
             param_grid = self.param_grid[self.model],
             cv=cv.split(),
-            scoring=sklearn.metrics.precision_score, #precision of class=contact
+            scoring="precision", #precision of class=contact
             verbose=1,
             refit=True #refit the best estimator with the entire dataset
         )
@@ -523,13 +620,12 @@ class TrainContactPriorModel():
         self.__write_gridsearchcv_metadata(param_dir)
 
         #best model that has been retrained on whole data using refit=True
+        print("\nBest estimator:")
+        print self.clf_gridcv.best_estimator_
         self.clf = self.clf_gridcv.best_estimator_
 
         #extract feature importances from classifier model
         self._extract_feature_importances()
-
-        #evaluate this model
-        self.evaluate_model(plot_dir)
 
 
     def train_model(self, parameters, param_dir, save_model=False):
@@ -548,16 +644,18 @@ class TrainContactPriorModel():
         if save_model:
             self._save_model(parameters, param_dir)
 
-
-
-
     def evaluate_model(self, plot_dir):
 
         #plot important features
         self.__plot_feature_importance(plot_dir)
 
-        #plot precision vs recall
-        self.__plot_precision_vs_recall(plot_dir)
+
+        if self.nr_proteins_test is not None:
+            # evaluate protein-wise
+            self.__plot_precision_vs_rank(plot_dir)
+        else:
+            #plot precision vs recall
+            self.__plot_precision_vs_recall(plot_dir)
 
     def get_param_grid(self):
         return self.param_grid[self.model]
