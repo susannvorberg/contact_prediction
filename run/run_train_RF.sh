@@ -26,8 +26,8 @@ echo "using " $OMP_NUM_THREADS "threads for omp parallelization"
 #------------------------------------------------------------------------------
 
 classifier=$1
-nr_contacts=50000
-nr_noncontacts=250000
+nr_contacts=20000
+nr_noncontacts=100000
 
 #------------------------------------------------------------------------------
 # example call
@@ -206,3 +206,10 @@ done
 #    bsub -W 48:00 -q mpi -m "mpi mpi2 mpi3_all hh sa" -n 8 -R span[hosts=1] -a openmp  -J $jobname -o job-$jobname-%J.out python $CONTACT_PREDICTION_PATH/contact_prior/train_RF.py $settings
 #
 #done
+
+
+
+
+
+
+

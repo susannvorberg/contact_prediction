@@ -2,7 +2,7 @@
 
 import contact_prior.TrainContactPriorModel as CPM
 import argparse
-
+import sys
 
 def parse_args():
 
@@ -28,7 +28,7 @@ def parse_args():
     dataset.add_argument("--window_size",    type=int, default=3,        help="compute certain features over a window")
     dataset.add_argument("--seq_separation",         type=int, default=12,    help="minimal separation for pairs in sequence ")
     dataset.add_argument("--contact_threshold",      type=int, default=8,    help="contacts: pairs with Cb < X")
-    dataset.add_argument("--non_contact_threshold",  type=int, default=25,   help="non-contacts: pairs with Cb > X")
+    dataset.add_argument("--non_contact_threshold",  type=int, default=20,   help="non-contacts: pairs with Cb > X")
     dataset.add_argument("--max_nr_contacts",           type=int, default=100,    help="max nr contacts per protein")
     dataset.add_argument("--max_nr_noncontacts",        type=int, default=500,   help="max nr non-contact per protein")
 
@@ -133,23 +133,20 @@ def main():
 
     contact_prior_model = CPM.TrainContactPriorModel(est)
 
-    #test on a realistic setting of 1 contact : 20 non_contacts
-    nr_contacts_test = 1000
-    nr_non_contacts_test = 20000
-
     #specifu all settings
     contact_prior_model.specify_dataset_ids(property_files_dir)
     contact_prior_model.specify_paths_to_data(alignment_dir, pdb_dir, psipred_dir, netsurfp_dir, mi_dir, omes_dir, braw_dir)
     contact_prior_model.specify_dataset_properties(
-        sequence_separation=seq_separation,  contact_threshold=contact_threshold,
-        non_contact_threshold=non_contact_threshold, window_size=window_size,
-        nr_contacts_train=nr_contacts, nr_non_contacts_train=nr_non_contacts,
-        nr_contacts_test = nr_contacts_test, nr_non_contacts_test = nr_non_contacts_test,
-        max_nr_contacts_per_protein = max_nr_contacts,  max_nr_non_contacts_per_protein=max_nr_noncontacts
+        sequence_separation=seq_separation, window_size=window_size,
+        max_nr_contacts_per_protein=max_nr_contacts, max_nr_non_contacts_per_protein=max_nr_noncontacts
     )
 
-    #setup the training and test set
-    contact_prior_model.generate_data()
+    # setup the training and test set
+    print("\nCompute features for trainingset...")
+    sys.stdout.flush()
+    contact_prior_model.generate_training_data(
+        contact_threshold=contact_threshold, non_contact_threshold=non_contact_threshold,
+        nr_contacts_train=nr_contacts, nr_non_contacts_train=nr_non_contacts)
 
 
     parameters={
@@ -172,13 +169,30 @@ def main():
     }
 
     #learn a model
+    print("\nTrain model...")
+    sys.stdout.flush()
     contact_prior_model.train_model(parameters[est], parameter_dir, save_model=True)
 
-    #evaluate the model
+
+    #evaluate the model on test data
+    print("\nCompute features for testset with contacts:noncontact ratio 1:20 ...")
+    sys.stdout.flush()
+    contact_prior_model.generate_test_data(
+        nr_contacts_test=1000, nr_non_contacts_test=20000, nr_proteins_test=None,
+        contact_threshold_test=8, non_contact_threshold_test=8)
+    print("\nEvaluate model on testset ...")
+    sys.stdout.flush()
     contact_prior_model.evaluate_model(plot_dir)
 
-
-
+    # evaluate the model on whole protein test set
+    print("\nCompute features for testset from whole proteins...")
+    sys.stdout.flush()
+    contact_prior_model.generate_test_data(
+        nr_contacts_test=0, nr_non_contacts_test=0, nr_proteins_test=50,
+        contact_threshold_test=8, non_contact_threshold_test=8)
+    print("\nEvaluate model on testset ...")
+    sys.stdout.flush()
+    contact_prior_model.evaluate_model(plot_dir)
 
 
 if __name__ == '__main__':
