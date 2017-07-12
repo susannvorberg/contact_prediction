@@ -7,7 +7,7 @@ import sys
 import coupling_data
 from likelihood import LikelihoodFct
 from optimizer import Optimizer
-
+from parameters import Parameters
 
 def parse_args():
 
@@ -177,17 +177,20 @@ def main():
     data.print_dataset_info()
 
 
+    #initialize the parametes
+    parameters = Parameters(parameter_dir)
+    parameters.initialise_parameters(nr_components, sigma, prec_wrt_L, fixed_parameters)
+
+
     #initialise parameters randomly around origin
-    likelihood = LikelihoodFct(parameter_dir, plot_dir)
+    likelihood = LikelihoodFct(plot_dir)
     likelihood.set_debug_mode(debug_mode)
-    likelihood.set_nr_components(nr_components)
     likelihood.set_nr_threads_per_protein(nr_threads)
     likelihood.set_regularizer_diagonal_precMat(reg_coeff_diagPrec)
     likelihood.set_regularizer_mu(reg_coeff_mu)
-    likelihood.set_sigma(sigma, prec_wrt_L)
-    likelihood.set_fixed_parameters(fixed_parameters)
+    likelihood.set_parameters(parameters)
     likelihood.set_data(data)
-    likelihood.initialise_parameters(nr_components=nr_components)
+
 
 
     #start optimization of likelihood with data

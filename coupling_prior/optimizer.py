@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import scipy.optimize
-
+import json
 
 class Optimizer():
     """
@@ -43,13 +43,25 @@ class Optimizer():
     def set_debug_mode(self, debug_mode):
         self.debug_mode = int(debug_mode)
 
+    def write_res(self, settings, res, settings_file):
+
+        settings['result']={}
+        settings['result']['f_value'] = res.fun
+        settings['result']['nr_iterations'] = res.nit
+        settings['result']['nr_evaluations'] = res.nfev
+        settings['result']['success'] = res.success
+        settings['result']['opt_message'] = res.message
+
+        with open(settings_file, 'w') as fp:
+            json.dump(settings, fp)
+
     def minimize(self):
 
         self.likelihood.debug_mode = self.debug_mode
 
         res = scipy.optimize.minimize(
             self.likelihood.f_df,
-            self.likelihood.get_parameters_linear(),
+            self.likelihood.parameters.get_parameters_linear(),
             method=self.method,
             jac=True,
             options={
@@ -59,5 +71,9 @@ class Optimizer():
         )
         print(res)
 
-        parameters_struct = self.likelihood.linear_to_structured(res.x)
+        parameters_transformed_back = self.likelihood.parameters.transform_parameters(weights=True, mean=False, prec=True, back=True)
+
+        ##### save parameters and settings
+        self.likelihood.parameters.write_parameters(parameters_transformed_back)
+        self.write_res(self.likelihood.get_settings(), res, self.likelihood.settings_file)
 

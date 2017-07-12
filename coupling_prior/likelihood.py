@@ -19,7 +19,7 @@ class LikelihoodFct():
 
     """
 
-    def __init__(self, parameter_dir, plot_dir ):
+    def __init__(self, plot_dir ):
 
         self.dataset = None
         self.training_data  = {}
@@ -28,29 +28,23 @@ class LikelihoodFct():
         self.batch_nr = 1
 
         #parameters
-        self.parameters_structured          = {}
-        self.parameters_linear              = np.array([])
+        self.parameters          = None
 
         #path to output files
-        self.parameter_dir          = str(parameter_dir)
-        self.parameter_file         = self.parameter_dir + "/parameters"
-        self.settings_file          = self.parameter_file + ".settings"
-        self.optimization_log_file  = self.parameter_file + ".log"
+        self.settings_file          = None
+        self.optimization_log_file  = None
         self.plot_dir               = str(plot_dir)
         self.plot_name              = self.plot_dir + "/optimization_monitor_plot.html"
 
-        #parameter settings
-        self.sigma                          = 'diagonal'
-        self.nr_components                  = 4
+        #regularization settings
         self.regularizer_mu                 = 0 #set to 0 to ignore regularization
         self.regularizer_diagonal_precMat   = 0 #set to 0 to ignore regularization
-        self.hessian_pseudocount            = 0 #only for debugging
-        self.fixed_parameters               = ['weight_bg_0', 'weight_contact_0', 'mu_0', 'prec_0']
-        self.prec_wrt_L                     = False
+
 
         # settings
         self.debug_mode = 0
         self.threads_per_protein = 1  # no parallelized by default
+        self.hessian_pseudocount = 0  # only for debugging
 
 
     def __repr__(self):
@@ -59,29 +53,25 @@ class LikelihoodFct():
         str = "\nLikelihood Function and Gradients:\n"
 
         str += "\nPath to ouput files: \n"
-        for param in ["self.parameter_file",
-                      "self.plot_name",
+        for param in ["self.plot_name",
                       "self.settings_file",
                       "self.optimization_log_file"]:
             str += "{0:{1}} {2}\n".format(param.split(".")[1], '36', eval(param))
 
 
-        str += "\nParameter settings: \n"
-        for param in ["self.sigma",
-                      "self.nr_components",
-                      "self.regularizer_mu",
-                      "self.regularizer_diagonal_precMat",
-                      "self.hessian_pseudocount",
-                      "self.fixed_parameters",
-                      "self.prec_wrt_L"  ]:
+        str += "\nRegularization settings: \n"
+        for param in ["self.regularizer_mu",
+                      "self.regularizer_diagonal_precMat"]:
             str += "{0:{1}} {2}\n".format(param.split(".")[1], '36', eval(param))
 
 
         str += "\nComputation settings: \n"
         str += "{0:{1}} {2}\n".format("debug_mode", '36', self.debug_mode)
         str += "{0:{1}} {2}\n".format("threads_per_protein", '36', self.threads_per_protein)
+        str += "{0:{1}} {2}\n".format("hessian_pseudocount", '36', self.hessian_pseudocount)
 
 
+        str += self.parameters.__repr__()
 
         return(str)
 
@@ -115,20 +105,18 @@ class LikelihoodFct():
         settings = {}
         settings['debug_mode'] = self.debug_mode
         settings['threads_per_protein'] = self.threads_per_protein
-        settings['fixed_parameters'] = self.fixed_parameters
         settings['regularizer_diagonal_precMat'] = self.regularizer_diagonal_precMat
         settings['regularizer_mu'] = self.regularizer_mu
-        settings['nr_components'] = self.nr_components
-        settings['sigma'] = self.sigma
-        settings['prec_wrt_L'] = self.prec_wrt_L
-
+        settings['hessian_pseudocount'] = self.hessian_pseudocount
         settings['plot_name'] = self.plot_name
         settings['optimization_log_file'] = self.optimization_log_file
         settings['settings_file'] = self.settings_file
-        settings['parameter_file'] = self.parameter_file
 
         if self.dataset is not None:
             settings.update(self.dataset.get_settings())
+
+        if self.parameters is not None:
+            settings.update(self.parameters.get_settings())
 
         return(settings)
 
@@ -145,14 +133,17 @@ class LikelihoodFct():
         #if we are dealing with stochastic optimization over mini batches
         self.batch_nr=batch_nr
 
+    def set_parameters(self, parameters):
+        self.parameters = parameters
+
+        self.settings_file = self.parameters.parameter_file + ".settings"
+        self.optimization_log_file = self.parameters.parameter_file + ".log"
+
     def set_debug_mode(self, debug_mode):
         self.debug_mode = int(debug_mode)
 
     def set_nr_threads_per_protein(self, nr_threads):
         self.threads_per_protein = int(nr_threads)
-
-    def set_nr_components(self, nr_components):
-        self.nr_components = int(nr_components)
 
     def set_regularizer_mu(self, reg_coeff_mu):
         self.regularizer_mu = float(reg_coeff_mu)
@@ -160,151 +151,11 @@ class LikelihoodFct():
     def set_regularizer_diagonal_precMat(self, reg_coeff_diagPrec):
         self.regularizer_diagonal_precMat = float(reg_coeff_diagPrec)
 
-    def set_sigma(self, sigma, prec_wrt_L):
-        self.sigma = sigma
-        self.prec_wrt_L = prec_wrt_L
+    def write_settings(self):
 
-        if sigma not in ['diagonal', 'isotrope', 'full']:
-            print("Sigma must be one of: ['diagonal', 'isotrope', 'full'].")
-            self.sigma = 'diagonal'
-
-    def set_fixed_parameters(self, fixed_parameters):
-
-        if not isinstance(fixed_parameters, list):
-            print("fixed_parameters must be a list of parameter names.")
-            self.fixed_parameters = ['weight_bg_0', 'weight_contact_0']
-            return
-
-        self.fixed_parameters = fixed_parameters
-
-
-    def _initialise_parameters_default(self):
-
-        #initialise parameters with a strong component at zero
-        #with equal weights for all components
-        initial_means       = [0]       + [0] * (self.nr_components-1)
-        initial_weights     = [1.0 / self.nr_components] *  self.nr_components
-        initial_precision   = [1/0.0005]  + [1/0.05] * (self.nr_components-1) #precision  = 1/variance
-        if self.prec_wrt_L:
-            initial_precision   = [1/0.05] + [1/0.5]* (self.nr_components-1) #precision  = 1/variance * L
-
-
-        parameters = {}
-
-        for component in range(len(initial_weights)):
-
-            parameters['weight_contact_' + str(component)] = [initial_weights[component]]  ##* 400
-            parameters['weight_bg_' + str(component)] = [initial_weights[component]]  ##* 400
-
-
-            if 'mu_' + str(component) in self.fixed_parameters:
-                parameters['mu_0'] = [initial_means[0]] * 400
-            else:
-                parameters['mu_' + str(component)] = np.random.normal(
-                    loc=initial_means[component],
-                    scale=0.05,
-                    size=400
-                ).tolist()
-
-            if ('prec_' + str(component) in self.fixed_parameters) or self.sigma == 'isotrope':
-                parameters['prec_' + str(component)] = [initial_precision[component]] * 400
-            else:
-                parameters['prec_' + str(component)] = np.random.normal(
-                    loc=initial_precision[component],
-                    scale=initial_precision[component] / 10,
-                    size=400
-                ).tolist()
-
-        return parameters
-
-    def initialise_parameters(self, parameter_file=None,  nr_components=None):
-
-        if parameter_file is not None:
-            self.parameter_file = parameter_file
-        if nr_components is not None:
-            self.nr_components = nr_components
-
-
-        if parameter_file is not None and os.path.exists(parameter_file):
-            print("Initialise parameters from {0}".format(parameter_file))
-            parameters  = coupling_prior_utils.read_parameter_file(parameter_file)
-            self.read_settings(parameter_file + ".settings")
-        else:
-            print("Initialise parameters with default values.")
-            parameters =  self._initialise_parameters_default()
-
-        self.settings_file = self.parameter_file + ".settings"
-        self.optimization_log_file = self.parameter_file + ".log"
-
-        parameters = coupling_prior_utils.transform_parameters(parameters, weights=True, mean=False, prec=True, back=False)
-
-        self.parameters_structured = parameters
-        self.parameters_linear = self.structured_to_linear(parameters)
-
-        self.print_parameters()
-
-    def print_parameters(self):
-
-        for key, value in self.parameters_structured.iteritems():
-            if "weight" in key:
-                print("{0}: \t {1}".format(key, value[0]))
-        for key, value in self.parameters_structured.iteritems():
-            if "mu" in key:
-                print("{0}: \t\t\t min: {1} \t mean: {2} \t max: {3}".format(key,
-                                                                             np.round(np.min(value), decimals=3),
-                                                                             np.round(np.mean(value), decimals=3),
-                                                                             np.round(np.max(value), decimals=3)))
-        for key, value in self.parameters_structured.iteritems():
-            if "prec" in key:
-                print("{0}: \t\t min: {1} \t mean: {2} \t max: {3}".format(key,
-                                                                           np.round(np.min(value), decimals=3),
-                                                                           np.round(np.mean(value), decimals=3),
-                                                                           np.round(np.max(value), decimals=3)))
-
-    def write_parameters_and_settings(self, parameters):
-
-        with open(self.parameter_file, 'w') as fp:
-            json.dump(parameters, fp)
-
-        with open(self.settings_file, 'w') as fp:
-            json.dump(self.get_settings(), fp)
-
-
-    def linear_to_structured(self, parameters_linear):
-
-        sorted_keys = [key for key in sorted(self.parameters_structured.keys()) if key not in self.fixed_parameters]
-
-        parameters_structured = {}
-        for position, key in enumerate(sorted_keys):
-            if 'prec' in key and self.sigma == 'isotrope':
-                parameters_structured[key]  = [parameters_linear[0]] * 400
-                parameters_linear           = parameters_linear[1:]
-            else:
-                parameters_structured[key]  = parameters_linear[:len(self.parameters_structured[key])].tolist()
-                parameters_linear           = parameters_linear[len(self.parameters_structured[key]):]
-
-        for key in self.fixed_parameters:
-            parameters_structured[key] = self.parameters_structured[key]
-
-        return parameters_structured
-
-    def structured_to_linear(self, parameters_structured):
-
-        parameters_linear = []
-        for key, values in sorted(parameters_structured.iteritems()):
-            if key not in self.fixed_parameters:
-                if 'prec' in key and self.sigma == 'isotrope':
-                    parameters_linear.extend([values[0]])
-                else:
-                    parameters_linear.extend(values)
-
-        return np.array(parameters_linear)
-
-    def get_parameters_linear(self):
-        return(self.parameters_linear)
-
-    def get_parameters_structured(self):
-        return(self.parameters_structured)
+        if self.settings_file is not None:
+            with open(self.settings_file, 'w') as fp:
+                json.dump(self.get_settings(), fp)
 
     def regularizer(self):
 
@@ -313,7 +164,7 @@ class LikelihoodFct():
 
         if self.regularizer_mu != 0 or self.regularizer_diagonal_precMat != 0:
 
-            regularizer = libreg.Regularizer(self.parameters_structured,
+            regularizer = libreg.Regularizer(self.parameters.parameters_structured,
                                           self.regularizer_mu,
                                           self.regularizer_diagonal_precMat,
                                           self.debug_mode
@@ -327,7 +178,7 @@ class LikelihoodFct():
                 reg += regularizer.regularizer_diagPrecMat()
 
             # Add gradient of regularizer
-            for parameter in sorted(self.parameters_structured):
+            for parameter in sorted(self.parameters.parameters_structured):
                 comp = int(parameter.split("_")[-1])  # 0 or 1
                 if('mu' in parameter) and self.regularizer_mu != 0:
                     reg_gradients_struct[parameter] = np.array(regularizer.gradient_mu_comp_reg(comp))
@@ -336,7 +187,6 @@ class LikelihoodFct():
 
 
         return(reg, reg_gradients_struct)
-
 
     def compute_f(self, parameter, parameter_name, parameters_structured, parameter_index, LL):
 
@@ -349,7 +199,6 @@ class LikelihoodFct():
         f = LL.get_f()
 
         return f
-
 
     def compute_grad_approx(self, parameter_name, parameters_structured, parameter_index, LL):
 
@@ -375,7 +224,7 @@ class LikelihoodFct():
         print("compute analytical gradient...\n")
         LL = libll.Likelihood_Dataset(
             self.training_data,
-            self.parameters_structured
+            self.parameters.parameters_structured
         )
         LL.set_debug_mode(0)
         LL.set_threads_per_protein(self.threads_per_protein)
@@ -393,13 +242,13 @@ class LikelihoodFct():
 
             for comp in range(self.nr_components):
                 parameter = 'weight_bg_'+str(comp)
-                num_grad_weight= self.compute_grad_approx(parameter, self.parameters_structured, 0, LL)
+                num_grad_weight= self.compute_grad_approx(parameter, self.parameters.parameters_structured, 0, LL)
                 diff = abs(gradients[parameter][0] - num_grad_weight)
                 print("{0:>20} {1:>20} {2:>20} {3:>20}".format(
                     parameter, num_grad_weight, gradients[parameter][0], diff))
 
                 parameter = 'weight_contact_' + str(comp)
-                num_grad_weight = self.compute_grad_approx(parameter, self.parameters_structured, 0, LL)
+                num_grad_weight = self.compute_grad_approx(parameter, self.parameters.parameters_structured, 0, LL)
                 diff = abs(gradients[parameter][0] - num_grad_weight)
                 print("{0:>20} {1:>20} {2:>20} {3:>20}".format(
                     parameter, num_grad_weight, gradients[parameter][0], diff))
@@ -417,7 +266,7 @@ class LikelihoodFct():
                 for parameter_index in parameter_indices:
 
                     parameter = 'mu_'+str(comp)
-                    num_grad_weight= self.compute_grad_approx(parameter, self.parameters_structured, parameter_index, LL)
+                    num_grad_weight= self.compute_grad_approx(parameter, self.parameters.parameters_structured, parameter_index, LL)
                     diff = abs(gradients[parameter][parameter_index] - num_grad_weight)
                     print("{0:>20} {1:>20} {2:>20} {3:>20} {4:>20}".format(
                         parameter, parameter_index, num_grad_weight, gradients[parameter][parameter_index], diff))
@@ -435,21 +284,20 @@ class LikelihoodFct():
                 for parameter_index in parameter_indices:
 
                     parameter = 'prec_'+str(comp)
-                    num_grad_weight= self.compute_grad_approx(parameter, self.parameters_structured, parameter_index, LL)
+                    num_grad_weight= self.compute_grad_approx(parameter, self.parameters.parameters_structured, parameter_index, LL)
                     diff = abs(gradients[parameter][parameter_index] - num_grad_weight)
                     print("{0:>20} {1:>20} {2:>20} {3:>20} {4:>20}".format(
                         parameter, parameter_index, num_grad_weight, gradients[parameter][parameter_index], diff))
 
-
     def f_df(self, parameters_linear):
 
-        self.parameters_linear = np.array(parameters_linear)
-        self.parameters_structured = self.linear_to_structured(parameters_linear)
+        self.parameters.parameters_linear = np.array(parameters_linear)
+        self.parameters.parameters_structured = self.parameters.linear_to_structured(parameters_linear)
 
         LL = libll.Likelihood_Dataset(
             self.training_data,
-            self.parameters_structured,
-            self.prec_wrt_L
+            self.parameters.parameters_structured,
+            self.parameters.prec_wrt_L
         )
 
         LL.set_debug_mode(self.debug_mode)
@@ -464,7 +312,6 @@ class LikelihoodFct():
         f = LL.get_f()
         gradients = LL.get_gradient_dict()
 
-
         # regularization
         reg, reg_gradients = self.regularizer()
         f -= reg
@@ -472,7 +319,7 @@ class LikelihoodFct():
             gradients[key] -= reg_gradients[key]
 
         #handle isotrope case: gradients of all 400 dimenstions need to be summed
-        if self.sigma == 'isotrope':
+        if self.parameters.sigma == 'isotrope':
             for key in gradients.keys():
                 if 'prec' in key:
                     gradients[key] = [np.sum(gradients[key])] * 400
@@ -483,23 +330,22 @@ class LikelihoodFct():
         log_df = self.update_optimization_logfile(f, gradients, timestamp)
 
 
-        parameters_transformed_back = coupling_prior_utils.transform_parameters(
-            self.parameters_structured, weights=True, mean=False, prec=True, back=True)
+        parameters_transformed_back = self.parameters.transform_parameters(weights=True, mean=False, prec=True, back=True)
 
         ##### save parameters and settings
-        self.write_parameters_and_settings(parameters_transformed_back)
+        self.parameters.write_parameters(parameters_transformed_back)
+        self.write_settings()
 
         ##### Plot the evaluation plot
         opt_plot.plot_evaluation(parameters_transformed_back,
                                  log_df,
                                  self.get_settings(),
                                  self.evaluation_set,
-                                 self.prec_wrt_L,
+                                 self.parameters.prec_wrt_L,
                                  self.plot_name
                                  )
 
-        return(f, self.structured_to_linear(gradients))
-
+        return(f, self.parameters.structured_to_linear(gradients))
 
     @staticmethod
     def print_status(f, gradients_dict, timestamp):
@@ -530,8 +376,8 @@ class LikelihoodFct():
         if len(log_df) % 10 == 0:
             optim_cpp = libll.Likelihood_Dataset(
                 self.test_data,
-                self.parameters_structured,
-                self.prec_wrt_L
+                self.parameters.parameters_structured,
+                self.parameters.prec_wrt_L
             )
             optim_cpp.set_debug_mode(1)
             optim_cpp.set_threads_per_protein(self.threads_per_protein)
