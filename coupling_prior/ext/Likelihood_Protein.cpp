@@ -387,10 +387,46 @@ void  Likelihood_Protein::read_braw() {
     workflow.convert(&workflow_list);
     std::map<std::string, msgpack::object> first_element;
     workflow_list[0].convert(&first_element);
-    std::map<std::string, msgpack::object> regularization;
-    first_element.at("regularization").convert(&regularization);
-    regularization.at("lambda_pair").convert(&this->lambda_w);
-    if(debug > 0 ) std::cout << "lambda_pair: " << this->lambda_w << std::endl;
+
+    for(std::map<std::string, msgpack::object>::iterator it = first_element.begin(); it != first_element.end(); ++it) {
+      std::cout << "a" << it->first << "b" << std::endl;
+    }
+
+    std::cout << "count reg: " << first_element.count("regularization") << std::endl;
+
+    if (first_element.count("regularization")) {
+        std::cout << "there is a key regularization! " << std::endl;
+
+        std::map<std::string, msgpack::object> regularization;
+        first_element.at("regularization").convert(&regularization);
+        regularization.at("lambda_pair").convert(&this->lambda_w);
+
+    } else {
+        std::cout << "there is NO key regularization: " << std::endl;
+
+        std::map<std::string, msgpack::object> parameter;
+        first_element.at("parameters").convert(&parameter);
+
+        std::cout << "successfully converted parameters " << std::endl;
+        for(std::map<std::string, msgpack::object>::iterator it = parameter.begin(); it != parameter.end(); ++it) {
+          std::cout << it->first << "\n";
+        }
+
+        std::map<std::string, msgpack::object> regularization;
+        parameter.at("regularization").convert(&regularization);
+        for(std::map<std::string, msgpack::object>::iterator it = regularization.begin(); it != regularization.end(); ++it) {
+          std::cout << it->first << "\n";
+        }
+
+        double lfactor;
+        regularization.at("lfactor").convert(&lfactor);
+        std::cout << "lfactor: " << lfactor << std::endl;
+
+
+    }
+
+
+    std::cout << "lambda_pair: " << this->lambda_w << std::endl;
 
 
     //get msgpack object for "x_pair"
