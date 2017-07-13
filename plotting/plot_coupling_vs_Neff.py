@@ -3,7 +3,11 @@
 #===============================================================================
 ###     For a dataset of couplings (braw files):
 ###
-###     plot w_ij(a,b) vs Neff
+###     plot w_ij(a,b) vs various alignment properties
+###         - L
+###         -neff
+###         -diversity
+###         -ratio_0.2L_Neff'
 #===============================================================================
 
 
