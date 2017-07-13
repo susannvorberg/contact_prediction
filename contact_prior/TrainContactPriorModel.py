@@ -81,11 +81,11 @@ class TrainContactPriorModel():
                 'min_samples_split': [2, 10, 100]
             },
             'xgboost': {
-                'max_depth': [2, 4, 6],
-                'learning_rate': [0.01, 0.1, 0.2],
-                'n_estimators': [100, 1000],
-                'subsample': [0.8, 1],
-                'min_child_weight' : [0.5, 1, 2],
+                'max_depth': [2, 3, 4],
+                'learning_rate': [0.001, 0.01, 0.1],
+                'n_estimators': [50, 100, 500, 1000],
+                'subsample': [0.5, 0.8, 1],
+                'min_child_weight' : [0.3, 0.5, 0.7],
                 'scale_pos_weight' : [1, 5, 20]
             }
         }
