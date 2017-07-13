@@ -2,7 +2,7 @@
 
 import argparse
 import os
-from . import Benchmark
+from benchmark import Benchmark
 
 
 
@@ -15,12 +15,17 @@ def main():
     parser = argparse.ArgumentParser(description='Remove score from evaluation files')
 
     parser.add_argument("eval_dir", type=str, help="path to evaluation files")
-    parser.add_argument("method", type=str, help="name of method which is to be removed from evaluation files")
+    parser.add_argument("--methods",        type=str, help="comma separated method names that will be removed from evaluation files")
 
     args = parser.parse_args()
 
-    method = str(args.method)
     eval_dir = str(args.eval_dir)
+
+
+    methods = []
+    if args.methods:
+        print ("methods: " + args.methods)
+        methods = set(args.methods.strip().split(","))
 
     if not os.path.exists(eval_dir):
         raise IOError("Evaluation directory " + str(eval_dir) + "does not exist. ")
@@ -30,8 +35,9 @@ def main():
 
 
 
-    #remove specified method
-    b.remove_method_from_evaluation_files(method)
+    #remove specified methods
+    for m in methods:
+        b.remove_method_from_evaluation_files(m)
 
 
 

@@ -4,7 +4,7 @@ import argparse
 import os
 import sys
 
-from coupling_data import CouplingData
+import coupling_data
 from likelihood import LikelihoodFct
 from optimizer import Optimizer
 
@@ -39,6 +39,7 @@ def parse_args():
     grp_data.add_argument("--seed",                 dest="seed",                default=123,    type=int, help="Set seed. [default %(default)s ]")
 
     grp_lik = parser.add_argument_group("likelihood function settings")
+    grp_lik.add_argument("--prec_wrt_L",            dest="prec_wrt_L",         action="store_true", default=False, help="Determine precision wrt to protein length, e.g. lambda_w = X*L. [default %(default)s ]")
     grp_lik.add_argument("--nr_threads",            dest="nr_threads",          default=1,      type=int,   help="Set the number of threads for OMP parallelization (parallelized over proteins). [default %(default)s ]")
     grp_lik.add_argument("--nr_components",         dest="nr_components",       default=3,      type=int,   help="Set number of components for Gaussian mixture prior. [default %(default)s ]")
     grp_lik.add_argument("--reg_coeff_mu",          dest="reg_coeff_mu",        default=0.0,    type=float, help="Set regularization coefficient for L2 regularizer on MU. [default %(default)s == no regularization]")
@@ -109,6 +110,7 @@ def main():
     # maxcontacts_per_protein     = 250
     # maxnoncontacts_per_protein  = 500
     # balance = 20
+    # prec_wrt_L = False
     # nr_threads = 1
     # reg_coeff_mu = 0
     # reg_coeff_diagPrec = 0
@@ -131,6 +133,7 @@ def main():
     nr_training_pairs           = opt.nr_training_pairs
     seed                        = opt.seed
 
+    prec_wrt_L                  = opt.prec_wrt_L
     nr_threads                  = opt.nr_threads
     nr_components               = opt.nr_components
     reg_coeff_mu                = opt.reg_coeff_mu
@@ -155,7 +158,7 @@ def main():
 
 
     #create dataset
-    data = CouplingData(braw_dir, qijab_dir, psicov_dir, pdb_dir)
+    data = coupling_data.CouplingData(braw_dir, qijab_dir, psicov_dir, pdb_dir)
     data.set_seed(seed)
     data.set_nr_residue_pairs_for_crossval(nr_crossval_pairs)
     data.set_nr_residue_pairs_for_training(nr_training_pairs)
@@ -181,7 +184,7 @@ def main():
     likelihood.set_nr_threads_per_protein(nr_threads)
     likelihood.set_regularizer_diagonal_precMat(reg_coeff_diagPrec)
     likelihood.set_regularizer_mu(reg_coeff_mu)
-    likelihood.set_sigma(sigma)
+    likelihood.set_sigma(sigma, prec_wrt_L)
     likelihood.set_fixed_parameters(fixed_parameters)
     likelihood.set_data(data)
     likelihood.initialise_parameters(nr_components=nr_components)

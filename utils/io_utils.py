@@ -82,6 +82,7 @@ def read_alignment(alignment_file, format="psicov"):
 
     return alignment
 
+
 def read_matfile(matfile):
     """
     Read matrix file

@@ -1,11 +1,64 @@
 import numpy as np
 import random
-
+import pandas as pd
 import plotly.graph_objs as go
 from plotly.offline import plot as plotly_plot
 from plotly import tools
 import colorlover as cl
-from io_utils import AMINO_ACIDS, AB_INDICES
+from io_utils import AMINO_ACIDS
+
+
+def plot_feature_importance(features, feature_importance, number_features=20, plot_out=None):
+
+    df = pd.DataFrame({
+        'features' : features,
+        'feature_importance': feature_importance
+    })
+
+    df.sort_values(by='feature_importance', inplace=True, ascending=True)
+
+    data = []
+
+
+    data.append(
+        go.Bar(
+            x=df['feature_importance'].values[:number_features],
+            y=df['features'].values[:number_features],
+            orientation='h',
+            name=str(number_features) + 'least important features'
+        )
+    )
+
+
+    data.append(
+        go.Bar(
+            x=df['feature_importance'].values[-number_features:],
+            y=df['features'].values[-number_features:],
+            orientation='h',
+            name=str(number_features) + 'most important features'
+        )
+    )
+
+
+    plot = {
+        "data": data,
+        "layout": go.Layout(
+            title='Feature Importance ranked by mean importance of feature in all trees',
+            xaxis=dict(title='feature importance (Gini Impurity)'),
+            margin=go.Margin(l=300),
+            font = dict(size = 18)
+
+        )
+    }
+
+
+    if plot_out is not None:
+        plotly_plot(plot, filename=plot_out, auto_open=False)
+    else:
+        return plot
+
+
+
 
 def plot_pairwise_couplings_density(scatter_dict, title, plot_out=None):
 
@@ -348,7 +401,8 @@ def plot_precision_vs_recall_plotly(precision_recall_dict, title, plot_out=None)
                 x=precision_recall_dict[method]['recall'],
                 y=precision_recall_dict[method]['precision'],
                 name=method + "("+str(precision_recall_dict[method]['size'],)+" proteins)",
-                mode='lines'
+                mode='lines',
+                showlegend=True
             )
         )
 
@@ -356,7 +410,7 @@ def plot_precision_vs_recall_plotly(precision_recall_dict, title, plot_out=None)
     plot = {
         "data": data,
         "layout": go.Layout(
-            title=title,
+            title='Precision-Recall curve <br>' + title,
             xaxis1=dict(
                 title='Recall',
                 range=[0, 1]
@@ -474,9 +528,6 @@ def plot_precision_rank_facetted_plotly(precision_rank, title, plot_out=None):
     #global layout settings
     fig['layout']['font'] = {'size': 18}  # set global font size
     fig['layout']['title'] = title
-
-    fig['layout']['legend']['x']=0
-    fig['layout']['legend']['y']=0
 
     if plot_out is not None:
         plotly_plot(fig, filename=plot_out, auto_open=False)

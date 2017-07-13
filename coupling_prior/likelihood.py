@@ -46,6 +46,7 @@ class LikelihoodFct():
         self.regularizer_diagonal_precMat   = 0 #set to 0 to ignore regularization
         self.hessian_pseudocount            = 0 #only for debugging
         self.fixed_parameters               = ['weight_bg_0', 'weight_contact_0', 'mu_0', 'prec_0']
+        self.prec_wrt_L                     = False
 
         # settings
         self.debug_mode = 0
@@ -71,7 +72,8 @@ class LikelihoodFct():
                       "self.regularizer_mu",
                       "self.regularizer_diagonal_precMat",
                       "self.hessian_pseudocount",
-                      "self.fixed_parameters"]:
+                      "self.fixed_parameters",
+                      "self.prec_wrt_L"  ]:
             str += "{0:{1}} {2}\n".format(param.split(".")[1], '36', eval(param))
 
 
@@ -105,6 +107,9 @@ class LikelihoodFct():
         if 'threads_per_protein' in settings:
             self.threads_per_protein = settings['threads_per_protein']
 
+        if 'prec_wrt_L' in settings:
+            self.set_prec_wrt_L = settings['prec_wrt_L']
+
     def get_settings(self):
 
         settings = {}
@@ -115,6 +120,7 @@ class LikelihoodFct():
         settings['regularizer_mu'] = self.regularizer_mu
         settings['nr_components'] = self.nr_components
         settings['sigma'] = self.sigma
+        settings['prec_wrt_L'] = self.prec_wrt_L
 
         settings['plot_name'] = self.plot_name
         settings['optimization_log_file'] = self.optimization_log_file
@@ -154,8 +160,9 @@ class LikelihoodFct():
     def set_regularizer_diagonal_precMat(self, reg_coeff_diagPrec):
         self.regularizer_diagonal_precMat = float(reg_coeff_diagPrec)
 
-    def set_sigma(self, sigma):
+    def set_sigma(self, sigma, prec_wrt_L):
         self.sigma = sigma
+        self.prec_wrt_L = prec_wrt_L
 
         if sigma not in ['diagonal', 'isotrope', 'full']:
             print("Sigma must be one of: ['diagonal', 'isotrope', 'full'].")
@@ -171,6 +178,45 @@ class LikelihoodFct():
         self.fixed_parameters = fixed_parameters
 
 
+    def _initialise_parameters_default(self):
+
+        #initialise parameters with a strong component at zero
+        #with equal weights for all components
+        initial_means       = [0]       + [0] * (self.nr_components-1)
+        initial_weights     = [1.0 / self.nr_components] *  self.nr_components
+        initial_precision   = [1/0.0005]  + [1/0.05] * (self.nr_components-1) #precision  = 1/variance
+        if self.prec_wrt_L:
+            initial_precision   = [1/0.05] + [1/0.5]* (self.nr_components-1) #precision  = 1/variance * L
+
+
+        parameters = {}
+
+        for component in range(len(initial_weights)):
+
+            parameters['weight_contact_' + str(component)] = [initial_weights[component]]  ##* 400
+            parameters['weight_bg_' + str(component)] = [initial_weights[component]]  ##* 400
+
+
+            if 'mu_' + str(component) in self.fixed_parameters:
+                parameters['mu_0'] = [initial_means[0]] * 400
+            else:
+                parameters['mu_' + str(component)] = np.random.normal(
+                    loc=initial_means[component],
+                    scale=0.05,
+                    size=400
+                ).tolist()
+
+            if ('prec_' + str(component) in self.fixed_parameters) or self.sigma == 'isotrope':
+                parameters['prec_' + str(component)] = [initial_precision[component]] * 400
+            else:
+                parameters['prec_' + str(component)] = np.random.normal(
+                    loc=initial_precision[component],
+                    scale=initial_precision[component] / 10,
+                    size=400
+                ).tolist()
+
+        return parameters
+
     def initialise_parameters(self, parameter_file=None,  nr_components=None):
 
         if parameter_file is not None:
@@ -180,17 +226,12 @@ class LikelihoodFct():
 
 
         if parameter_file is not None and os.path.exists(parameter_file):
-
+            print("Initialise parameters from {0}".format(parameter_file))
             parameters  = coupling_prior_utils.read_parameter_file(parameter_file)
             self.read_settings(parameter_file + ".settings")
         else:
-
-            #initialise parameters with a strong component at zero
-            initial_means       = [0]       + [0] * (self.nr_components-1)
-            initial_precision   = [1/0.0005]  + [1/0.05] * (self.nr_components-1) #precision  = 1/variance
-            initial_weights     = [1.0 / self.nr_components] *  self.nr_components
-
-            parameters = coupling_prior_utils.init_by_default(initial_weights, initial_means, initial_precision, self.sigma, self.fixed_parameters)
+            print("Initialise parameters with default values.")
+            parameters =  self._initialise_parameters_default()
 
         self.settings_file = self.parameter_file + ".settings"
         self.optimization_log_file = self.parameter_file + ".log"
@@ -407,7 +448,8 @@ class LikelihoodFct():
 
         LL = libll.Likelihood_Dataset(
             self.training_data,
-            self.parameters_structured
+            self.parameters_structured,
+            self.prec_wrt_L
         )
 
         LL.set_debug_mode(self.debug_mode)
@@ -452,6 +494,7 @@ class LikelihoodFct():
                                  log_df,
                                  self.get_settings(),
                                  self.evaluation_set,
+                                 self.prec_wrt_L,
                                  self.plot_name
                                  )
 
@@ -487,7 +530,8 @@ class LikelihoodFct():
         if len(log_df) % 10 == 0:
             optim_cpp = libll.Likelihood_Dataset(
                 self.test_data,
-                self.parameters_structured
+                self.parameters_structured,
+                self.prec_wrt_L
             )
             optim_cpp.set_debug_mode(1)
             optim_cpp.set_threads_per_protein(self.threads_per_protein)

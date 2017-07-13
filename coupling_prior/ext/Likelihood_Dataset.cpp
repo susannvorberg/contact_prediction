@@ -22,7 +22,8 @@
 
 Likelihood_Dataset::Likelihood_Dataset(
                     boost::python::dict pairs_per_protein_,
-                    boost::python::dict parameters_
+                    boost::python::dict parameters_,
+                    bool L_dependent_
                     )
 {
 
@@ -32,11 +33,11 @@ Likelihood_Dataset::Likelihood_Dataset(
 
 	debug_mode		= 0;
     nr_threads_prot = 1;
+    L_dependent     = L_dependent_;
 
 	//save parameters as a std::map
 	parameterMap = fromPythonDict(parameters_);
 	nr_components = parameterMap.size()/ 4 ;
-
 
 
 	//initialize variables
@@ -70,8 +71,6 @@ void Likelihood_Dataset::protein_dict_to_protein_map(boost::python::dict &pairs_
 
 		//protein stats
 		std::string protein_name = boost::python::extract<std::string>(keys[i]);
-		int N = boost::python::extract<int>(protein_dict["N"]);
-		int L = boost::python::extract<int>(protein_dict["L"]);
 		std::string braw_file_path  = boost::python::extract<std::string>(protein_dict["braw_file_path"]);
 		std::string qijabfilename   = boost::python::extract<std::string>(protein_dict["qijabfilename"]);
 
@@ -85,8 +84,6 @@ void Likelihood_Dataset::protein_dict_to_protein_map(boost::python::dict &pairs_
 
 		myProtein protein {
 		   protein_name,
-		   N,
-		   L,
 		   braw_file_path,
 		   qijabfilename,
 		   residue_i,
@@ -213,11 +210,10 @@ void Likelihood_Dataset::compute_f(){
 
 		Likelihood_Protein protein(
 		        protein_data.name,
-		        protein_data.N,
-                protein_data.L,
                 protein_data.brawfilename,
                 protein_data.qijabfilename,
-                this->parameterMap
+                this->parameterMap,
+                this->L_dependent
                 );
 
         //set pair information
@@ -271,11 +267,10 @@ void Likelihood_Dataset::compute_f_df(int hessian_pseudocount)
 
 		Likelihood_Protein protein(
 		        protein_data.name,
-		        protein_data.N,
-                protein_data.L,
                 protein_data.brawfilename,
                 protein_data.qijabfilename,
-                this->parameterMap
+                this->parameterMap,
+                this->L_dependent
                 );
 
         //set pair information
@@ -300,10 +295,8 @@ void Likelihood_Dataset::compute_f_df(int hessian_pseudocount)
 			grad_weight_bg_mat(p,component)         = protein.get_gradient_weight_comp(component, 0);
 			//mu
 			grad_mu_cube.tube(p,component)          = protein.get_gradient_mu_comp(component);
-			//precMat - diagonal or isotrope
-			//grad_precMat_cube.tube(p,component)     = protein.get_gradient_precisionMatrix_comp(component);
-            //precMat - isotrope (dependentL)
-            grad_precMat_cube.tube(p,component)     = protein.get_gradient_precisionMatrix_isotrop_Ldependent(component);
+			//precMat - diagonal or isotrope (dependentL)
+			grad_precMat_cube.tube(p,component)     = protein.get_gradient_precisionMatrix_comp(component);
 		}
 
 	}//end proteins

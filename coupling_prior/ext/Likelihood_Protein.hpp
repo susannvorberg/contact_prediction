@@ -22,11 +22,10 @@ class Likelihood_Protein{
 	public:
 
 	    Likelihood_Protein(	std::string protein_id_,
-                            int N_,
-                            int L_,
                             std::string brawfilename_,
                             std::string qijabfilename_,
-                            std::map<std::string, std::vector<double> > parameterMap
+                            std::map<std::string, std::vector<double> > parameterMap,
+                            bool L_dependent
                             );
 
         //default constructor
@@ -39,11 +38,6 @@ class Likelihood_Protein{
      * Get protein length
      */
     int get_L() const;
-
-    /*
-     * Get alignment size (number of sequences)
-     */
-    int get_N() const;
 
     /*
     * Get indices for first residue
@@ -118,18 +112,17 @@ class Likelihood_Protein{
     arma::vec get_gradient_mu_comp(int component);
 
      /*
-     * Return gradient of precision matrix
+     * Return gradient of precision matrix (for NEG log likelihood)
      *  for specified component
      *  gradient is cumulated over all pairs
+
+     * if L_dependent:
+     * precision matrix is isotrop and dependending on protein length L
+     * e.g. when diag(precMat) == 0.2 * (L-1)
+     *
      */
     arma::vec get_gradient_precisionMatrix_comp(int component);
 
-    /*
-     * Returning the gradient of the precision matrix (for NEG log likelihood)
-     * when precision matrix is isotrop and dependending on protein length L
-     * e.g. when diag(precMat) == 0.2 * (L-1)
-     */
-    arma::mat get_gradient_precisionMatrix_isotrop_Ldependent(int component);
 
     /*
     * Set the level of printing debugging information
@@ -220,6 +213,11 @@ class Likelihood_Protein{
 
     //protected members can be accesssed by derived class
     private:
+		const std::string protein_id;
+		const std::string brawfilename;
+		const std::string qijabfilename;
+    	Parameters parameters;
+    	const bool L_dependent;
 
         arma::vec responsibilities;
         arma::vec log_likelihood;
@@ -241,16 +239,11 @@ class Likelihood_Protein{
 		arma::cube w_ij3d;
 		arma::mat regularizer_w;
 
-		int number_of_pairs;
+        int L;
+    	double lambda_w;
+    	int number_of_pairs;
 		int debug;
 		int nr_components;
-		const std::string protein_id;
-		const int N;
-		const int L;
-		double lambda_w;
-		const std::string brawfilename;
-		const std::string qijabfilename;
-    	Parameters parameters;
 
 
 };

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import os
 import argparse
-from . import Benchmark
+from benchmark import Benchmark
 
 def parse_args():
 
@@ -16,7 +16,7 @@ def parse_args():
     group_append.add_argument("--braw_file", dest="mat_file", action='store_false', help="compute score from binary raws")
 
     parser.add_argument('--apc', dest='apc', action='store_true', help="Appply average product correction")
-    parser.add_argument('--no_update', dest='update', action='store_false', help="Do not update evaluation file if method_name already exists")
+    parser.add_argument('--no_update', dest='update', action='store_false', default=True, help="Do not update evaluation file if method_name already exists")
 
     args = parser.parse_args()
 
@@ -42,7 +42,7 @@ def main():
     b = Benchmark(eval_dir)
 
     #Add method to benchmark set ===============================================================================
-    b.add_method_to_evaluation_files(method_name, method_dir, is_mat_file=mat_file, apc=apc, update=update)
+    b.add_method_from_file(method_name, method_dir, is_mat_file=mat_file, apc=apc, update=update)
 
 
 if __name__ == '__main__':

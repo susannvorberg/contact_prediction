@@ -36,31 +36,21 @@
 
 Likelihood_Protein::Likelihood_Protein(
                     std::string protein_id_,
-                    int N_,
-                    int L_,
                     std::string brawfilename_,
                     std::string qijabfilename_,
-                    std::map<std::string, std::vector<double> > parameterMap
+                    std::map<std::string, std::vector<double> > parameterMap,
+                    bool L_dependent
                    )
 :protein_id(protein_id_),
-N(N_),
-L(L_),
 brawfilename(brawfilename_),
 qijabfilename(qijabfilename_),
-parameters(parameterMap.size()/ 4)
+parameters(parameterMap.size()/ 4),
+L_dependent(L_dependent)
 {
 
     //set up model specifications
     this->debug			    = 0;
     this->nr_components     = parameters.get_nr_components();
-
-    //if precision dependent on L: set L
-    parameters.set_L(this->L);
-
-    //set up parameters
-    parameters.set_parameters(parameterMap);
-    std::cout << "finished parameters..."  <<  std::endl;
-
 
     try	{
         read_braw();
@@ -71,7 +61,7 @@ parameters(parameterMap.size()/ 4)
         std::cout << "Error reading in braw ("<< protein_id <<") : " << e.what() <<  std::endl;
         exit (EXIT_FAILURE);
     }
-    std::cout << "finished braw..."  <<  std::endl;
+    //std::cout << "finished braw..."  <<  std::endl;
 
 
     try {set_qijab();}	//sets qijab and Nij
@@ -79,8 +69,18 @@ parameters(parameterMap.size()/ 4)
         std::cout << "Error reading in qijab ("<< protein_id <<"): " << e.what() <<  std::endl;
         exit (EXIT_FAILURE);
     }
-    std::cout << "finished qij..."  <<  std::endl;
+    //std::cout << "finished qij..."  <<  std::endl;
 
+    //determine precision dependent on protein length L
+    if (L_dependent) {
+        if (this->debug) std::cout << "Frecision depends on protein length."  <<  std::endl;
+        parameters.set_L(this->L);
+    }
+
+    //initialize the hyperparameters of the model
+    parameters.set_parameters(parameterMap);
+
+    if (this->debug) std::cout << "Finished initialising parameters."  <<  std::endl;
 
 }
 
@@ -93,10 +93,9 @@ parameters(parameterMap.size()/ 4)
 
 Likelihood_Protein::Likelihood_Protein()
 :protein_id(0),
- N(0),
- L(0),
- brawfilename(0),
- qijabfilename(0)
+brawfilename(0),
+qijabfilename(0),
+L_dependent(0)
 {
 	std::cout << "Default constructor... " << std::endl;
 }
@@ -116,12 +115,6 @@ int Likelihood_Protein::get_L() const{
 	return(this->L);
 }
 
-/*
- * Get alignment size (number of sequences)
- */
-int Likelihood_Protein::get_N() const{
-	return(this->N);
-}
 
 /*
  * Return a coupling value for residues i and j and a*20+b
@@ -237,32 +230,27 @@ arma::vec Likelihood_Protein::get_gradient_mu_comp(int component){
 }
 
  /*
- * Return gradient of precision matrix
+ * Return gradient of precision matrix (for NEG log likelihood)
  *  for specified component
  *  gradient is cumulated over all pairs
+
+ * if L_dependent:
+ * precision matrix is isotrop and dependending on protein length L
+ * e.g. when diag(precMat) == 0.2 * (L-1)
+ *
  */
 arma::vec Likelihood_Protein::get_gradient_precisionMatrix_comp(int component){
 
     arma::vec vec_grad_precMat = this->grad_precMat.col(component);
 
+    if (this->L_dependent){
+        vec_grad_precMat *= this->L;
+    }
+
     //gradient of NEGATIVE loglikelihood
     return -vec_grad_precMat;
 }
 
-
-/*
- * Returning the gradient of the precision matrix (for NEG log likelihood)
- * when precision matrix is isotrop and dependending on protein length L
- * e.g. when diag(precMat) == 0.2 * (L-1)
- */
-arma::mat Likelihood_Protein::get_gradient_precisionMatrix_isotrop_Ldependent(int component){
-
-    //this returns the gradient of the NEGATIVE LOG LIEKLIHOOD
-	arma::mat grad_precMat = this->get_gradient_precisionMatrix_comp(component);
-
-	grad_precMat.diag() *= this->L;
-	return grad_precMat;
-}
 
 /********************************************************************************************************************************
  *
@@ -326,10 +314,7 @@ void Likelihood_Protein::set_pairs(arma::uvec &i_indices_in, arma::uvec &j_indic
  */
 void  Likelihood_Protein::read_braw() {
 
-	if(debug > 0 ) std::cout << "Read in braw File... \n";
-
-    //initialise cube for couplings
-    w_ij3d.zeros(L, L, 400);
+	if (this->debug) std::cout << "Read in braw File... " << std::endl;
 
 	//deserialize
 	msgpack::unpacked msg;
@@ -337,7 +322,7 @@ void  Likelihood_Protein::read_braw() {
 	//find out whether braw file is zipped or not
 	if (brawfilename.find("gz") != std::string::npos) {
 
-		if(debug > 0 ) std::cout << "braw  compressed!" << '\n';
+		if (this->debug) std::cout << "braw  "<< brawfilename <<" compressed!" << std::endl;
 
 		std::ifstream file;
 		std::stringstream in;
@@ -375,73 +360,73 @@ void  Likelihood_Protein::read_braw() {
 		msgpack::unpack(&msg, buf, fileSize, 0);
 
 	}else{
-
-		if(debug > 0 ) std::cout << "braw is uncompressed!" << '\n';
+		if (this->debug) std::cout << "braw is uncompressed!" << std::endl;
 		exit (EXIT_FAILURE);
     }
 
 
-		//msgpack::object obj = msg.get();
-		//std::cout << "obj type: " << obj.type << std::endl;
-		//std::cout << "map type: " << msgpack::type::MAP << std::endl;
-		//std::cout << "obj size: " << obj.via.map.size << std::endl;
+    //msgpack::object obj = msg.get();
+    //std::cout << "obj type: " << obj.type << std::endl;
+    //std::cout << "map type: " << msgpack::type::MAP << std::endl;
+    //std::cout << "obj size: " << obj.via.map.size << std::endl;
+
+    //convert as a map of msgpack objects
+    std::map<std::string, msgpack::object> msgpack_map;
+    msg.get().convert(&msgpack_map);
 
 
-		//convert as a map of msgpack objects
-		std::map<std::string, msgpack::object> msgpack_map;
-		msg.get().convert(&msgpack_map);
+    //protein length
+    msgpack_map.at("ncol").convert(&this->L);
 
 
-        //read lambda_value
-    	//braw.meta['workflow'][0]['parameters']['regularization']['lambda_pair']
-        std::map<std::string, msgpack::object> meta;
-        msgpack_map.at("meta").convert(&meta);
-        msgpack::object workflow = meta.at("workflow");
-        std::vector<msgpack::object> workflow_list;
-        workflow.convert(&workflow_list);
-        std::map<std::string, msgpack::object> first_element;
-        workflow_list[0].convert(&first_element);
-        std::map<std::string, msgpack::object> parameters;
-        first_element.at("parameters").convert(&parameters);
-        std::map<std::string, msgpack::object> regularization;
-        parameters.at("regularization").convert(&regularization);
-        double lambda_pair;
-        regularization.at("lambda_pair").convert(&lambda_pair);
-        if(debug > 0 ) std::cout << "lambda_pair: " << lambda_pair << std::endl;
-        lambda_w = lambda_pair;
+    //read lambda_value from: braw.meta['workflow'][0]['regularization']['lambda_pair']
+    std::map<std::string, msgpack::object> meta;
+    msgpack_map.at("meta").convert(&meta);
+    msgpack::object workflow = meta.at("workflow");
+    std::vector<msgpack::object> workflow_list;
+    workflow.convert(&workflow_list);
+    std::map<std::string, msgpack::object> first_element;
+    workflow_list[0].convert(&first_element);
+    std::map<std::string, msgpack::object> regularization;
+    first_element.at("regularization").convert(&regularization);
+    regularization.at("lambda_pair").convert(&this->lambda_w);
+    if(debug > 0 ) std::cout << "lambda_pair: " << this->lambda_w << std::endl;
 
 
-		//get msgpack object for "x_pair"
-		// the x_pair msgpack object is of type MAP and has keys "i/j" with j>i
-		// this amounts to ncol*(ncol-1)/2 values in this map
-		msgpack::object xpair_obj = msgpack_map.at("x_pair");
+    //get msgpack object for "x_pair"
+    // the x_pair msgpack object is of type MAP and has keys "i/j" with j>i
+    // this amounts to ncol*(ncol-1)/2 values in this map
+    msgpack::object xpair_obj = msgpack_map.at("x_pair");
 
-		//iterate over these i/j pairs and extract the next (and last) map of msgpack objects
-		//with keys "i", "j" and "x"
-		msgpack::object_kv* p(xpair_obj.via.map.ptr);
-		for(msgpack::object_kv* const pend(xpair_obj.via.map.ptr + xpair_obj.via.map.size); p < pend; ++p) {
+    //initialise cube for couplings
+    w_ij3d.zeros(this->L, this->L, 400);
 
-			//std::string k = p->key.as<std::string>();
-			//std::cout << "key: " << k << std::endl;
-			std::map<std::string, msgpack::object> xpair_ij_map;
-			p->val.convert(&xpair_ij_map);
+    //iterate over these i/j pairs and extract the next (and last) map of msgpack objects
+    //with keys "i", "j" and "x"
+    msgpack::object_kv* p(xpair_obj.via.map.ptr);
+    for(msgpack::object_kv* const pend(xpair_obj.via.map.ptr + xpair_obj.via.map.size); p < pend; ++p) {
 
-			int i;
-			int j;
-			std::vector<double> x_vec;
+        //std::string k = p->key.as<std::string>();
+        //std::cout << "key: " << k << std::endl;
+        std::map<std::string, msgpack::object> xpair_ij_map;
+        p->val.convert(&xpair_ij_map);
 
-			xpair_ij_map.at("i").convert(&i);
-			xpair_ij_map.at("j").convert(&j);
-			xpair_ij_map.at("x").convert(&x_vec); //has been written rowwise
+        int i;
+        int j;
+        std::vector<double> x_vec;
 
-			//read columnwise as matrix
-			arma::mat x_mat(arma::vec(x_vec).begin(),21,21);    //length = 21, column-wise to matrix
-			arma::mat x_mat_sub = x_mat.submat(0, 0, 19, 19);   //first column 0, last column 19
+        xpair_ij_map.at("i").convert(&i);
+        xpair_ij_map.at("j").convert(&j);
+        xpair_ij_map.at("x").convert(&x_vec); //has been written rowwise
 
-			//write column-wise back to vector
-			w_ij3d.tube(i,j) = arma::vectorise(x_mat_sub);
+        //read columnwise as matrix
+        arma::mat x_mat(arma::vec(x_vec).begin(),21,21);    //length = 21, column-wise to matrix
+        arma::mat x_mat_sub = x_mat.submat(0, 0, 19, 19);   //first column 0, last column 19
 
-		}
+        //write column-wise back to vector
+        w_ij3d.tube(i,j) = arma::vectorise(x_mat_sub);
+
+    }
 }
 
 /*
@@ -577,10 +562,10 @@ double Likelihood_Protein::log_density_gaussian_ratio(	const arma::vec &mu_k,
 	double gaussian_ratio_log_density = 0.5 * (gaussian_1 - gaussian_2);
 
 
-    if(gaussian_ratio_log_density>1000){
-        std::cout  << "gaussian_1: " << 0.5 * gaussian_1 << std::endl;
-        std::cout  << "gaussian_2: " << 0.5 * gaussian_2 << std::endl;
-    }
+//    if(gaussian_ratio_log_density>1000){
+//        std::cout  << "gaussian_1: " << 0.5 * gaussian_1 << std::endl;
+//        std::cout  << "gaussian_2: " << 0.5 * gaussian_2 << std::endl;
+//    }
 
 
 /*	if(! std::isnormal(gaussian_1)) {
@@ -718,28 +703,17 @@ void Likelihood_Protein::compute_negLL(int nr_threads_prot)
 		arma::vec resps = arma::exp(log_density - a_max);//r_nk = exp( a_nk - a_max)
 		double sum_resp = arma::sum(resps);    //sum += r_nk
 
-		if(this->debug  > 1)
-		{
-		    for(int k = 0; k < this->nr_components; k++){
-		        std::cout  << "component " << k << std::endl;
-		        std::cout  << "Responsibilty: " << resps(k)/sum_resp << std::endl;
-		        std::cout  << "log_density: " << log_density(k) << std::endl;
-		    }
-		}
 
 		//save neg likelihood of current pair
 		double f = log(sum_resp) + a_max;
 
 		if(! std::isnormal(f)) {
 				std::cout  << "ERROR: likelihood cannot be computed for protein " << protein_id << ", i " << i << ", j " << j << " ("<< contact <<"): " << f << std::endl;
-                std::cout  << "Nij " << N_ij << std::endl;
+                std::cout  << "Nij " << N_ij << ", sum_resp: " << sum_resp << ", a_max: " << a_max << std::endl;
                 for(int k = 0; k < this->nr_components; k++){
-                    std::cout  << "component " << k << std::endl;
-                    std::cout  << "Responsibilty:" << resps(k) << std::endl;
-                    std::cout  << "log_density: " << log_density(k) << std::endl;
-                    std::cout  << "sum_resp: " << sum_resp << std::endl;
-                    std::cout  << "a_max: " << a_max << std::endl;
+                    std::cout  << "component: " << k << ", sum_precMat(k)diag: "<< arma::sum(this->parameters.get_precMat(k).diag()) << ", responsibilty:" << resps(k)/sum_resp << ", log_density: " << log_density(k) << std::endl;
                 }
+
 				continue;
 		} else log_likelihood(pair) = f;
 
@@ -877,7 +851,7 @@ void Likelihood_Protein::compute_f_df(int hessian_pseudocount)
 
 
 
-            if(gaussian_ratio_logdensity>1000){
+            if(this->debug > 0 and gaussian_ratio_logdensity>1000){
                 std::cout  << protein_id << " " << i << " " << j << " " << pair << " " << contact << " " << k << std::endl;
                 std::cout  << "Gaussian log density > 1: " << gaussian_ratio_logdensity << std::endl;
                 std::cout  << "A_inv.max() : " << A_inv.max()  << std::endl;
@@ -911,18 +885,15 @@ void Likelihood_Protein::compute_f_df(int hessian_pseudocount)
 		double f = log(sum_resp) + a_max;
 		if(! std::isnormal(f)) {
 				std::cout  << "ERROR: likelihood cannot be computed for protein " << protein_id << ", i " << i << ", j " << j << " ("<< contact <<"): " << f << std::endl;
-                std::cout  << "Nij " << N_ij << std::endl;
+                std::cout  << "Nij: " << N_ij << ", sum_resp: " << sum_resp << ", a_max: " << a_max << std::endl;
                 for(int k = 0; k < this->nr_components; k++){
-                    std::cout  << "component " << k << std::endl;
-                    std::cout  << "Responsibilty:" << this->responsibilities(k) << std::endl;
-                    std::cout  << "log_density: " << log_density(k) << std::endl;
-                    std::cout  << "log_det_lambda_ij_k: " << log_det_lambda_ij_k(k) << std::endl;
-                    std::cout  << "sum_resp: " << sum_resp << std::endl;
-                    std::cout  << "a_max: " << a_max << std::endl;
+                    std::cout  << "component: " << k << ", sum_precMat(k)diag: "<< arma::sum(this->parameters.get_precMat(k).diag()) << ", responsibilty:" << this->responsibilities(k) << ", log_density: " << log_density(k) << ", log_det_lambda_ij_k: " << log_det_lambda_ij_k(k) << std::endl;
                 }
+
 				continue;
-		}
-		log_likelihood(pair) = f;
+		} else log_likelihood(pair) = f;
+
+
 
 
         // Compute ALL gradients for ALL components

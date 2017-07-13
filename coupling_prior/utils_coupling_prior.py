@@ -29,43 +29,6 @@ def gaussian_mixture_density(x, weights, means, sd):
            sum_density +=  weights[component] * norm.pdf(x, means[component], sd[component])
         return sum_density
 
-def init_by_default(initial_weights, initial_means, initial_precision, sigma, fixed_parameters):
-
-
-    parameters = {}
-
-    for component in range(len(initial_weights)):
-
-
-        parameters['weight_contact_' + str(component)] = [initial_weights[component]]  ##* 400
-        parameters['weight_bg_' + str(component)] = [initial_weights[component]]  ##* 400
-
-
-        if 'mu_' + str(component) in fixed_parameters:
-            parameters['mu_0'] = [initial_means[0]] * 400
-        else:
-            parameters['mu_' + str(component)] = np.random.normal(
-                loc=initial_means[component],
-                scale=0.05,
-                size=400
-            ).tolist()
-
-        if ('prec_' + str(component) in fixed_parameters):
-            initial_diagonal = initial_precision[component] * 400
-        elif sigma == 'isotrope':
-            initial_diagonal = [1.0/0.05] * 400
-        else:
-            initial_diagonal = np.random.normal(
-                loc=initial_precision[component],
-                scale=initial_precision[component] / 10,
-                size=400
-            ).tolist()
-
-        parameters['prec_' + str(component)] = initial_diagonal
-
-
-    return parameters
-
 def transform_parameters(parameters_in, weights=True, mean=False, prec=True, back=False):
     """
     parameters: Pandas dataframe with column names

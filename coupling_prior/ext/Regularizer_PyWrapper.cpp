@@ -23,7 +23,8 @@ using namespace boost::python;
 Regularizer* Regularizer_PyWrapper(
         boost::python::dict parameters_,
         double regularization_parameter_mu_,
-        double regularization_parameter_diagonal_PrecMat_
+        double regularization_parameter_diagonal_PrecMat_,
+        bool L_dependent
     )
 {
 
@@ -32,7 +33,8 @@ Regularizer* Regularizer_PyWrapper(
 
 	return new Regularizer( parameterMap,
 	                        regularization_parameter_mu_,
-	                        regularization_parameter_diagonal_PrecMat_);
+	                        regularization_parameter_diagonal_PrecMat_,
+	                        L_dependent);
 
 }
 

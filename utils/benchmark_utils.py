@@ -208,6 +208,7 @@ def mean_precision_per_protein(evaluation_statistics, methods):
             ", N: " + str(protein_eval_metrics['N']) +
             ", neff: " + str(np.round(protein_eval_metrics['neff'], decimals=3)) +
             ", cath: " + str(protein_eval_metrics['cath class']) +
+            ", percentage_gaps: " + str(np.round(protein_eval_metrics['gap_percentage'], decimals=3)) +
             ", diversity: " + str(np.round(protein_eval_metrics['diversity'], decimals=3))
             for protein, protein_eval_metrics in evaluation_statistics['proteins'].iteritems()]
 
@@ -276,8 +277,8 @@ def compute_l2norm_from_braw(braw, apc=False):
     :return: l2norm (-apc) score matrix
     '''
 
-    #compute l2norm
-    mat = np.sqrt(np.sum(braw.x_pair * braw.x_pair, axis=(2, 3)))
+    #compute l2norm without gap state
+    mat = np.sqrt(np.sum(braw.x_pair[:,:,:20,:20] * braw.x_pair[:,:,:20,:20], axis=(2, 3)))
 
     #apply apc)
     if(apc):
