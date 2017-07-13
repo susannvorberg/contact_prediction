@@ -24,6 +24,7 @@ echo "using " $OMP_NUM_THREADS "threads for omp parallelization"
 
 method=$1
 nr_components=$2
+prec_wrt_L=$3
 
 
 echo "data dir: "$DATA
@@ -33,19 +34,19 @@ echo "plot dir: "$PLOTS
 # example call
 #------------------------------------------------------------------------------
 
-#bash ~/opt/contactprediction/contact_prediction/run/run_infer_lambda_w.sh ccmpredpy_pcd_gd 1
+#bash ~/opt/contactprediction/contact_prediction/run/run_infer_lambda_w.sh ccmpredpy_pcd_gd 1 1
 
 
 #------------------------------------------------------------------------------
 # start script
 #------------------------------------------------------------------------------
 
-for nrcontacts in 100 1000 10000 15000 30000;
+for nrcontacts in 1000; #1000 10000 15000 30000 50000;
 do
 
 
-    PARAM_DIR=$DATA"/bayesian_framework/infer_lambdaw_benchmarkset_cath4.1/"$method"/isotrope1_"$nrcontacts"contacts"
-    PLOT_DIR=$PLOTS"/bayesian_framework/infer_lambdaw_benchmarkset_cath4.1/"$method"/isotrope1_"$nrcontacts"contacts/"
+    PARAM_DIR=$DATA"/bayesian_framework/infer_lambdaw_benchmarkset_cath4.1/"$method"/isotrope1_"$nrcontacts"contacts_wrtL"$prec_wrt_L"/"
+    PLOT_DIR=$PLOTS"/bayesian_framework/infer_lambdaw_benchmarkset_cath4.1/"$method"/isotrope1_"$nrcontacts"contacts_wrtL"$prec_wrt_L"/"
 
     if [ ! -d "$PARAM_DIR" ]; then
       mkdir $PARAM_DIR
@@ -80,7 +81,7 @@ do
     settings=$settings" --filter_gap_columns"
     settings=$settings" --filter_pairs_by_Nij"
     settings=$settings" --maxcontacts_per_protein 250"
-    settings=$settings" --maxnoncontacts_per_protein 500"
+    settings=$settings" --maxnoncontacts_per_protein 1000"
     settings=$settings" --diversity_thr 0.3"
 
 
@@ -94,7 +95,10 @@ do
     #   precision matrix is isotrope
     #   precision is determined wrt to protein length L
 
-    settings=$settings" --prec_wrt_L"
+    if [ "$prec_wrt_L" -eq "1" ];
+    then
+        settings=$settings" --prec_wrt_L"
+    fi
     settings=$settings" --sigma isotrope"
     settings=$settings" --fixed_parameters weight_bg_0,weight_contact_0,mu_0"
     settings=$settings" --nr_components "$nr_components
@@ -104,8 +108,7 @@ do
     settings=$settings" --debug_mode 0"
 
 
-    jobname=lambdaw.$method.$nrcontacts
+    jobname=lambdaw.$method.$nrcontacts.wrtL$prec_wrt_L
     bsub -W 48:00 -q mpi -m "mpi mpi2 mpi3_all hh sa" -n 8 -R span[hosts=1] -a openmp  -J $jobname -o job-$jobname-%J.out python $CONTACT_PREDICTION_PATH/coupling_prior/infer_hyperparameters_for_coupling_prior.py $settings
-    ##> $PARAM_DIR"/infer_lambda_prior.log" 2>&1
 
 done
