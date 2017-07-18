@@ -1,9 +1,9 @@
 import os
 import json
 import numpy as np
-import gzip
 import Bio.AlignIO as aio
-
+import msgpack
+import gzip
 
 AMINO_ACIDS = "ARNDCQEGHILKMFPSTWYV-"
 
@@ -110,3 +110,29 @@ def read_fasta(fasta_file):
     id  = list(aln_iterator)[0].id
 
     return id, seq
+
+
+def read_qij(qij_file, L):
+    """
+    Parse msgpacked qij_file
+    """
+
+    open_fn = gzip.open if qij_file.endswith(".gz") else open
+
+    try:
+        with open_fn(qij_file, 'rb') as f:
+            x = msgpack.unpackb(f.read(), encoding="utf-8")
+    except Exception as e:
+        print("There was an error while reading {0}: {1}".format(qij_file, e))
+        return
+
+    N_ij = np.zeros((L, L))
+    N_ij[np.tril_indices(L, k=-1)]  = x['N_ij']
+    N_ij += N_ij.transpose()
+
+    indices = np.triu_indices(L, 1)
+    qij_reshaped = np.array(x['q_ij']).reshape((len(indices[0]), 400))
+    q_ij = np.zeros((L, L, 400))
+    q_ij[indices] = qij_reshaped
+
+    return N_ij, q_ij
