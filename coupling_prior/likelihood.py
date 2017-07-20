@@ -5,7 +5,6 @@ import json
 import time
 import sys
 import coupling_prior.ext.libll as libll
-import coupling_prior.ext.libreg as libreg
 import numpy as np
 from statsmodels.tools import numdiff
 import raw
@@ -62,19 +61,20 @@ class LikelihoodFct():
             str += "{0:{1}} {2}\n".format(param.split(".")[1], '36', eval(param))
 
 
-        str += "\nRegularization settings: \n"
-        for param in ["self.regularizer_mu",
-                      "self.regularizer_diagonal_precMat"]:
-            str += "{0:{1}} {2}\n".format(param.split(".")[1], '36', eval(param))
-
-
         str += "\nComputation settings: \n"
         str += "{0:{1}} {2}\n".format("debug_mode", '36', self.debug_mode)
         str += "{0:{1}} {2}\n".format("threads_per_protein", '36', self.threads_per_protein)
         str += "{0:{1}} {2}\n".format("hessian_pseudocount", '36', self.hessian_pseudocount)
 
+        if self.dataset:
+            str += self.dataset.__repr__()
 
-        str += self.parameters.__repr__()
+        if self.parameters:
+            str += self.parameters.__repr__()
+
+        if self.regularization:
+            str += self.regularization.__repr__()
+
 
         return(str)
 
@@ -108,18 +108,20 @@ class LikelihoodFct():
         settings = {}
         settings['debug_mode'] = self.debug_mode
         settings['threads_per_protein'] = self.threads_per_protein
-        settings['regularizer_diagonal_precMat'] = self.regularizer_diagonal_precMat
-        settings['regularizer_mu'] = self.regularizer_mu
         settings['hessian_pseudocount'] = self.hessian_pseudocount
         settings['plot_name'] = self.plot_name
         settings['optimization_log_file'] = self.optimization_log_file
         settings['settings_file'] = self.settings_file
 
-        if self.dataset is not None:
+        if self.dataset:
             settings.update(self.dataset.get_settings())
 
-        if self.parameters is not None:
+        if self.parameters:
             settings.update(self.parameters.get_settings())
+
+        if self.regularization:
+            settings.update(self.regularization.get_settings())
+
 
         return(settings)
 
@@ -149,7 +151,7 @@ class LikelihoodFct():
         self.threads_per_protein = int(nr_threads)
 
     def set_regularizer(self, reg_coeff_mu, reg_coeff_diag_prec):
-        self.regularizion = Regularization(self.parameters, reg_coeff_mu, reg_coeff_diag_prec)
+        self.regularization = Regularization(self.parameters, reg_coeff_mu, reg_coeff_diag_prec)
 
     def write_settings(self):
 

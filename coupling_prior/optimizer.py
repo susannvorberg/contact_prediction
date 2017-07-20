@@ -21,7 +21,6 @@ class Optimizer():
 
         str = "\nHyperparameters for Coupling Prior will be inferred using the following settings:\n"
 
-        str += self.likelihood.dataset.__repr__()
         str += self.likelihood.__repr__()
 
         str += "\nOptimization specific settings: \n"
@@ -71,6 +70,8 @@ class Optimizer():
         )
         print(res)
 
+        self.likelihood.parameters.parameters_linear = res.x
+        self.likelihood.parameters.parameters_structured = self.likelihood.parameters.linear_to_structured(res.x)
         parameters_transformed_back = self.likelihood.parameters.transform_parameters(weights=True, mean=False, prec=True, back=True)
 
         ##### save parameters and settings
