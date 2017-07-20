@@ -20,8 +20,17 @@ class Regularization():
         self.reg_coeff_diag_prec   = 0
         self.set_reg_coefficients(reg_coeff_mu, reg_coeff_diag_prec)
 
+    def __repr__(self):
+
+        str = "\nRegularization settings: \n"
+        for param in ["self.reg_coeff_mu",
+                      "self.reg_coeff_diag_prec"]:
+            str += "{0:{1}} {2}\n".format(param.split(".")[1], '36', eval(param))
+
+        return str
+
     def set_parameters(self, parameters):
-        for parameter_name, parameter in parameters.parameters_structured.keys():
+        for parameter_name, parameter in parameters.parameters_structured.iteritems():
             if parameter_name not in parameters.fixed_parameters:
 
                 if 'mu' in parameter_name:
@@ -35,6 +44,13 @@ class Regularization():
         self.reg_coeff_mu                 = reg_coeff_mu
         self.reg_coeff_diag_prec   = reg_coeff_diag_prec
 
+    def get_settings(self):
+        settings={}
+        settings['reg_coeff_mu'] = self.reg_coeff_mu
+        settings['reg_coeff_diag_prec'] = self.reg_coeff_diag_prec
+
+        return settings
+
     def get_regularization(self):
         return self._regularizer_diag_prec() + self._regularizer_mu()
 
@@ -42,10 +58,10 @@ class Regularization():
         gradients = {}
 
         for parameter in self.parameters_mu.keys():
-            gradients[parameter] = - self.parameters_mu[parameter] / (self.reg_coeff_mu*self.reg_coeff_mu)
+            gradients[parameter] = -np.array(self.parameters_mu[parameter]) / (self.reg_coeff_mu*self.reg_coeff_mu)
 
         for parameter in self.parameters_diag_prec.keys():
-            gradients[parameter] = -self.parameters_diag_prec[parameter] / (self.reg_coeff_diag_prec * self.reg_coeff_diag_prec)
+            gradients[parameter] = -np.array(self.parameters_diag_prec[parameter]) / (self.reg_coeff_diag_prec * self.reg_coeff_diag_prec)
             # add derivative of exponential transformation
             gradients[parameter] *= self.parameters_diag_prec[parameter]
 
