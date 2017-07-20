@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 
 import argparse
-import os
-import sys
 
-import coupling_data
-from likelihood import LikelihoodFct
-from optimizer import Optimizer
-from parameters import Parameters
+from coupling_prior.coupling_data import CouplingData
+from coupling_prior.likelihood import LikelihoodFct
+from coupling_prior.optimizer import Optimizer
+from coupling_prior.parameters import Parameters
 
 def parse_args():
 
@@ -82,21 +80,20 @@ def main():
     pdb_dir                 = opt.structure_dir
 
     ###### for Testing
+    # import os
     # data_dir    = os.environ['DATA']
     # parameter_dir           = "/home/vorberg/"
     # plot_dir                = "/home/vorberg/"
     #
-    # braw_dir                = data_dir + "/benchmarkset_cathV4.1/contact_prediction/ccmpredpy_cd/braw/"
-    # qijab_dir               = data_dir + "/benchmarkset_cathV4.1/contact_prediction/ccmpredpy_cd/qij/"
-    # braw_dir                = data_dir + "/benchmarkset_cathV4.1/contact_prediction/ccmpredpy_pcd/braw/"
-    # qijab_dir               = data_dir + "/benchmarkset_cathV4.1/contact_prediction/ccmpredpy_pcd/qij/"
+    # braw_dir                = data_dir + "/benchmarkset_cathV4.1/contact_prediction/ccmpredpy_cd_gd/braw/"
+    # qijab_dir               = data_dir + "/benchmarkset_cathV4.1/contact_prediction/ccmpredpy_cd_gd/qij/"
     # pdb_dir                 = data_dir + "/benchmarkset_cathV4.1/pdb_renum_combs/"
     # psicov_dir              = data_dir + "/benchmarkset_cathV4.1/psicov/"
     #
     # nr_crossval_pairs       = 100
-    # nr_training_pairs       = 10000
-    # sigma                   = 'isotrope'
-    # nr_components           = 1
+    # nr_training_pairs       = 100
+    # sigma                   = 'diagonal'
+    # nr_components           = 3
     # debug_mode              = 0
     # diversity_thr           = 0.3
     # fixed_parameters        = ['weight_bg_0', 'weight_contact_0', 'mu_0']
@@ -107,9 +104,10 @@ def main():
     # max_gap_percentage = 0.5
     # filter_gap_columns = True
     # filter_pairs_by_Nij = True
+    # filter_best_pairs = False
     # maxcontacts_per_protein     = 250
     # maxnoncontacts_per_protein  = 500
-    # balance = 20
+    # balance = 1
     # prec_wrt_L = False
     # nr_threads = 1
     # reg_coeff_mu = 0
@@ -158,7 +156,7 @@ def main():
 
 
     #create dataset
-    data = coupling_data.CouplingData(braw_dir, qijab_dir, psicov_dir, pdb_dir)
+    data = CouplingData(braw_dir, qijab_dir, psicov_dir, pdb_dir)
     data.set_seed(seed)
     data.set_nr_residue_pairs_for_crossval(nr_crossval_pairs)
     data.set_nr_residue_pairs_for_training(nr_training_pairs)
@@ -186,11 +184,12 @@ def main():
     likelihood = LikelihoodFct(plot_dir)
     likelihood.set_debug_mode(debug_mode)
     likelihood.set_nr_threads_per_protein(nr_threads)
-    likelihood.set_regularizer_diagonal_precMat(reg_coeff_diagPrec)
-    likelihood.set_regularizer_mu(reg_coeff_mu)
     likelihood.set_parameters(parameters)
+    likelihood.set_regularizer(reg_coeff_mu, reg_coeff_diagPrec)
     likelihood.set_data(data)
 
+    #check gradients
+    #likelihood.numerical_gradient(check_weights=True, check_mu=True, check_prec=True)
 
 
     #start optimization of likelihood with data
@@ -201,7 +200,6 @@ def main():
     print(optimizer)
 
     optimizer.minimize()
-
 
 
 

@@ -1,17 +1,21 @@
 #!/usr/bin/env python
 
 
-import os
-import numpy as np
-import time
 import json
-import pandas as pd
-from statsmodels.tools import numdiff
-
-import utils_coupling_prior as coupling_prior_utils
-import plotting.plot_optimization_logfile as opt_plot
-import coupling_prior.ext.libreg as libreg
+import time
+import sys
 import coupling_prior.ext.libll as libll
+import coupling_prior.ext.libreg as libreg
+import numpy as np
+from statsmodels.tools import numdiff
+import raw
+import plotting.plot_optimization_logfile as opt_plot
+import utils_coupling_prior as coupling_prior_utils
+import utils.io_utils as io
+from coupling_prior.likelihood_protein import LikelihoodProtein
+from coupling_prior.parameters import Parameters
+from coupling_prior.regularization import Regularization
+import copy
 
 class LikelihoodFct():
     """
@@ -30,15 +34,14 @@ class LikelihoodFct():
         #parameters
         self.parameters          = None
 
+        #regularization settings
+        self.regularization = None
+
         #path to output files
         self.settings_file          = None
         self.optimization_log_file  = None
         self.plot_dir               = str(plot_dir)
         self.plot_name              = self.plot_dir + "/optimization_monitor_plot.html"
-
-        #regularization settings
-        self.regularizer_mu                 = 0 #set to 0 to ignore regularization
-        self.regularizer_diagonal_precMat   = 0 #set to 0 to ignore regularization
 
 
         # settings
@@ -145,11 +148,8 @@ class LikelihoodFct():
     def set_nr_threads_per_protein(self, nr_threads):
         self.threads_per_protein = int(nr_threads)
 
-    def set_regularizer_mu(self, reg_coeff_mu):
-        self.regularizer_mu = float(reg_coeff_mu)
-
-    def set_regularizer_diagonal_precMat(self, reg_coeff_diagPrec):
-        self.regularizer_diagonal_precMat = float(reg_coeff_diagPrec)
+    def set_regularizer(self, reg_coeff_mu, reg_coeff_diag_prec):
+        self.regularizion = Regularization(self.parameters, reg_coeff_mu, reg_coeff_diag_prec)
 
     def write_settings(self):
 
@@ -157,82 +157,115 @@ class LikelihoodFct():
             with open(self.settings_file, 'w') as fp:
                 json.dump(self.get_settings(), fp)
 
-    def regularizer(self):
+    def compute_regularization(self):
 
-        reg = 0
-        reg_gradients_struct = {}
+        if self.regularization is None:
+            print("You need to set the regularizer first with  'set_regularizer'. ")
+            return
 
-        if self.regularizer_mu != 0 or self.regularizer_diagonal_precMat != 0:
+        #update regularizer with current parameters
+        self.regularization.set_parameters(self.parameters)
 
-            regularizer = libreg.Regularizer(self.parameters.parameters_structured,
-                                          self.regularizer_mu,
-                                          self.regularizer_diagonal_precMat,
-                                          self.debug_mode
-                                          )
-            regularizer.print_regularization_parameters()
+        #compute regularization
+        reg = self.regularization.get_regularization()
 
-            # Add regularization to likelihood (not for fixed component 0!!!)
-            if self.regularizer_mu != 0:
-                reg += regularizer.regularizer_mu()
-            if self.regularizer_diagonal_precMat != 0:
-                reg += regularizer.regularizer_diagPrecMat()
+        #compute gradients of regularizer
+        reg_gradients_struct = self.regularization.get_regularization_gradients()
 
-            # Add gradient of regularizer
-            for parameter in sorted(self.parameters.parameters_structured):
-                comp = int(parameter.split("_")[-1])  # 0 or 1
-                if('mu' in parameter) and self.regularizer_mu != 0:
-                    reg_gradients_struct[parameter] = np.array(regularizer.gradient_mu_comp_reg(comp))
-                if('prec' in parameter) and self.regularizer_diagonal_precMat != 0:
-                    reg_gradients_struct[parameter] =  np.diag(regularizer.gradient_diagprecMat_comp_reg(comp))
+        return reg, reg_gradients_struct
+
+    def compute_f(self, parameter, parameter_name, parameter_index, LikelihoodProtein):
 
 
-        return(reg, reg_gradients_struct)
+        parameters_structured = copy.deepcopy(self.parameters.parameters_structured)
 
-    def compute_f(self, parameter, parameter_name, parameters_structured, parameter_index, LL):
-
-        #parameter value to compute finite differences
-        parameters_structured[parameter_name][parameter_index] = parameter[0]
+        if ('prec' in parameter_name) and (self.parameters.sigma == 'isotrope'):
+            parameters_structured[parameter_name] = [parameter[0]] * 400
+        else:
+            parameters_structured[parameter_name][parameter_index] = parameter[0]
 
         #compute function value at current parameter value
-        LL.set_parameters(parameters_structured)
-        LL.compute_f()
+        LikelihoodProtein.set_parameters(parameters_structured)
+        LikelihoodProtein.compute_f()
+        f = LikelihoodProtein.get_f()
+
+        return f
+
+    def compute_f_py(self, parameter, braw, Nij, qij, protein, parameter_name, parameter_index):
+
+
+        #compute function value at current parameter value
+        LL = LikelihoodProtein(braw, Nij, qij)
+        LL.set_pairs(
+            self.training_data[protein]['residue_i'],
+            self.training_data[protein]['residue_j'],
+            self.training_data[protein]['contact']
+        )
+
+        # define parameters
+        parameters = Parameters(self.parameters.parameter_dir)
+        parameters.set_sigma(self.parameters.sigma, self.parameters.prec_wrt_L)
+        parameters.set_nr_components(self.parameters.nr_components)
+        parameters.set_fixed_parameters(self.parameters.fixed_parameters)
+        parameters.initialise_parameters(seed=123, verbose=False)
+
+        parameters_structured = copy.deepcopy(self.parameters.parameters_structured)
+        if ('prec' in parameter_name) and (self.parameters.sigma == 'isotrope'):
+            parameters_structured[parameter_name] = [parameter[0]] * 400
+        else:
+            parameters_structured[parameter_name][parameter_index] = parameter[0]
+        parameters.parameters_structured=parameters_structured
+
+        #will also be transformed!
+        LL.set_parameters(parameters)
+
+        LL.compute_f_df(compute_gradients=False)
         f = LL.get_f()
 
         return f
 
-    def compute_grad_approx(self, parameter_name, parameters_structured, parameter_index, LL):
-
-        start_parameter_value = parameters_structured[parameter_name][parameter_index]
-
-        numerical_gradient = float(
-            numdiff.approx_fprime(
-                [start_parameter_value],
-                self.compute_f,
-                args=(parameter_name, parameters_structured.copy(), parameter_index, LL)
-            )
-        )
-
-        return numerical_gradient
-
     def numerical_gradient(self, check_weights=True, check_mu=True, check_prec=True):
 
+        #select data for checking the gradient
+        protein = self.training_data.keys()[0]
+        data_for_gradient_check = {protein: self.training_data[protein]}
 
-        print("\nDataset used for gradient checking \nnumber of contacts: {0}, number of non-contacts: {1}\n".format(self.dataset.nr_pairs_contact, self.dataset.nr_pairs_noncontact))
+        print("\nUse protein {0} for gradient checking".format(protein))
+        print("with {0} contacts and {1} non-contacts\n".format(
+            np.sum(data_for_gradient_check[protein]['contact']),
+            len(data_for_gradient_check[protein]['contact']) - np.sum(data_for_gradient_check[protein]['contact']))
+        )
 
 
-        #compute analytical gradients
+        ## compute analytical gradients
         print("compute analytical gradient...\n")
         LL = libll.Likelihood_Dataset(
-            self.training_data,
-            self.parameters.parameters_structured
+            data_for_gradient_check,
+            self.parameters.parameters_structured,
+            self.parameters.prec_wrt_L
         )
         LL.set_debug_mode(0)
         LL.set_threads_per_protein(self.threads_per_protein)
         LL.compute_f_df(self.hessian_pseudocount)
         gradients = LL.get_gradient_dict()
+        if self.parameters.sigma == 'isotrope':
+            for key in gradients.keys():
+                if 'prec' in key:
+                    gradients[key] = [np.sum(gradients[key])] * 400
 
-
-
+        # compute analytical gradients
+        # print("compute analytical gradient...\n")
+        # braw = raw.parse_msgpack(self.training_data[protein]['braw_file_path'])
+        # Nij, qij = io.read_qij(self.training_data[protein]['qijabfilename'], braw.ncol)
+        # LL = LikelihoodProtein(braw, Nij, qij)
+        # LL.set_pairs(
+        #     self.parameters.parameters_structured[protein]['residue_i'],
+        #     self.parameters.parameters_structured[protein]['residue_j'],
+        #     self.parameters.parameters_structured[protein]['contact']
+        # )
+        # LL.set_parameters(parameters)
+        # LL.compute_f_df()
+        # gradients = LL.get_gradients()
 
         if(check_weights):
             print("\ncheck gradients of weights parameters...\n")
@@ -240,15 +273,27 @@ class LikelihoodFct():
             print("{0:>20} {1:>20} {2:>20} {3:>20}".format(
                 "parameter", "numdiff", "analytical", "|difference|"))
 
-            for comp in range(self.nr_components):
+            for comp in range(self.parameters.nr_components):
+
                 parameter = 'weight_bg_'+str(comp)
-                num_grad_weight= self.compute_grad_approx(parameter, self.parameters.parameters_structured, 0, LL)
+                init_param=copy.deepcopy(self.parameters.parameters_structured[parameter][0])
+                num_grad_weight = numdiff.approx_fprime(
+                    [init_param],
+                    self.compute_f,
+                    args=(parameter, 0, LL)
+                )
                 diff = abs(gradients[parameter][0] - num_grad_weight)
                 print("{0:>20} {1:>20} {2:>20} {3:>20}".format(
                     parameter, num_grad_weight, gradients[parameter][0], diff))
 
+
                 parameter = 'weight_contact_' + str(comp)
-                num_grad_weight = self.compute_grad_approx(parameter, self.parameters.parameters_structured, 0, LL)
+                init_param=copy.deepcopy(self.parameters.parameters_structured[parameter][0])
+                num_grad_weight = numdiff.approx_fprime(
+                    [init_param],
+                    self.compute_f,
+                    args=(parameter, 0, LL)
+                )
                 diff = abs(gradients[parameter][0] - num_grad_weight)
                 print("{0:>20} {1:>20} {2:>20} {3:>20}".format(
                     parameter, num_grad_weight, gradients[parameter][0], diff))
@@ -260,13 +305,18 @@ class LikelihoodFct():
             print("{0:>20} {1:>20} {2:>20} {3:>20} {4:>20}".format(
                 "parameter", "index", "numdiff", "analytical", "|difference|"))
 
-            parameter_indices = np.random.randint(400, size=20)
+            parameter_indices = np.random.randint(400, size=3)
 
-            for comp in range(self.nr_components):
-                for parameter_index in parameter_indices:
+            for comp in range(self.parameters.nr_components):
+                for parameter_index in parameter_indices.tolist():
 
                     parameter = 'mu_'+str(comp)
-                    num_grad_weight= self.compute_grad_approx(parameter, self.parameters.parameters_structured, parameter_index, LL)
+                    init_param = copy.deepcopy(self.parameters.parameters_structured[parameter][parameter_index])
+                    num_grad_weight = numdiff.approx_fprime(
+                        [init_param],
+                        self.compute_f,
+                        args=(parameter, parameter_index, LL)
+                    )
                     diff = abs(gradients[parameter][parameter_index] - num_grad_weight)
                     print("{0:>20} {1:>20} {2:>20} {3:>20} {4:>20}".format(
                         parameter, parameter_index, num_grad_weight, gradients[parameter][parameter_index], diff))
@@ -278,16 +328,98 @@ class LikelihoodFct():
             print("{0:>20} {1:>20} {2:>20} {3:>20} {4:>20}".format(
                 "parameter", "index", "numdiff", "analytical", "|difference|"))
 
-            parameter_indices = np.random.randint(400, size=20)
+            parameter_indices = np.random.randint(400, size=3)
 
-            for comp in range(self.nr_components):
-                for parameter_index in parameter_indices:
-
+            for comp in range(self.parameters.nr_components):
+                for parameter_index in parameter_indices.tolist():
                     parameter = 'prec_'+str(comp)
-                    num_grad_weight= self.compute_grad_approx(parameter, self.parameters.parameters_structured, parameter_index, LL)
+
+                    init_param = copy.deepcopy(self.parameters.parameters_structured[parameter][parameter_index])
+                    # num_grad_weight = numdiff.approx_fprime(
+                    #     [init_param],
+                    #     self.compute_f_py,
+                    #     args=(braw, Nij, qij, protein, parameter, parameter_index)
+                    # )
+                    num_grad_weight = numdiff.approx_fprime(
+                        [init_param],
+                        self.compute_f,
+                        args=(parameter, parameter_index, LL)
+                    )
                     diff = abs(gradients[parameter][parameter_index] - num_grad_weight)
                     print("{0:>20} {1:>20} {2:>20} {3:>20} {4:>20}".format(
                         parameter, parameter_index, num_grad_weight, gradients[parameter][parameter_index], diff))
+
+    def f_df_protein(self, protein, parameters_structured):
+
+        print(protein)
+
+        braw = raw.parse_msgpack(self.training_data[protein]['braw_file_path'])
+        Nij, qij = io.read_qij(self.training_data[protein]['qijabfilename'], braw.ncol)
+
+        lik_protein = LikelihoodProtein(braw, Nij, qij)
+
+        lik_protein.set_pairs(
+            self.training_data[protein]['residue_i'],
+            self.training_data[protein]['residue_j'],
+            self.training_data[protein]['contact']
+        )
+
+        #create new Parameter instance
+        parameters = Parameters(self.parameters.parameter_dir)
+        parameters.set_sigma(self.parameters.sigma, self.parameters.prec_wrt_L)
+        parameters.set_nr_components(self.parameters.nr_components)
+        parameters.set_fixed_parameters(self.parameters.fixed_parameters)
+        parameters.set_parameters_structured(parameters_structured)
+        lik_protein.set_parameters(parameters)
+
+        lik_protein.compute_f_df()
+
+        f_protein = lik_protein.get_f()
+        grad_protein = lik_protein.get_gradients()
+
+        return f_protein, grad_protein
+
+    def f_df_py(self, parameters_linear):
+
+        f = 0
+        g = {}
+
+        parameters_linear = np.array(parameters_linear)
+        parameters_structured = self.parameters.linear_to_structured(parameters_linear)
+
+        #initialise gradient dict with zeros
+        for parameter in self.parameters.parameters_structured.keys():
+            if parameter not in self.parameters.fixed_parameters:
+                g[parameter] = [0] * len(self.parameters.parameters_structured[parameter])
+
+        t = time.time()
+        for protein in self.training_data.keys():
+            f_protein, grad_protein = self.f_df_protein(protein, parameters_structured.copy())
+            f += f_protein
+            for parameter, val in grad_protein.iteritems():
+                g[parameter] += val
+        timestamp = time.time() - t
+
+        self.print_status(f, g, timestamp)
+
+        ##### update log file
+        log_df = self.update_optimization_logfile(f, g, timestamp)
+
+        parameters_transformed_back = self.parameters.transform_parameters(weights=True, mean=False, prec=True, back=True)
+
+        ##### save parameters and settings
+        self.parameters.write_parameters(parameters_transformed_back)
+        self.write_settings()
+
+        ##### Plot the evaluation plot
+        # opt_plot.plot_evaluation(parameters_transformed_back,
+        #                          log_df,
+        #                          self.get_settings(),
+        #                          self.evaluation_set,
+        #                          self.plot_name
+        #                          )
+
+        return(f, self.parameters.structured_to_linear(g))
 
     def f_df(self, parameters_linear):
 
@@ -313,7 +445,7 @@ class LikelihoodFct():
         gradients = LL.get_gradient_dict()
 
         # regularization
-        reg, reg_gradients = self.regularizer()
+        reg, reg_gradients = self.compute_regularization()
         f -= reg
         for key in reg_gradients.keys():
             gradients[key] -= reg_gradients[key]
@@ -341,7 +473,6 @@ class LikelihoodFct():
                                  log_df,
                                  self.get_settings(),
                                  self.evaluation_set,
-                                 self.parameters.prec_wrt_L,
                                  self.plot_name
                                  )
 
@@ -367,6 +498,8 @@ class LikelihoodFct():
         print("{0:>24} {1:>24} {2:>24} {3:>24} {4:>24} \n".format(
             f, gradient_norm_weight, gradient_norm_mu, gradient_norm_prec, timestamp
         ))
+
+        sys.stdout.flush()
 
     def update_optimization_logfile(self, f, gradients, timestamp):
 
