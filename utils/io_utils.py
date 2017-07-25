@@ -99,6 +99,20 @@ def read_matfile(matfile):
 
     return mat
 
+def write_matfile(mat, matfile, meta={}):
+
+    if matfile.endswith(".gz"):
+        with gzip.open(matfile, 'wb') as f:
+            np.savetxt(f, mat)
+            f.write("#>META> ".encode("utf-8") + json.dumps(meta).encode("utf-8") + b"\n")
+        f.close()
+    else:
+        np.savetxt(matfile, mat)
+        with open(matfile,'a') as f:
+            f.write("#>META> ".encode("utf-8") + json.dumps(meta).encode("utf-8") + b"\n")
+        f.close()
+
+
 def read_fasta(fasta_file):
     try:
         aln_iterator = aio.read(fasta_file, format='fasta', seq_count=1)
