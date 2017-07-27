@@ -20,19 +20,29 @@ eval_dir=$DATA"/benchmarkset_cathV4.1/evaluation/"
 #python $CONTACT_PREDICTION_PATH/benchmark/append_to_evaluation_file.py $settings
 
 
+#echo "add method ccmpred-pll-centerv+apc"
+#settings=$eval_dir
+#settings=$settings" $DATA/benchmarkset_cathV4.1/contact_prediction/ccmpred-pll-centerv/mat/ "
+#settings=$settings" ccmpred-pll-centerv+apc"
+#settings=$settings" --mat_file --apc --no_update"
+#python $CONTACT_PREDICTION_PATH/benchmark/append_to_evaluation_file.py $settings
 
 
+echo "add method ccmpred-cd-gd+apc"
+settings=$eval_dir
+settings=$settings" $DATA/benchmarkset_cathV4.1/contact_prediction/ccmpredpy_cd_gd/mat/ "
+settings=$settings" ccmpred-cd-gd+apc"
+settings=$settings" --mat_file --apc --no_update"
+python $CONTACT_PREDICTION_PATH/benchmark/append_to_evaluation_file.py $settings
 
-methods="ccmpred-pll-centerv ccmpred-cd-gd ccmpred-pcd-gd " ##ccmpred-pcd-gd
-for method in $methods;
-do
-    echo "add method "$method"+apc"
-    settings=$eval_dir
-    settings=$settings" $DATA/benchmarkset_cathV4.1/contact_prediction/"$method"/mat/ "
-    settings=$settings" "$method"+apc"
-    settings=$settings" --mat_file --apc --no_update"
-    python $CONTACT_PREDICTION_PATH/benchmark/append_to_evaluation_file.py $settings
-done
+
+echo "add method ccmpred-pcd-gd+apc"
+settings=$eval_dir
+settings=$settings" $DATA/benchmarkset_cathV4.1/contact_prediction/ccmpredpy_pcd_gd/mat/ "
+settings=$settings" ccmpred-pcd-gd+apc"
+settings=$settings" --mat_file --apc --no_update"
+python $CONTACT_PREDICTION_PATH/benchmark/append_to_evaluation_file.py $settings
+
 
 
 
