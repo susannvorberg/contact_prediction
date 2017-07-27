@@ -17,7 +17,7 @@ eval_dir=$DATA"/benchmarkset_cathV4.1/evaluation/"
 #settings=$settings" $DATA/benchmarkset_cathV4.1/contact_prediction/ccmpred-vanilla/ "
 #settings=$settings" ccmpred-vanilla+apc"
 #settings=$settings" --mat_file --apc --no_update"
-#python ../benchmark/append_to_evaluation_file.py $settings
+#python $CONTACT_PREDICTION_PATH/benchmark/append_to_evaluation_file.py $settings
 
 
 
@@ -31,7 +31,7 @@ do
     settings=$settings" $DATA/benchmarkset_cathV4.1/contact_prediction/"$method"/mat/ "
     settings=$settings" "$method"+apc"
     settings=$settings" --mat_file --apc --no_update"
-    python ../benchmark/append_to_evaluation_file.py $settings
+    python $CONTACT_PREDICTION_PATH/benchmark/append_to_evaluation_file.py $settings
 done
 
 
@@ -50,7 +50,7 @@ done
 #    settings=$settings" /home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/local_methods/"$dir"/"
 #    settings=$settings" "$dir"+apc"
 #    settings=$settings" --mat_file --apc --no_update"
-#    python ../benchmark/append_to_evaluation_file.py $settings
+#    python $CONTACT_PREDICTION_PATH/benchmark/append_to_evaluation_file.py $settings
 #done
 
 
@@ -61,4 +61,4 @@ done
 #echo "Remove scores..."
 #methods_to_remove="mi_nogaps+apc,mi_normalized_nogaps+apc,omes_fodoraldrich_nogaps+apc,omes_nogaps+apc"
 #settings=$eval_dir" --methods "$methods_to_remove
-#python ../benchmark/remove_score.py $settings
+#python $CONTACT_PREDICTION_PATH/benchmark/remove_score.py $settings
