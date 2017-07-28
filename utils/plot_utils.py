@@ -57,9 +57,6 @@ def plot_feature_importance(features, feature_importance, number_features=20, pl
     else:
         return plot
 
-
-
-
 def plot_pairwise_couplings_density(scatter_dict, title, plot_out=None):
 
     x_axis_title  = scatter_dict.keys()[0]
@@ -152,7 +149,6 @@ def plot_pairwise_couplings_density(scatter_dict, title, plot_out=None):
     else:
         return fig
 
-
 def plot_coupling_vs_neff(coupling_df, feature, plot_file=None):
 
 
@@ -239,7 +235,6 @@ def plot_coupling_vs_neff(coupling_df, feature, plot_file=None):
     else:
         return plot
 
-
 def plot_scatter_meanprecision_per_protein_vs_feature(scatter_dict, title, xaxis_title, log_xaxis=False, plot_out=None):
     """
     Plots a scatter plot with trendline (moving average)
@@ -308,7 +303,6 @@ def plot_scatter_meanprecision_per_protein_vs_feature(scatter_dict, title, xaxis
         plotly_plot(plot, filename=plot_out, auto_open=False)
     else:
         return plot
-
 
 def plot_meanprecision_per_protein(scatter_dict, title, plot_out=None):
     """
@@ -400,7 +394,7 @@ def plot_precision_vs_recall_plotly(precision_recall_dict, title, plot_out=None)
             go.Scatter(
                 x=precision_recall_dict[method]['recall'],
                 y=precision_recall_dict[method]['precision'],
-                name=method + "("+str(precision_recall_dict[method]['size'],)+" proteins)",
+                name=method,
                 mode='lines',
                 showlegend=True
             )
@@ -429,7 +423,6 @@ def plot_precision_vs_recall_plotly(precision_recall_dict, title, plot_out=None)
         plotly_plot(plot, filename=plot_out, auto_open=False)
     else:
         return plot
-
 
 def plot_evaluationmeasure_vs_rank_plotly(evaluation_dict, title, yaxistitle, plot_out=None):
     """
@@ -533,7 +526,6 @@ def plot_precision_rank_facetted_plotly(precision_rank, title, plot_out=None):
         plotly_plot(fig, filename=plot_out, auto_open=False)
     else:
         return fig
-
 
 def plot_contact_map_someScore_plotly(plot_matrix, title, seqsep, gaps_percentage_plot=None, plot_file=None):
     
@@ -697,8 +689,7 @@ def plot_contact_map_someScore_plotly(plot_matrix, title, seqsep, gaps_percentag
         plotly_plot(fig, filename=plot_file, auto_open=False)
     else:
         return fig
-    
-    
+
 def plot_coupling_matrix(couplings, single_terms_i, single_terms_j, residue_i, residue_j, protein, plot_file=None ):
 
     grid = np.indices((20, 20))
@@ -797,7 +788,6 @@ def plot_coupling_matrix(couplings, single_terms_i, single_terms_j, residue_i, r
         plotly_plot(fig, filename=plot_file, auto_open=False)
     else:
         return fig
-
 
 def plot_aa_freq_matrix(pair_freq, single_freq_i, single_freq_j, residue_i, residue_j, title, frequencies=True, plot_file=None):
     grid = np.indices((21, 21))
@@ -899,7 +889,6 @@ def plot_aa_freq_matrix(pair_freq, single_freq_i, single_freq_j, residue_i, resi
     else:
         return fig
 
-
 #basic plotly plots
 
 def plot_barplot(statistics_dict, title, y_axis_title, type='stack', colors=None, plot_out=None):
@@ -950,7 +939,6 @@ def plot_barplot(statistics_dict, title, y_axis_title, type='stack', colors=None
         plotly_plot(plot, filename=plot_out, auto_open=False)
     else:
         return plot
-
 
 def draw_box(values, parameter_name, color=None, orient='v', jitter_pos=None):
     # imitate jitter
