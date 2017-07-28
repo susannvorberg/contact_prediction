@@ -135,7 +135,7 @@ class AlignmentFeatures():
 
 
         #extract class df
-        class_df_columns = ['Cbdist', 'contact', 'nocontact', 'i', 'j', 'protein']
+        class_df_columns = ['Cbdist', 'contact', 'nocontact', 'i', 'j', 'protein', 'L']
         class_df = pd.DataFrame()
         for name in class_df_columns:
             class_df[name] = feature_df[name]
@@ -213,6 +213,7 @@ class AlignmentFeatures():
 
         self.features['global']['protein']=np.array([self.protein])
         self.features['global']['L']=np.array([self.L])
+        self.features['global']['log_L']=np.log([self.L])
         self.features['global']['N']=np.array([self.N])
         self.features['global']['diversity'] = np.array([np.sqrt(self.N)/self.L])
         self.features['global']['Neff'] = np.array([self.neff])
