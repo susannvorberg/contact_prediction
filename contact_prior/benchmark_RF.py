@@ -2,13 +2,8 @@
 import argparse
 import pandas as pd
 import glob
-from contact_prior.AlignmentFeatures import AlignmentFeatures
-from sklearn.externals import joblib
-import numpy as np
-import raw
 from benchmark import Benchmark
-import json
-
+from  bayesian_model.BayesianContactPredictor import BayesianContactPredictor
 
 def parse_args():
 
@@ -66,65 +61,35 @@ def main():
         properties.columns=['protein', 'resol', 'CATH-topology', 'domlength', 'alilength', 'dataset_id']
         dataset_properties = dataset_properties.append(properties, ignore_index=True)
 
-
-    ###########  Load Random Forest model
-    RF_clf = joblib.load(model_file)
-    params = RF_clf.get_params()
-
-    ###########  Load Random Forest model meta data
-    meta_out = model_file + ".meta"
-    rf_meta = json.load(meta_out)
-    window_size             = rf_meta['window_size']
-    seq_separation          = rf_meta['seq_separation']
-    contact_threshold       = rf_meta['contact_threshold']
-    non_contact_threshold   = contact_threshold #as we want to predict all pairs
-
     ########## Setup Benchmark framework
     b = Benchmark(evaluation_dir)
 
     ########## Benschmark on dataset 10
     benchmark_dataset_id = 10
 
+    ######### Load model
+    rf_clf, rf_meta = BayesianContactPredictor.load_contact_prior_model(model_file)
+
     ########## Iterate over proteins
     for protein in dataset_properties.query('dataset_id == '+str(benchmark_dataset_id))['protein'][:n_proteins]:
 
         alignment_file  = alignment_dir + "/" + protein.strip() + ".filt.psc"
-        pdb_file        = pdb_dir + "/" + protein.strip() + ".pdb"
         psipred_file    = psipred_dir + "/" + protein.strip() + ".filt.withss.a3m.ss2"
         netsurfp_file   = netsurfp_dir + "/" + protein.strip() + ".filt.netsurfp"
         mi_file         = mi_dir + "/"+ protein.strip() + "filt.mi..mat"
         omes_file       = omes_dir + "/"+ protein.strip() + "filt.omes.mat"
-        braw_file       = braw_dir + "/" + protein.strip() + ".braw.gz"
 
-        braw = raw.parse_msgpack(braw_file)
+        BCP = BayesianContactPredictor(alignment_file, rf_meta['seq_separation'], rf_meta['contact_threshold'])
+        BCP.contact_prior_model = rf_clf
+        BCP.contact_prior_meta = rf_meta
+        contact_prior_mat = BCP.contact_prior(psipred_file, netsurfp_file, mi_file, omes_file)
+        meta = {
+            'opt_code' : 1,
+            'rf' : rf_meta
+        }
 
-        #generate features
-        AF = AlignmentFeatures(alignment_file, pdb_file, seq_separation, contact_threshold,
-                               non_contact_threshold)
-        AF.compute_mean_physico_chem_properties()
-        AF.compute_correlation_physico_chem_properties()
-        AF.compute_entropy()
-        AF.compute_mutual_info(mi_file)
-        AF.compute_pssm()
-        AF.compute_mean_pairwise_potentials()
-        AF.compute_omes(omes_file)
-        AF.compute_contact_prior_given_L(contact_thr=contact_threshold, seqsep=seq_separation)
-        AF.compute_psipred_features(psipred_file)
-        AF.compute_netsurfp_features(netsurfp_file)
-        if braw_file:
-            AF.compute_coupling_feature(braw_file, qij=True)
-        AF.compute_single_features_in_window(window_size=window_size)
-        feature_df_protein, class_df_protein = AF.get_feature_matrix()
-
-
-        L = braw.ncol
-        ij_indices = np.array([class_df_protein['i'].values, class_df_protein['j'].values])
-
-        ##add random forest
-        mat_rf = np.zeros((L,L))
-        mat_rf[ij_indices] = RF_clf.predict_proba(feature_df_protein.as_matrix()).transpose()[1]
-        b.add_method(protein, 'rf+apc', mat_rf, {'rf_parameters':params, 'opt_code': 1}, apc=True, update=True)
-        b.add_method(protein, 'rf', mat_rf, {'rf_parameters':params, 'opt_code': 1}, apc=False, update=True)
+        b.add_method(protein, 'rf+apc', contact_prior_mat, meta, apc=True, update=True)
+        b.add_method(protein, 'rf', contact_prior_mat, meta, apc=False, update=True)
 
     ########## Plotting
 
@@ -138,8 +103,8 @@ def main():
     benchmark_methods += ['rf', 'rf+apc', 'omes+apc', 'mi+apc']
 
     #Compute statistics ===================================================================================================
-    seqsep = seq_separation
-    contact_thr = contact_threshold
+    seqsep = rf_meta['seq_separation']
+    contact_thr = rf_meta['contact_threshold']
     b.set_methods_for_benchmark(benchmark_methods)
     b.compute_evaluation_statistics(seqsep, contact_thr)
 
