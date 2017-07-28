@@ -15,7 +15,11 @@ class LikelihoodProtein():
 
         self.L      = braw.ncol
 
-        self.lambda_w =  braw.meta['workflow'][0]['regularization']['lambda_pair']
+
+        if 'regularization' in braw.meta['workflow'][0]:
+            self.lambda_w =  braw.meta['workflow'][0]['regularization']['lambda_pair']
+        else:
+            self.lambda_w = braw.meta['workflow'][0]['parameters']['regularization']['lambda_pair']
         self.lambda_w_mat = np.diag([self.lambda_w] * 400)
 
         self.residues_i = None
@@ -26,7 +30,7 @@ class LikelihoodProtein():
         self.covMatdiag = None
         self.log_det_precMat = None
 
-        self.f = 0
+        self.f_pairwise = []
 
         #intialize gradients
         self.gradients = {}
@@ -64,7 +68,10 @@ class LikelihoodProtein():
                     self.log_det_precMat[component] =  np.sum(np.log(self.parameters.parameters_structured[parameter]))
 
     def get_f(self):
-        return self.f
+        return np.sum(self.f_pairwise)
+
+    def get_f_pairwise(self):
+        return self.f_pairwise
 
     def get_gradients(self):
         return self.gradients
@@ -155,17 +162,26 @@ class LikelihoodProtein():
     def compute_f_df(self, compute_gradients=True):
 
         if self.parameters is None:
-            print("You first need to set parameters!")
+            print("You first need to set parameters with 'set_parameters()'!")
+            return
+
+        if self.residues_i is None:
+            print("You first need to set data with 'set_pairs()'!")
             return
 
         #initialise f and gradients in case compute_f_df is called multiple times
-        self.f = 0
+        self.f_pairwise = [0] * len(self.residues_i)
         for parameter in self.parameters.parameters_structured.keys():
             if parameter not in self.parameters.fixed_parameters:
                 self.gradients[parameter] = [0] * len(self.parameters.parameters_structured[parameter])
 
+
         #iterate over all residue pairs for this protein
-        for i,j,contact in zip(self.residues_i, self.residues_j, self.contacts):
+        for nr in range(len(self.residues_i)):
+
+            i = self.residues_i[nr]
+            j = self.residues_j[nr]
+            contact = self.contacts[nr]
 
 
             diag_qij 		= np.diag(self.qij[i,j])                    # dim 400, 400 only diagonal
@@ -254,7 +270,7 @@ class LikelihoodProtein():
             #save NEG log likelihood of current pair
             f = np.log(sum_resp) + a_max
             if not np.isnan(f) and not np.isinf(f):
-                self.f -= f
+                self.f_pairwise[nr] = -f
 
             # print   "resp: " + str(responsibilities[0]) + " f: " + str(f)
 
