@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import TrainContactPriorModel as CPM
+import contact_prior.TrainContactPriorModel as CPM
 import argparse
 import sys
 
@@ -50,16 +50,16 @@ def main():
 
     args = parse_args()
 
-    property_files_dir = args.property_files_dir
-    alignment_dir     = args.alignment_dir
-    pdb_dir           = args.pdb_dir
-    psipred_dir        = args.psipred_dir
-    netsurfp_dir     = args.netsurfp_dir
-    mi_dir           = args.mi_dir
-    omes_dir          = args.omes_dir
-    braw_dir         = args.braw_dir
-    parameter_dir      = args.parameter_dir
-    plot_dir         = args.plot_dir
+    property_files_dir      = args.property_files_dir
+    alignment_dir           = args.alignment_dir
+    pdb_dir                 = args.pdb_dir
+    psipred_dir             = args.psipred_dir
+    netsurfp_dir            = args.netsurfp_dir
+    mi_dir                  = args.mi_dir
+    omes_dir                = args.omes_dir
+    braw_dir                = args.braw_dir
+    parameter_dir           = args.parameter_dir
+    plot_dir                = args.plot_dir
     nr_contacts             = args.nr_contacts
     nr_non_contacts         = args.nr_non_contacts
     max_nr_contacts         = args.max_nr_contacts
@@ -70,7 +70,7 @@ def main():
     non_contact_threshold   = args.non_contact_threshold
     est                     = args.estimator
 
-
+    #
     # property_files_dir = "/home/vorberg/work/data/benchmarkset_cathV4.1/dataset/dataset_properties/"
     # alignment_dir      = "/home/vorberg/work/data/benchmarkset_cathV4.1/psicov/"
     # pdb_dir            ="/home/vorberg/work/data/benchmarkset_cathV4.1/pdb_renum_combs/"
@@ -90,7 +90,7 @@ def main():
     # seq_separation          = 12
     # contact_threshold       = 8
     # non_contact_threshold   = 25
-    # est = "xgboost" #"random_forest"
+    # est = "random_forest"
 
     contact_prior_model = CPM.TrainContactPriorModel(est)
 
@@ -111,17 +111,28 @@ def main():
     # ##for testing: less parameters
     # if est == "random_forest":
     #     contact_prior_model.print_param_grid()
-    #     param_grid={'n_estimators': [100],
-    #                 "criterion": ['gini', 'entropy']
-    #                 }
+    #     param_grid={
+    #         'n_estimators': [1000],
+    #         'min_samples_leaf': [1],
+    #         'max_depth': [100],
+    #         'criterion': ["gini"],
+    #         # 'class_weight': [None,
+    #         #                  "balanced",
+    #         #                  {0: 2.0/3, 1: 2},          # ==> n_samples/(n_classes * np.bincount(y) fuer ratio 1:3
+    #         #                  {0: 0.6,   1: 3},          # ==> n_samples/(n_classes * np.bincount(y) fuer ratio 1:5
+    #         #                  {0: 0.55,  1: 5.5},        # ==> n_samples/(n_classes * np.bincount(y) fuer ratio 1:10
+    #         #                  {0: 0.525, 1: 10.5}],      # ==> n_samples/(n_classes * np.bincount(y) fuer ratio 1:20
+    #         'min_samples_split': [2]
+    #         }
     #     contact_prior_model.update_param_grid(param_grid)
+    # #
     #
-    #
-    # ##for testing: less parameters
+    ##for testing: less parameters
     # if est == "xgboost":
     #     contact_prior_model.print_param_grid()
-    #     param_grid={'max_depth': [2, 4],
-    #                 'n_estimators': [100, 1000]
+    #     param_grid={'n_estimators': [100, 500, 1000],
+    #                 'learning_rate': [0.0001, 0.001, 0.01],
+    #                 'scale_pos_weight': [1, 5, 20]
     #                 }
     #     contact_prior_model.update_param_grid(param_grid)
 
@@ -131,25 +142,18 @@ def main():
     #do grid search on predefined parameter grid
     contact_prior_model.gridsearch_modelhyperparameters(plot_dir, parameter_dir)
 
-    #evaluate the model on test data
-    print("\nCompute features for testset with contacts:noncontact ratio 1:20 ...")
-    sys.stdout.flush()
-    contact_prior_model.generate_test_data(
-        nr_contacts_test=1000, nr_non_contacts_test=20000, nr_proteins_test=None,
-        contact_threshold_test=8, non_contact_threshold_test=8)
-    print("\nEvaluate model on testset ...")
-    sys.stdout.flush()
-    contact_prior_model.evaluate_model(plot_dir)
 
-    # evaluate the model on whole protein test set
-    print("\nCompute features for testset from whole proteins...")
+
+    print("\nGenerate testset from whole proteins...")
     sys.stdout.flush()
     contact_prior_model.generate_test_data(
         nr_contacts_test=0, nr_non_contacts_test=0, nr_proteins_test=50,
         contact_threshold_test=8, non_contact_threshold_test=8)
-    print("\nEvaluate model on testset ...")
+
+
+    print("\nEvaluate model on testset (whole proteins)...")
     sys.stdout.flush()
-    contact_prior_model.evaluate_model(plot_dir)
+    contact_prior_model.evaluate_model(plot_dir, prec_rank=True, prec_recall=True)
 
 if __name__ == '__main__':
     main()
