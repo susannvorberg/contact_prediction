@@ -40,19 +40,19 @@ io = extcpp(
                      ]
         )
 
-regularizer = extcpp(
-            'coupling_prior.ext.libreg',
-            sources=['coupling_prior/ext/Regularizer_PyWrapper.cpp',
-                     'coupling_prior/ext/Regularizer.cpp',
+likelihood = extcpp(
+            'coupling_prior.ext.libll',
+            sources=['coupling_prior/ext/Likelihood_Dataset_PyWrapper.cpp',
+                     'coupling_prior/ext/Likelihood_Dataset.cpp',
+                     'coupling_prior/ext/Likelihood_Protein.cpp',
                      'coupling_prior/ext/Parameters.cpp',
                      'utils/ext/boost_converters.cpp'
                      ]
         )
 
-likelihood = extcpp(
-            'coupling_prior.ext.libll',
-            sources=['coupling_prior/ext/Likelihood_Dataset_PyWrapper.cpp',
-                     'coupling_prior/ext/Likelihood_Dataset.cpp',
+likelihood_protein = extcpp(
+            'coupling_prior.ext.libproteinll',
+            sources=['coupling_prior/ext/Likelihood_Protein_PyWrapper.cpp',
                      'coupling_prior/ext/Likelihood_Protein.cpp',
                      'coupling_prior/ext/Parameters.cpp',
                      'utils/ext/boost_converters.cpp'
@@ -76,6 +76,6 @@ setup(
     description="cpp utils",
     license="AGPLv3",
     packages=find_packages(),
-    ext_modules=[utils, io, regularizer, likelihood, counts, weighting],
+    ext_modules=[utils, io, likelihood, likelihood_protein, counts, weighting],
     scripts=['contact_prior/grid_search_RF.py']
 )
