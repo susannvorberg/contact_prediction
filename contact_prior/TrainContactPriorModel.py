@@ -89,12 +89,12 @@ class TrainContactPriorModel():
             },
             'xgboost': {
                 'learning_rate': [0.01],
-                'n_estimators': [300],
+                'n_estimators': [300, 500],
                 'subsample': [1],
-                'max_depth': [2],
+                'max_depth': [2,4,6,8,10],
                 'min_child_weight': [3],
                 'reg_lambda': [1],
-                'scale_pos_weight': [0.05, 0.1, 0.2, 1, 5, 10, 20]
+                'scale_pos_weight': [1]
 
             }
         }
@@ -163,10 +163,9 @@ class TrainContactPriorModel():
         protein = os.path.basename(alignment_file).split(".")[0]
         print("    compute features for protein {0}".format(protein))
 
-        AF = AlignmentFeatures(alignment_file, pdb_file, self.sequence_separation,
-                               contact_threshold, non_contact_threshold,
-                               max_nr_contacts_per_protein, max_nr_non_contacts_per_protein
-                               )
+        AF = AlignmentFeatures(alignment_file, self.sequence_separation, contact_threshold, non_contact_threshold)
+        AF.compute_distances_and_pairs(pdb_file, max_nr_contacts_per_protein, max_nr_non_contacts_per_protein)
+        AF.compute_basic_features()
         AF.compute_mean_physico_chem_properties()
         AF.compute_correlation_physico_chem_properties()
         AF.compute_entropy()
