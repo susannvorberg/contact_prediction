@@ -159,14 +159,14 @@ class LikelihoodFct():
             with open(self.settings_file, 'w') as fp:
                 json.dump(self.get_settings(), fp)
 
-    def compute_regularization(self):
+    def compute_regularization(self, parameters_structured):
 
         if self.regularization is None:
             print("You need to set the regularizer first with  'set_regularizer'. ")
             return
 
         #update regularizer with current parameters
-        self.regularization.set_parameters(self.parameters)
+        self.regularization.set_parameters(parameters_structured)
 
         #compute regularization
         reg = self.regularization.get_regularization()
@@ -190,6 +190,10 @@ class LikelihoodFct():
         LikelihoodProtein.set_parameters(parameters_structured)
         LikelihoodProtein.compute_f()
         f = LikelihoodProtein.get_f()
+
+        # regularization
+        reg, reg_gradients = self.compute_regularization(parameters_structured)
+        f = reg
 
         return f
 
@@ -254,6 +258,15 @@ class LikelihoodFct():
             for key in gradients.keys():
                 if 'prec' in key:
                     gradients[key] = [np.sum(gradients[key])] * 400
+
+
+        # regularization
+        self.regularization.fixed_parameters = [] #so that we also get gradients for fixed parameters
+        reg, reg_gradients = self.compute_regularization(self.parameters.parameters_structured)
+        for key in reg_gradients.keys():
+            print key
+            gradients[key] = reg_gradients[key]
+
 
         # compute analytical gradients
         # print("compute analytical gradient...\n")
@@ -334,8 +347,8 @@ class LikelihoodFct():
 
             for comp in range(self.parameters.nr_components):
                 for parameter_index in parameter_indices.tolist():
-                    parameter = 'prec_'+str(comp)
 
+                    parameter = 'prec_'+str(comp)
                     init_param = copy.deepcopy(self.parameters.parameters_structured[parameter][parameter_index])
                     # num_grad_weight = numdiff.approx_fprime(
                     #     [init_param],
@@ -350,6 +363,30 @@ class LikelihoodFct():
                     diff = abs(gradients[parameter][parameter_index] - num_grad_weight)
                     print("{0:>20} {1:>20} {2:>20} {3:>20} {4:>20}".format(
                         parameter, parameter_index, num_grad_weight, gradients[parameter][parameter_index], diff))
+
+    @staticmethod
+    def compute_neg_log_likelihood_protein(braw_file, qij_file, residues_i, residues_j, parameters, contact=1):
+
+        assert(len(residues_i) == len(residues_j)), "residues_i and residues_j are not of same length!"
+
+        braw = raw.parse_msgpack(braw_file)
+        Nij, qij = io.read_qij(qij_file, braw.ncol)
+
+        lik_protein = LikelihoodProtein(braw, Nij, qij)
+
+        lik_protein.set_pairs(
+            residues_i,
+            residues_j,
+            [contact] * len(residues_i)
+        )
+
+        lik_protein.set_parameters(parameters)
+
+        lik_protein.compute_f_df(compute_gradients=False)
+
+        f_protein = lik_protein.get_f_pairwise()
+
+        return f_protein
 
     def f_df_protein(self, protein, parameters_structured):
 
@@ -447,10 +484,10 @@ class LikelihoodFct():
         gradients = LL.get_gradient_dict()
 
         # regularization
-        reg, reg_gradients = self.compute_regularization()
+        reg, reg_gradients = self.compute_regularization(self.parameters.parameters_structured)
         f -= reg
         for key in reg_gradients.keys():
-            gradients[key] -= reg_gradients[key]
+            gradients[key] =  list(np.array(gradients[key]) - np.array(reg_gradients[key]))
 
         #handle isotrope case: gradients of all 400 dimenstions need to be summed
         if self.parameters.sigma == 'isotrope':
@@ -458,7 +495,7 @@ class LikelihoodFct():
                 if 'prec' in key:
                     gradients[key] = [np.sum(gradients[key])] * 400
 
-        self.print_status(f, gradients, timestamp)
+        self.print_status(f+reg, reg,  gradients, timestamp)
 
         ##### update log file
         log_df = self.update_optimization_logfile(f, gradients, timestamp)
@@ -481,7 +518,7 @@ class LikelihoodFct():
         return(f, self.parameters.structured_to_linear(gradients))
 
     @staticmethod
-    def print_status(f, gradients_dict, timestamp):
+    def print_status(f, reg, gradients_dict, timestamp):
         gradient_norm_weight = np.linalg.norm(
             [x for key, value in gradients_dict.iteritems() if 'weight' in key for x in value])
         gradient_norm_mu = np.linalg.norm([x for key, value in gradients_dict.iteritems() if 'mu' in key for x in value])
@@ -489,6 +526,7 @@ class LikelihoodFct():
             [x for key, value in gradients_dict.iteritems() if 'prec' in key for x in value])
 
         header_tokens = [("f", 24),
+                         ("reg", 24),
                          ("gradient_norm_weight", 24),
                          ("gradient_norm_mu", 24),
                          ("gradient_norm_prec", 24),
@@ -497,8 +535,8 @@ class LikelihoodFct():
         print("\n" + headerline)
 
 
-        print("{0:>24} {1:>24} {2:>24} {3:>24} {4:>24} \n".format(
-            f, gradient_norm_weight, gradient_norm_mu, gradient_norm_prec, timestamp
+        print("{0:>24} {1:>24} {2:>24} {3:>24} {4:>24} {5:>24}\n".format(
+            f, reg, gradient_norm_weight, gradient_norm_mu, gradient_norm_prec, timestamp
         ))
 
         sys.stdout.flush()
