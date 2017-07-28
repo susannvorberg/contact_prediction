@@ -36,6 +36,41 @@ def find_dict_key(key, dictionary):
                 if res is not None:
                     return res
 
+def plot_contact_map(mat, seqsep, contact_threshold, plot_file, title, alignment_file=None, pdb_file=None):
+
+    L                   = len(mat)
+    indices_upper_tri   = np.triu_indices(L, seqsep)
+
+    ### if alignment file is specified, compute Ni
+    if (alignment_file):
+        alignment_file = alignment_file
+        alignment = io.read_alignment(alignment_file)
+        gaps_percentage_plot = aligncov.plot_percentage_gaps_per_position(alignment, plot_file=None)
+    else:
+        gaps_percentage_plot = None
+
+
+    plot_matrix      = pd.DataFrame()
+
+    ###compute distance map from pdb file
+    if(pdb_file):
+        pdb_file = pdb_file
+        observed_distances = pdb.distance_map(pdb_file,L)
+        plot_matrix['distance']   = observed_distances[indices_upper_tri]
+        plot_matrix['contact']    = ((plot_matrix.distance < contact_threshold) * 1).tolist()
+
+
+    #add scores
+    plot_matrix['residue_i']  = indices_upper_tri[0]+1
+    plot_matrix['residue_j']  = indices_upper_tri[1]+1
+    plot_matrix['confidence'] = mat[indices_upper_tri]
+
+
+
+    ### Plot Contact Map
+    plot.plot_contact_map_someScore_plotly(plot_matrix, title, seqsep, gaps_percentage_plot, plot_file)
+
+
 
 def main():
 
@@ -52,7 +87,6 @@ def main():
     parser.add_argument("--contact_threshold",  type=int,   default=8, help="contact definition; C_beta distance between residue pairs")
     parser.add_argument("--pdb_file",           type=str,   help="path to pdb file [optional] -  plotting true contacs")
     parser.add_argument("--alignment_file",     type=str,   help="path to alignment file [optional] - plotting coverage")
-    parser.add_argument("--alignment_format",   type=str,   default="psicov", help="format of alignment file")
     parser.add_argument("--apc",                action="store_true", default=False,   help="Apply average product correction")
 
 
@@ -99,7 +133,7 @@ def main():
         braw = raw.parse_msgpack(braw_file)
         meta_info = braw.meta
         mat = bu.compute_l2norm_from_brawfile(braw_file, apc)
-        base_name = '.'.join(os.path.basename(braw_file).split('.')[:-1])
+        protein = '.'.join(os.path.basename(braw_file).split('.')[:-1])
 
     ### Read score from mat
     if args.mat_file is not None:
@@ -108,55 +142,18 @@ def main():
         if(apc):
             mat = bu.compute_apc_corrected_matrix(mat)
         meta_info = io.read_json_from_mat(mat_file)
-        base_name = '.'.join(os.path.basename(mat_file).split('.')[:-1])
+        protein = '.'.join(os.path.basename(mat_file).split('.')[:-1])
 
 
-    L                   = len(mat)
-    indices_upper_tri   = np.triu_indices(L, seqsep)
-    protein = base_name
 
-
-    ###Read Meta info if available
+    plot_file = plot_out + protein + "_seqsep"+str(seqsep)+ "_contacthr"+str(contact_threshold)+".html"
     neff = find_dict_key("neff", meta_info)
     N = find_dict_key("nrow", meta_info)
-
-    ### if alignment file is specified, compute Ni
-    if (args.alignment_file):
-        alignment_file = args.alignment_file
-        alignment_format    = args.alignment_format
-        alignment = io.read_alignment(alignment_file, format=alignment_format)
-        gaps_percentage_plot = aligncov.plot_percentage_gaps_per_position(alignment, plot_file=None)
-    else:
-        gaps_percentage_plot = None
-
-
-    plot_matrix      = pd.DataFrame()
-
-    ###compute distance map from pdb file
-    if(args.pdb_file):
-        pdb_file = args.pdb_file
-        observed_distances = pdb.distance_map(pdb_file,L)
-        plot_matrix['distance']   = observed_distances[indices_upper_tri]
-        plot_matrix['contact']    = ((plot_matrix.distance < contact_threshold) * 1).tolist()
-
-
-    #add scores
-    plot_matrix['residue_i']  = indices_upper_tri[0]+1
-    plot_matrix['residue_j']  = indices_upper_tri[1]+1
-    plot_matrix['confidence'] = mat[indices_upper_tri]
-
-
-
-    ### Plot Contact Map
-    # plot_name = plot_out + "/" + base_name + "_cd_nsample10000_apc.html"
-    # plot_name = plot_out + "/" + base_name + "_cd_nsample10000.html"
-    # plot_name = plot_out + "/" + base_name + "_cd_apc.html"
-    # plot_name = plot_out + "/" + base_name + "_cd.html"
-    # plot_name = plot_out + "/" + base_name + "_pll_apc.html"
-    # plot_name = plot_out + "/" + base_name + "_pll.html"
-    plot_name = plot_out + "/" + base_name + ".html"
+    L = find_dict_key("ncol", meta_info)
     title = protein + "<br>L: " + str(L) + " N: " + str(N) + " Neff: " + str(neff)
-    plot.plot_contact_map_someScore_plotly(plot_matrix, title, seqsep, gaps_percentage_plot, plot_name)
+    plot_contact_map(mat, seqsep, contact_threshold, plot_file, title, alignment_file=args.alignment_file, pdb_file=args.pdb_file)
+
+
 
 
 if __name__ == '__main__':
