@@ -91,7 +91,7 @@ def main():
     # psicov_dir              = data_dir + "/benchmarkset_cathV4.1/psicov/"
     #
     # nr_crossval_pairs       = 100
-    # nr_training_pairs       = 100
+    # nr_training_pairs       = 1000
     # sigma                   = 'diagonal'
     # nr_components           = 3
     # debug_mode              = 0
@@ -110,10 +110,10 @@ def main():
     # balance = 1
     # prec_wrt_L = False
     # nr_threads = 1
-    # reg_coeff_mu = 0
-    # reg_coeff_diagPrec = 0
+    # reg_coeff_mu = 0.1
+    # reg_coeff_diagPrec = 10.0
     # method = 'L-BFGS-B'
-    # maxit = 1000
+    # maxit = 10
 
 
     contact_thr                 = opt.contact_thr
@@ -156,7 +156,8 @@ def main():
 
 
     #create dataset
-    data = CouplingData(braw_dir, qijab_dir, psicov_dir, pdb_dir)
+    data = CouplingData()
+    data.specify_paths_to_data(braw_dir, qijab_dir, psicov_dir, pdb_dir)
     data.set_seed(seed)
     data.set_nr_residue_pairs_for_crossval(nr_crossval_pairs)
     data.set_nr_residue_pairs_for_training(nr_training_pairs)
@@ -174,13 +175,11 @@ def main():
     data.initialise(protein_set = [])
     data.print_dataset_info()
 
-
     #initialize the parametes
     parameters = Parameters(parameter_dir)
     parameters.initialise_parameters(nr_components, sigma, prec_wrt_L, fixed_parameters)
 
-
-    #initialise parameters randomly around origin
+    #wrap it all up in the Likelihood environment
     likelihood = LikelihoodFct(plot_dir)
     likelihood.set_debug_mode(debug_mode)
     likelihood.set_nr_threads_per_protein(nr_threads)
