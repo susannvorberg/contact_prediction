@@ -23,11 +23,10 @@ class AlignmentFeatures():
     Compute sequence and alignment derived features
     """
 
-    def __init__(self, alignment_file, pdb_file, seq_separation=8, contact_threshold=8, non_contact_threshold=25, nr_contacts=None , nr_noncontacts=None):
+    def __init__(self, alignment_file, seq_separation=8, contact_threshold=8, non_contact_threshold=25):
 
 
         self.alignment_file = alignment_file
-        self.pdb_file = pdb_file
         self.protein=os.path.basename(self.alignment_file).split(".")[0]
         self.msa = io.read_alignment(alignment_file)
 
@@ -62,8 +61,7 @@ class AlignmentFeatures():
                          }
 
         self.compute_frequencies(pseudocounts='uniform')
-        self.compute_distances_and_pairs(nr_contacts, nr_noncontacts)
-        self.compute_basic_features()
+
 
     def __repr__(self):
         nr_features = self.get_number_of_features_per_pair()
@@ -133,17 +131,15 @@ class AlignmentFeatures():
         #drop rows with na values
         feature_df.dropna(axis=0, how='any', inplace=True)
 
-
-        #extract class df
-        class_df_columns = ['Cbdist', 'contact', 'nocontact', 'i', 'j', 'protein', 'L']
+        #drop columns that are not features for training
         class_df = pd.DataFrame()
-        for name in class_df_columns:
-            class_df[name] = feature_df[name]
-            del feature_df[name]
+        for column in ['Cbdist', 'contact', 'nocontact', 'i', 'j', 'protein']:
+            if column in feature_df.columns:
+                class_df[column] = feature_df[column]
+                del feature_df[column]
+
 
         return feature_df, class_df
-
-
 
     def compute_frequencies(self, pseudocounts='background'):
         """
@@ -180,9 +176,9 @@ class AlignmentFeatures():
                        (pairwise_frequencies - single_frequencies[:, np.newaxis, :, np.newaxis] * single_frequencies[np.newaxis, :, np.newaxis, :]) + \
                        (self.single_frequencies[:, np.newaxis, :, np.newaxis] * self.single_frequencies[np.newaxis, :, np.newaxis, :])
 
-    def compute_distances_and_pairs(self, nr_contacts=None, nr_noncontacts=None):
+    def compute_distances_and_pairs(self, pdb_file, nr_contacts=None, nr_noncontacts=None):
         #distance and contacts
-        self.features['pair']['Cbdist'] = pdb.distance_map(self.pdb_file, self.L)
+        self.features['pair']['Cbdist'] = pdb.distance_map(pdb_file, self.L)
 
         #mask positions that have too many gaps
         gap_freq = 1 - (self.Ni / self.neff)
@@ -234,8 +230,6 @@ class AlignmentFeatures():
         #global amino acid frequencies
         for a in io.AMINO_ACIDS[:20]:
             self.features['global']['global_aa_freq_'+a] = np.array([np.mean(self.single_frequencies[:, io.AMINO_INDICES[a]])])
-
-
 
     def compute_mean_physico_chem_properties(self):
 
