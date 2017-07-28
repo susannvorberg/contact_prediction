@@ -7,7 +7,6 @@ import utils.io_utils as io
 import json
 from sklearn.externals import joblib
 from coupling_prior.parameters import Parameters
-from coupling_prior.coupling_data import CouplingData
 from coupling_prior.likelihood import LikelihoodFct
 
 class BayesianContactPredictor():
@@ -34,7 +33,7 @@ class BayesianContactPredictor():
         self.contact_likelihood_meta = None
         self.contact_likelihood_mat = None
 
-        self.posterior_contact_mat = None
+        self.contact_posterior_mat = None
 
 
 
@@ -50,27 +49,49 @@ class BayesianContactPredictor():
 
         return repr_string
 
-    def load_contact_prior_model(self, contact_prior_parameter_file):
+
+    def get_meta(self):
+
+        meta = {}
+        if self.contact_likelihood_meta:
+            meta['contact_likelihood_model'] = self.contact_likelihood_meta
+
+        if self.contact_prior_meta:
+            meta['contact_prior_model'] = self.contact_prior_meta
+
+        meta['opt_code'] = 1
+
+        return meta
+
+
+    @staticmethod
+    def load_contact_prior_model(contact_prior_parameter_file):
 
         if not os.path.exists(contact_prior_parameter_file):
             print("Path to contact prior model {0} does not exist!".format(contact_prior_parameter_file))
             return
 
         #  Load Random Forest model
-        self.contact_prior_model = joblib.load(contact_prior_parameter_file)
+        contact_prior_model = joblib.load(contact_prior_parameter_file)
 
         ##  Load Random Forest model meta data
-        self.contact_prior_meta = {}
+        contact_prior_meta = {}
         meta_file = contact_prior_parameter_file.replace(".pkl", ".metadata")
         if os.path.exists(meta_file):
             with open(meta_file, 'r') as fp:
-                self.contact_prior_meta = json.load(fp)
+                contact_prior_meta = json.load(fp)
         else:
             print("There is no meta file for contact prior model: {0}".format(meta_file))
 
-    def write_contact_prior_mat(self, contact_prior_mat_file):
+        return contact_prior_model, contact_prior_meta
 
-        if not self.contact_prior_mat:
+    def set_contact_prior_model(self, contact_prior_model, contact_prior_meta):
+        self.contact_prior_model    = contact_prior_model
+        self.contact_prior_meta     = contact_prior_meta
+
+    def write_contact_prior_mat(self, contact_prior_mat_file, contact=1):
+
+        if self.contact_prior_mat is None:
             print("You first need to compute contact prior with 'contact_prior()'!")
             return
 
@@ -78,21 +99,21 @@ class BayesianContactPredictor():
         meta = {}
         meta['contact_prior_model'] = self.contact_prior_meta
         meta['opt_code'] = 1
-        io.write_matfile(self.contact_prior_mat, contact_prior_mat_file, meta)
+        io.write_matfile(self.contact_prior_mat[contact], contact_prior_mat_file, meta)
 
-    def write_contact_likelihood_mat(self, contact_likelihood_mat_file):
+    def write_contact_likelihood_mat(self, contact_likelihood_mat_file, contact=1):
 
-        if not self.contact_likelihood_mat:
+        if self.contact_likelihood_mati is None:
             print("You first need to compute contact likelihood with 'contact_likelihood()'!")
             return
 
         meta = {}
         meta['contact_likelihood_model'] = self.contact_likelihood_meta
         meta['opt_code'] = 1
-        io.write_matfile(self.contact_likelihood_mat, contact_likelihood_mat_file, meta)
+        io.write_matfile(self.contact_likelihood_mat[contact], contact_likelihood_mat_file, meta)
 
-    def write_contact_posterior_mat(self, contact_posterior_mat_file):
-        if not self.posterior_contact_mat:
+    def write_contact_posterior_mat(self, contact_posterior_mat_file, contact=1):
+        if self.contact_posterior_mat is None:
             print("You first need to compute contact posterior with 'contact_posterior()'!")
             return
 
@@ -100,18 +121,16 @@ class BayesianContactPredictor():
         meta['contact_likelihood_model'] = self.contact_likelihood_meta
         meta['contact_prior_model'] = self.contact_prior_meta
         meta['opt_code'] = 1
-        io.write_matfile(self.posterior_contact_mat, contact_posterior_mat_file, meta)
+        io.write_matfile(self.contact_posterior_mat[contact], contact_posterior_mat_file, meta)
 
-    def contact_prior(self, contact_prior_parameter_file, psipred_file, netsurfp_file, mi_file, omes_file):
-
-        self.load_contact_prior_model(contact_prior_parameter_file)
+    def contact_prior(self, psipred_file, netsurfp_file, mi_file, omes_file):
 
         if self.contact_prior_model is None:
-            print("You need to load a correct contact prior model first!")
+            print("You need to load a contact prior model first!")
             return
 
         if self.contact_prior_meta is None:
-            print("You need to specify the meta data for a correct contact prior model first!")
+            print("You need to specify the meta data for a contact prior model first!")
             return
 
         window_size         = self.contact_prior_meta['training_set']['window_size']
@@ -136,7 +155,10 @@ class BayesianContactPredictor():
         # use only features that the model was trained on
         feature_df_protein = feature_df_protein[features]
 
-        assert(len(self.residues_i) == len(class_df_protein['i'].values)), "number of residue pairs differes in feature data!"
+        if len(self.residues_i) != len(class_df_protein['i'].values):
+            print "ij not the same! : ", len(self.residues_i), len(class_df_protein['i'].values)
+            self.residues_i = class_df_protein['i'].values.tolist()
+            self.residues_j = class_df_protein['j'].values.tolist()
 
         distances = [0, 1]
         self.contact_prior_mat = np.zeros((len(distances), self.L, self.L))
@@ -180,7 +202,7 @@ class BayesianContactPredictor():
 
     def contact_posterior(self):
 
-        if (not self.contact_prior_mat) or (not self.contact_likelihood_mat):
+        if (self.contact_prior_mat is None) or (self.contact_likelihood_mat is None):
             print("You need to compute both contact likelihood and contact prior first!")
             return
 
@@ -189,18 +211,32 @@ class BayesianContactPredictor():
         posterior_unnormalized = self.contact_likelihood_mat * self.contact_prior_mat
         sum = posterior_unnormalized.sum(axis=0)
 
-        self.posterior_contact_mat = posterior_unnormalized / sum
+        self.contact_posterior_mat = posterior_unnormalized / sum
 
         # sanity check: predictions for all distances (contact/noncontact) should sum to 1
-        assert (np.abs(np.nanmax(np.sum(self.posterior_contact_mat, axis=0)) - np.nanmin(
-            np.sum(self.posterior_contact_mat, axis=0))) < 1e-10), "Sum of posterior probabilities is not 1"
+        assert (np.abs(np.nanmax(np.sum(self.contact_posterior_mat, axis=0)) - np.nanmin(
+            np.sum(self.contact_posterior_mat, axis=0))) < 1e-10), "Sum of posterior probabilities is not 1"
 
+    def get_contact_prior(self, contact=1):
+        if not self.contact_prior_mat:
+            print("You need to compute contact prior first!")
+            return
 
+        return self.contact_prior_mat[contact]
 
+    def get_contact_likelihood(self, contact=1):
+        if not self.contact_likelihood_mat:
+            print("You need to compute contact lieklihood first!")
+            return
 
+        return self.contact_likelihood_mat[contact]
 
+    def get_contact_posterior(self, contact=1):
+        if self.contact_posterior_mat is None:
+            print("You need to compute contact posterior first!")
+            return
 
-
+        return self.contact_posterior_mat[contact]
 
 
 
