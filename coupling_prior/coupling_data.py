@@ -19,7 +19,7 @@ class CouplingData():
     Setup  training and test dataset and dataset for plotting
     """
 
-    def __init__(self, braw_dir, qijab_dir, psicov_dir, pdb_dir):
+    def __init__(self):
         """
         Specify paths to data and read in data
 
@@ -40,7 +40,6 @@ class CouplingData():
         self.qijab_dir      = ""
         self.psicov_dir     = ""
         self.pdb_dir        = ""
-        self.specify_paths_to_data(braw_dir, qijab_dir, psicov_dir, pdb_dir)
 
 
         #dataset settings
@@ -179,7 +178,6 @@ class CouplingData():
         self.psicov_dir = psicov_dir
         self.pdb_dir = pdb_dir
 
-
     def set_contact_thr(self, contact_thr):
         self.contact_thr  = int(contact_thr)
 
@@ -221,7 +219,6 @@ class CouplingData():
 
     def set_seed(self, seed):
         self.seed = int(seed)
-
 
     def initialise(self, protein_set=[]):
         """
