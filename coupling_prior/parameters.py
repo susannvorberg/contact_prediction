@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 
-
-
 import numpy as np
 import json
-
+import os
 
 class Parameters():
     """
@@ -14,14 +12,11 @@ class Parameters():
 
     def __init__(self, parameter_dir):
 
+        self.parameter_file = parameter_dir +'/parameters'
+
         #parameters
         self.parameters_structured          = {}
         self.parameters_linear              = np.array([])
-
-        #path to output files
-        self.parameter_dir          = str(parameter_dir)
-        self.parameter_file         = self.parameter_dir + "/parameters"
-
 
         #parameter settings
         self.sigma                          = 'diagonal'
@@ -73,27 +68,34 @@ class Parameters():
 
         self.fixed_parameters = fixed_parameters
 
-    def _initialise_parameters_default(self):
+    def _initialise_parameters_default(self, seed=None):
+
+        if seed:
+            np.random.seed(seed)
 
         #initialise parameters with a strong component at zero
-        #with equal weights for all components
+
+
         initial_means       = [0]       + [0] * (self.nr_components-1)
-        initial_weights     = [1.0 / self.nr_components] *  self.nr_components
-        initial_precision   = [1/0.0005]  + [1/0.05] * (self.nr_components-1) #precision  = 1/variance
+
+        initial_weights_contact = np.random.random(self.nr_components)
+        initial_weights_contact = sorted([ x/np.sum(initial_weights_contact) for x in initial_weights_contact], reverse=True)
+        initial_weights_bg = np.random.random(self.nr_components)
+        initial_weights_bg = sorted([ x/np.sum(initial_weights_bg) for x in initial_weights_bg], reverse=True)
+
+        initial_precision   = [1/0.005]  + [1/0.05] * (self.nr_components-1) #precision  = 1/variance
         if self.prec_wrt_L:
             initial_precision   = [1/1.0] + [1/0.8]* (self.nr_components-1) #precision  = 1/variance * L
 
 
         parameters = {}
+        for component in range(self.nr_components):
 
-        for component in range(len(initial_weights)):
-
-            parameters['weight_contact_' + str(component)] = [initial_weights[component]]  ##* 400
-            parameters['weight_bg_' + str(component)] = [initial_weights[component]]  ##* 400
-
+            parameters['weight_contact_' + str(component)] = [initial_weights_contact[component]]  ##* 400
+            parameters['weight_bg_' + str(component)] = [initial_weights_bg[component]]  ##* 400
 
             if 'mu_' + str(component) in self.fixed_parameters:
-                parameters['mu_0'] = [initial_means[0]] * 400
+                parameters['mu_' + str(component)] = [initial_means[component]] * 400
             else:
                 parameters['mu_' + str(component)] = np.random.normal(
                     loc=initial_means[component],
@@ -112,7 +114,7 @@ class Parameters():
 
         return parameters
 
-    def initialise_parameters(self, nr_components=None, sigma=None, prec_wrt_L=None, fixed_parameters=None):
+    def initialise_parameters(self, nr_components=None, sigma=None, prec_wrt_L=None, fixed_parameters=None, seed=None, verbose=True):
 
         if nr_components is not None:
             self.set_nr_components(nr_components)
@@ -123,19 +125,26 @@ class Parameters():
         if fixed_parameters is not None:
             self.set_fixed_parameters(fixed_parameters)
 
+        if os.path.exists(self.parameter_file):
+            self.read_parameters(self.parameter_file, transform=True)
+        else:
+            if verbose:
+                print("\nInitialise parameters with default values using:")
+                print("\tnr components: {0}".format(self.nr_components))
+                print("\tprecision matrix is {0} and it's determined wrt to L: {1}".format(self.sigma, self.prec_wrt_L))
+                print("\tfixed parameters that will not be optimized: {0}".format(self.fixed_parameters))
 
-        print("\nInitialise parameters with default values using:")
-        print("\tnr components: {0}".format(self.nr_components))
-        print("\tprecision matrix is {0} and it's determined wrt to L: {1}".format(self.sigma, self.prec_wrt_L))
-        print("\tfixed parameters that will not be optimized: {0}".format(self.fixed_parameters))
+            self.set_parameters_structured(self._initialise_parameters_default(seed), transform=True)
 
-        self.parameters_structured =  self._initialise_parameters_default()
+        if verbose:
+            self.print_parameters()
 
-        #transform weights and precision
-        self.parameters_structured = self.transform_parameters(weights=True, mean=False, prec=True, back=False)
+    def set_parameters_structured(self, parameters_structured, transform=False):
+        self.parameters_structured = parameters_structured
+
+        if(transform):
+            self.parameters_structured = self.transform_parameters(weights=True, mean=False, prec=True, back=False)
         self.parameters_linear = self.structured_to_linear(self.parameters_structured)
-
-        self.print_parameters()
 
     def print_parameters(self):
 
@@ -155,6 +164,31 @@ class Parameters():
                                                                            np.round(np.min(value), decimals=3),
                                                                            np.round(np.mean(value), decimals=3),
                                                                            np.round(np.max(value), decimals=3)))
+
+    def read_parameters_metadata(self, parameters_meta_file):
+        if not os.path.exists(parameters_meta_file):
+            print "Cannot read {0}!".format(parameters_meta_file)
+            return
+
+        with open(parameters_meta_file, 'r') as fp:
+            meta = json.load(fp)
+
+        self.sigma = str(meta['sigma'])
+        self.nr_components = meta['nr_components']
+        self.fixed_parameters = [str(k) for k in meta['fixed_parameters']]
+        self.prec_wrt_L = meta['prec_wrt_L']
+
+    def read_parameters(self, parameter_file, transform=True):
+
+        self.parameter_file = parameter_file
+
+        with open(parameter_file, 'r') as fp:
+            parameters_structured = json.load(fp)
+
+        #transform unicode characters to str.... dirty solution
+        parameters_structured = dict([(str(k), v) for k, v in parameters_structured.iteritems()])
+
+        self.set_parameters_structured(parameters_structured, transform)
 
     def write_parameters(self, parameters):
 
@@ -207,6 +241,18 @@ class Parameters():
 
         return settings
 
+    def softmax(self, x, back=False):
+        """Compute softmax values for each sets of scores in x."""
+
+        if back:
+            y = [1] * len(x)
+            for i in range(1, len(x)):
+                y[i] = np.log(x[i] * np.exp(1) / x[0])
+            return y
+        else:
+            e_x = np.exp(x - np.max(x))
+            return e_x / e_x.sum(axis=0)
+
     def transform_parameters(self, weights=True, mean=False, prec=True, back=False):
         """
         parameters: Pandas dataframe with column names
@@ -222,36 +268,17 @@ class Parameters():
 
             # weights will be represented as softmax
             if (weights):
-                weight_names_bg = [parameter_name for parameter_name in self.parameters_structured.keys() if
-                                   "weight_bg" in parameter_name]
-                weight_names_contact = [parameter_name for parameter_name in self.parameters_structured.keys() if
-                                        "weight_contact" in parameter_name]
 
-                if (len(weight_names_bg) > 0):
+                weights_contact = [v[0] for k,v in sorted(self.parameters_structured.iteritems()) if 'weight_contact' in k]
+                transformed_contact = self.softmax(weights_contact, back=True)
 
-                    # first weight is set to 1 for all 400 ab
-                    name_weight_fixed = [parameter_name for parameter_name in weight_names_bg if "0" in parameter_name][
-                        0]
-                    # set weight1 to 1 because of overparametrizaton of softmax
-                    transformed_parameters[name_weight_fixed] = [1.0]
+                weights_bg = [v[0] for k,v in sorted(self.parameters_structured.iteritems()) if 'weight_bg' in k]
+                transformed_bg = self.softmax(weights_bg, back=True)
 
-                    # softmax
-                    for weight in [parameter_name for parameter_name in weight_names_bg if "0" not in parameter_name]:
-                        transformed_parameters[weight] = np.log(self.parameters_structured[weight][0] * np.exp(1)
-                                                                / self.parameters_structured[name_weight_fixed]).tolist()
+                for component in range(self.nr_components):
+                    transformed_parameters['weight_contact_'+str(component)] = [transformed_contact[component]]
+                    transformed_parameters['weight_bg_'+str(component)] = [transformed_bg[component]]
 
-                if (len(weight_names_contact) > 0):
-                    # first weight is set to 1 for all 400 ab
-                    name_weight_fixed = \
-                        [parameter_name for parameter_name in weight_names_contact if "0" in parameter_name][0]
-                    transformed_parameters[name_weight_fixed] = [
-                        1.0]  # set weight1 to 1 because of overparametrizaton of softmax
-
-                    # softmax
-                    for weight in [parameter_name for parameter_name in weight_names_contact if
-                                   "0" not in parameter_name]:
-                        transformed_parameters[weight] = np.log(
-                            self.parameters_structured[weight][0] * np.exp(1) / self.parameters_structured[name_weight_fixed]).tolist()
 
             # mean values will be transformed into log space
             if (mean):
@@ -273,28 +300,16 @@ class Parameters():
             # weights will be backtransformed from softmax representation
             if (weights):
 
-                weight_names_bg = [parameter_name for parameter_name in self.parameters_structured.keys() if
-                                   "weight_bg" in parameter_name]
-                weight_names_contact = [parameter_name for parameter_name in self.parameters_structured.keys() if
-                                        "weight_contact" in parameter_name]
+                weights_contact = [v[0] for k,v in sorted(self.parameters_structured.iteritems()) if 'weight_contact' in k]
+                transformed_contact = self.softmax(weights_contact, back=False)
 
-                if (len(weight_names_bg) > 0):
-                    sum_weights = 0
-                    for weight in weight_names_bg:
-                        transformed_parameters[weight] = np.exp(self.parameters_structured[weight][0]).tolist()
-                        sum_weights += transformed_parameters[weight]
+                weights_bg = [v[0] for k,v in sorted(self.parameters_structured.iteritems()) if 'weight_bg' in k]
+                transformed_bg = self.softmax(weights_bg, back=False)
 
-                    for weight in weight_names_bg:
-                        transformed_parameters[weight] = [transformed_parameters[weight] / sum_weights]
+                for component in range(self.nr_components):
+                    transformed_parameters['weight_contact_'+str(component)] = [transformed_contact[component]]
+                    transformed_parameters['weight_bg_'+str(component)] = [transformed_bg[component]]
 
-                if (len(weight_names_contact) > 0):
-                    sum_weights = 0
-                    for weight in weight_names_contact:
-                        transformed_parameters[weight] = np.exp(self.parameters_structured[weight][0]).tolist()
-                        sum_weights += transformed_parameters[weight]
-
-                    for weight in weight_names_contact:
-                        transformed_parameters[weight] = [transformed_parameters[weight] / sum_weights]
 
             # log mean values will be transformed back via exp
             if (mean):
