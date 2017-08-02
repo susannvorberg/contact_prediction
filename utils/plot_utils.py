@@ -749,7 +749,7 @@ def plot_coupling_matrix(couplings, single_terms_i, single_terms_j, residue_i, r
 
 
 
-    fig = tools.make_subplots(rows=2, cols=2, shared_xaxes=True, shared_yaxes=True)
+    fig = tools.make_subplots(rows=2, cols=2, shared_xaxes=True, shared_yaxes=True, print_grid=False)
     fig.append_trace(singles_j, 1, 1)
     fig.append_trace(bubbles, 1, 2)
     fig.append_trace(singles_i, 2, 2)
@@ -891,7 +891,7 @@ def plot_aa_freq_matrix(pair_freq, single_freq_i, single_freq_j, residue_i, resi
 
 #basic plotly plots
 
-def plot_barplot(statistics_dict, title, y_axis_title, type='stack', colors=None, plot_out=None):
+def plot_barplot(statistics_dict, title, y_axis_title, type='stack', colors=None, showlegend=False, plot_out=None):
     """
     Plot the distribution of the statistics in the dictionary as barplots
     - Keys in the dictionary represent different groups (different colors)
@@ -899,6 +899,7 @@ def plot_barplot(statistics_dict, title, y_axis_title, type='stack', colors=None
         numeric values representing single bars at different x-coords
     """
 
+    annotations_list = []
     data = []
     # different colors: either stacked or next to each other
     for group in sorted(statistics_dict.keys()):
@@ -910,16 +911,19 @@ def plot_barplot(statistics_dict, title, y_axis_title, type='stack', colors=None
             x.append(key)
             y.append(statistics_dict[group][key])
 
+
         # different colors: either stacked or next to each other
         data.append(go.Bar(
             x=x,
             y=y,
-            showlegend=False,
+            showlegend=showlegend,
             name=group
         ))
 
         if (colors is not None):
             data[-1]['marker']['color'] = colors[len(data) - 1]
+
+
 
     plot = {
         "data": data,
@@ -931,6 +935,7 @@ def plot_barplot(statistics_dict, title, y_axis_title, type='stack', colors=None
                 exponentformat="e",
                 showexponent='All'
             ),
+            annotations=go.Annotations(annotations_list),
             font = dict(size=18)
         )
     }
@@ -1054,6 +1059,9 @@ def plot_boxplot(statistics_dict, title, y_axis_title, colors=None, jitter_pos=N
         plot['layout']['xaxis'].update(plot['layout']['yaxis'])
         plot['layout']['yaxis'] = {}
         plot['layout']['margin']['l'] = 150
+
+    if title=="":
+        plot['layout']['margin']['t'] = 10
 
     if plot_out is not None:
         plotly_plot(plot, filename=plot_out, auto_open=False)
