@@ -47,12 +47,15 @@ class BayesianContactPredictor():
 
         print("Predict Residue-Resdiue Contacts for protein {0}".format(self.protein))
 
+        repr_string="\nProtein: {0}".format(self.protein)
+
         repr_string="\nPaths to data: \n"
         for param in [  "self.alignment_file"
                       ]:
             repr_string += "{0:{1}} {2}\n".format(param.split(".")[1], '36', eval(param))
 
-        repr_string="\nModel settings: \n"
+
+        repr_string="\nGeneral settings: \n"
         for param in [  "self.sequence_separation",
                         "self.contact_threshold",
                         "self.n_threads"
@@ -77,31 +80,44 @@ class BayesianContactPredictor():
 
         return meta
 
-    def load_contact_prior_model(self, contact_prior_parameter_file):
+    @staticmethod
+    def load_contact_prior_model(contact_prior_parameter_file):
 
         if not os.path.exists(contact_prior_parameter_file):
             print("Path to contact prior model {0} does not exist!".format(contact_prior_parameter_file))
             return
 
         #  Load Random Forest model
-        self.contact_prior_model = joblib.load(contact_prior_parameter_file)
+        contact_prior_model = joblib.load(contact_prior_parameter_file)
 
         ##  Load Random Forest model meta data
         contact_prior_meta = {}
         meta_file = contact_prior_parameter_file.replace(".pkl", ".metadata")
         if os.path.exists(meta_file):
             with open(meta_file, 'r') as fp:
-                self.contact_prior_meta = json.load(fp)
+                contact_prior_meta = json.load(fp)
         else:
             print("There is no meta file for contact prior model: {0}".format(meta_file))
 
-        self.contact_prior_model.set_params(n_jobs=self.n_threads)
+        return contact_prior_model, contact_prior_meta
+
+    @staticmethod
+    def load_coupling_prior_hyperparameters(coupling_prior_parameter_file):
+
+        contact_likelihood_parameters = Parameters("")
+        contact_likelihood_parameters.read_parameters_metadata(coupling_prior_parameter_file + ".settings")
+        contact_likelihood_parameters.read_parameters(coupling_prior_parameter_file, transform=True)
+
+        return contact_likelihood_parameters
 
     def set_contact_prior_model(self, contact_prior_model, contact_prior_meta):
         self.contact_prior_model    = contact_prior_model
         self.contact_prior_meta     = contact_prior_meta
 
         self.contact_prior_model.set_params(n_jobs=self.n_threads)
+
+    def set_coupling_prior_parameters(self, parameters):
+        self.contact_likelihood_parameters = parameters
 
     def set_n_threads(self, n_threads):
         self.n_threads = n_threads
@@ -157,9 +173,16 @@ class BayesianContactPredictor():
         meta['opt_code'] = 1
         io.write_matfile(self.contact_posterior_mat[contact], contact_posterior_mat_file, meta)
 
-    def contact_prior(self, contact_prior_model_file, psipred_file, netsurfp_file, mi_file, omes_file):
+    def contact_prior(self, psipred_file, netsurfp_file, mi_file, omes_file, contact_prior_model_file=None):
 
-        self.load_contact_prior_model(contact_prior_model_file)
+        #load the model
+        if contact_prior_model_file:
+            contact_prior_model, contact_prior_meta = self.load_contact_prior_model(contact_prior_model_file)
+            self.set_contact_prior_model(contact_prior_model, contact_prior_meta)
+
+        if not self.contact_prior_model:
+            print("You first need to specify a contact prior model!")
+            return
 
         window_size         = self.contact_prior_meta['training_set']['window_size']
         features            = self.contact_prior_meta['features']['names']
@@ -189,7 +212,7 @@ class BayesianContactPredictor():
         feature_df_protein = feature_df_protein[features]
 
         if len(self.residues_i) != len(class_df_protein['i'].values):
-            print "Some ({0}) residue pairs have been discarded (features could not be computed...).".format(self.residues_i - len(class_df_protein['i'].values))
+            print "Some ({0}) residue pairs have been discarded (features could not be computed...).".format(len(self.residues_i) - len(class_df_protein['i'].values))
             self.residues_i = class_df_protein['i'].values.tolist()
             self.residues_j = class_df_protein['j'].values.tolist()
 
@@ -203,12 +226,15 @@ class BayesianContactPredictor():
         for distance in distances:
             self.contact_prior_mat[distance, self.residues_i, self.residues_j] = predictions_rf[distance]
 
-    def contact_likelihood(self, coupling_prior_parameter_file, braw_file, qij_file):
+    def contact_likelihood(self, braw_file, qij_file, coupling_prior_parameter_file=None):
 
         # load parameters for coupling prior
-        self.contact_likelihood_parameters = Parameters("")
-        self.contact_likelihood_parameters.read_parameters_metadata(coupling_prior_parameter_file + ".settings")
-        self.contact_likelihood_parameters.read_parameters(coupling_prior_parameter_file, transform=True)
+        if coupling_prior_parameter_file:
+            self.contact_likelihood_parameters = self.load_coupling_prior_hyperparameters(coupling_prior_parameter_file)
+
+        if not self.contact_likelihood_parameters:
+            print("You need to specidy parameters for coupling piror!")
+            return
 
         if not os.path.exists(braw_file):
             print("Binary coupling file {0} cannot be found.".format(braw_file))
