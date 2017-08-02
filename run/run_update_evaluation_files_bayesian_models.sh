@@ -12,10 +12,8 @@
 
 module load anaconda/2
 source activate py27
-
 module load C/msgpack
 module load C/armadillo
-
 module load contactprediction/contact_prediction
 
 #------------------------------------------------------------------------------
@@ -23,7 +21,6 @@ module load contactprediction/contact_prediction
 #------------------------------------------------------------------------------
 export OMP_NUM_THREADS=8
 echo "using " $OMP_NUM_THREADS "threads for omp parallelization"
-
 
 #-------------------------------------------------------------------------------
 # example call
