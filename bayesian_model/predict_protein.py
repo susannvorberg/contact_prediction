@@ -85,10 +85,10 @@ def main():
 
 
     #compute contact prior
-    BCP.contact_prior(contact_prior_model_file, psipred_file, netsurfp_file, mi_file, omes_file)
+    BCP.contact_prior(psipred_file, netsurfp_file, mi_file, omes_file, contact_prior_model_file)
 
     #compute contact likelihood
-    BCP.contact_likelihood(contact_likelihood_parameter, braw_file, qij_file)
+    BCP.contact_likelihood(braw_file, qij_file, contact_likelihood_parameter)
     #python implementation is not parallelized
     #BCP.contact_likelihood_py(contact_likelihood_parameter, braw_file, qij_file)
 
