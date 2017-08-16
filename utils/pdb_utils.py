@@ -15,8 +15,7 @@ def read_pdb(pdbfile):
 
     return structure
 
-
-def calc_residue_dist(residue_one, residue_two):
+def calc_residue_dist(residue_one, residue_two, distance_definition="Cb"):
     '''
         Calculate euclidian distance between C-beta (C-alpha in case of Glycine/missing C-beta)
         atoms of oth residues
@@ -25,21 +24,32 @@ def calc_residue_dist(residue_one, residue_two):
     :return: float euclidian distance between residues
     '''
 
-    if residue_one.has_id("CB"):
-        residue_one_atom = residue_one["CB"]
+    if distance_definition == "Cb":
+
+        if residue_one.has_id("CB"):
+            residue_one_atom = residue_one["CB"]
+        else:
+            residue_one_atom = residue_one["CA"]
+
+        if residue_two.has_id("CB"):
+            residue_two_atom = residue_two["CB"]
+        else:
+            residue_two_atom = residue_two["CA"]
+
+        diff_vector = residue_one_atom.coord - residue_two_atom.coord
+        diff = np.sqrt(np.sum(diff_vector * diff_vector))
     else:
-        residue_one_atom = residue_one["CA"]
+        diff_list = []
+        for atom_1 in [atom for atom in residue_one if atom.name not in ['N', 'O', 'C']]:
+            for atom_2 in [atom for atom in residue_two if atom.name not in ['N', 'O', 'C']]:
+                diff_vector = atom_1.coord - atom_2.coord
+                diff_list.append(np.sqrt(np.sum(diff_vector * diff_vector)))
 
-    if residue_two.has_id("CB"):
-        residue_two_atom = residue_two["CB"]
-    else:
-        residue_two_atom = residue_two["CA"]
+        diff = np.min(diff_list)
 
-    diff_vector = residue_one_atom.coord - residue_two_atom.coord
-    return np.sqrt(np.sum(diff_vector * diff_vector))
+    return diff
 
-
-def distance_map(pdb_file, L=None):
+def distance_map(pdb_file, L=None, distance_definition="Cb"):
     '''
     Compute the distances between Cbeta (Calpha for Glycine) atoms of all residue pairs
 
@@ -61,13 +71,12 @@ def distance_map(pdb_file, L=None):
     distance_map = np.full((L, L), np.NaN)
     for residue_one in chain.get_list():
         for residue_two in chain.get_list():
-            distance_map[residue_one.id[1] - 1, residue_two.id[1] - 1] = calc_residue_dist(residue_one, residue_two)
+            distance_map[residue_one.id[1] - 1, residue_two.id[1] - 1] = calc_residue_dist(residue_one, residue_two, distance_definition)
 
 
     return distance_map
 
-
-def contact_map(pdb_file, cutoff):
+def contact_map(pdb_file, cutoff, distance_definition="Cb"):
     '''
     Compute contact map from a distance map
     Residue pairs with C-beta distances < cutoff are contacts
@@ -76,7 +85,7 @@ def contact_map(pdb_file, cutoff):
     :param cutoff: C-beta distance cutoff to define a contact
     :return: LxL numpy array (L=protein length) (1=contact, 0=no contact)
     '''
-    distance_matrix = distance_map(pdb_file)
+    distance_matrix = distance_map(pdb_file, None, distance_definition)
 
     contact_map = distance_matrix[distance_matrix < cutoff] * 1
 
