@@ -60,7 +60,7 @@ class AlignmentFeatures():
                          'pair':{}
                          }
 
-        self.compute_frequencies(pseudocounts='uniform')
+        self.compute_frequencies(pseudocounts='background')
 
 
     def __repr__(self):
@@ -128,12 +128,16 @@ class AlignmentFeatures():
         #transform non-numeric values to inf
         feature_df.replace([np.inf, -np.inf], np.nan, inplace=True)
 
+        #get nr of nan rows
+        nr_rows_nan = feature_df.isnull().T.any().T.sum()
+        print("There are {0} residue pairs with NAN features. They will discarded.".format(nr_rows_nan))
+
         #drop rows with na values
         feature_df.dropna(axis=0, how='any', inplace=True)
 
         #drop columns that are not features for training
         class_df = pd.DataFrame()
-        for column in ['Cbdist', 'contact', 'nocontact', 'i', 'j', 'protein']:
+        for column in ['Cbdist', 'contact', 'nocontact', 'i', 'j', 'L', 'protein']:
             if column in feature_df.columns:
                 class_df[column] = feature_df[column]
                 del feature_df[column]
@@ -141,7 +145,7 @@ class AlignmentFeatures():
 
         return feature_df, class_df
 
-    def compute_frequencies(self, pseudocounts='background'):
+    def compute_frequencies(self, pseudocounts='uniform'):
         """
         Comput single and pairwise amino acid frequencies from alignment
 
