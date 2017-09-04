@@ -36,7 +36,7 @@ class TrainContactPriorModel():
 
         self.dataset_properties = pd.DataFrame()
         self.dataset_ids_training = [1,2,3,4,5]
-        self.dataset_ids_crossval = [6]
+        self.dataset_ids_crossval = [6,7,8]
 
         self.feature_df_train = pd.DataFrame()
         self.class_df_train = pd.DataFrame()
@@ -88,13 +88,13 @@ class TrainContactPriorModel():
                     {0: 10.5, 1: 0.525}]
             },
             'xgboost': {
-                'learning_rate': [0.01],
-                'n_estimators': [300, 500],
+                'learning_rate': [0.005],
+                'n_estimators': [300],
                 'subsample': [1],
-                'max_depth': [2,4,6,8,10],
-                'min_child_weight': [3],
-                'reg_lambda': [1],
-                'scale_pos_weight': [1]
+                'max_depth': [2],
+                'min_child_weight': [1],
+                'reg_lambda': [2],
+                'scale_pos_weight': [1, 5, 10, 20]
 
             }
         }
@@ -200,12 +200,13 @@ class TrainContactPriorModel():
             nr_non_contacts_per_dataset = np.inf
             max_nr_contacts_protein = None
             max_nr_noncontacts_protein = None
-            nr_proteins_per_dataset = nr_proteins / len(dataset_ids)
+            nr_proteins_per_dataset = np.ceil(float(nr_proteins) / len(dataset_ids))
         else:
             nr_contacts_per_dataset = nr_contacts / len(dataset_ids)
             nr_non_contacts_per_dataset = nr_non_contacts / len(dataset_ids)
             max_nr_contacts_protein = self.max_nr_contacts_per_protein
             max_nr_noncontacts_protein = self.max_nr_non_contacts_per_protein
+            nr_proteins_per_dataset =  np.inf
 
 
 
@@ -219,8 +220,9 @@ class TrainContactPriorModel():
                 nr_proteins_per_dataset = len(self.dataset_properties.query('dataset_id == '+str(dataset_id)))
             print("Compute features for dataset {0}".format(dataset_id))
 
+            protein_counter = 0
+            for protein in self.dataset_properties.query('dataset_id == '+str(dataset_id))['protein'].values:
 
-            for protein in self.dataset_properties.query('dataset_id == '+str(dataset_id))['protein'].values[:nr_proteins_per_dataset]:
                 alignment_file = self.alignment_dir + "/" + protein.strip() + ".filt.psc"
                 pdb_file = self.pdb_dir + "/" + protein.strip() + ".pdb"
                 psipred_file = self.psipred_dir + "/" + protein.strip() + ".filt.withss.a3m.ss2"
@@ -292,7 +294,12 @@ class TrainContactPriorModel():
                     print("    dataset {0} #contacts: {1}  #non-contacts: {2}".format(
                         dataset_id, current_nr_contacts,current_nr_noncontacts))
 
+                ### check stopping condition
                 if current_nr_contacts >= nr_contacts_per_dataset and current_nr_noncontacts >= nr_non_contacts_per_dataset:
+                    break
+
+                protein_counter +=1
+                if protein_counter >= nr_proteins_per_dataset:
                     break
 
             #Finished iterating over current dataset: append to
@@ -357,18 +364,13 @@ class TrainContactPriorModel():
 
         plot.plot_boxplot(statistics_dict, title, y_axis_title, colors=None, jitter_pos=1, orient='h', print_total=False, order=plot_order[::-1], plot_out=plot_name)
 
-    def __plot_feature_importance(self, plot_dir):
+    def __plot_feature_importance(self, plot_file):
 
         if self.clf is None:
             print("You first need to learn a model with train_model() before plotting feature importances!")
             exit()
 
-        #plot important features
-        plot_file = plot_dir +"/feature_"+ self.model
-        for param in self.param_grid[self.model].keys():
-            plot_file += "_"+param.replace("_","")+str(self.clf.get_params()[param])
-        plot_file += ".html"
-
+        print("\nPlot feature importance to {0}.".format(plot_file))
 
         plot.plot_feature_importance(
             self.features,
@@ -444,6 +446,8 @@ class TrainContactPriorModel():
             print("You need to generate a dataset with generate_data() before plotting precision vs recall!")
             exit()
 
+        print("\nPlot precision vs rank to {0}".format(plot_file))
+
         nr_proteins = len(np.unique(self.class_df_test['protein'].values))
 
         # plot
@@ -466,6 +470,7 @@ class TrainContactPriorModel():
             print("You need to generate a dataset with generate_data() before plotting precision vs recall!")
             exit()
 
+        print("\nPlot precision vs recall to {0}".format(plot_file))
 
         subtitle = ""
         precision_recall_dict = {}
@@ -833,7 +838,6 @@ class TrainContactPriorModel():
         plot_name += "_" + str(len(self.feature_df_train.columns)) + "features"
         plot_name += ".html"
 
-
         #plot precision vs recall cross-validation
         plot_file = plot_dir + "/precision_vs_recall_CV_" + self.model
         plot_file += plot_name
@@ -851,15 +855,17 @@ class TrainContactPriorModel():
 
     def evaluate_model(self, plot_dir, prec_rank=True, prec_recall=True):
 
-        #plot important features
-        self.__plot_feature_importance(plot_dir)
-
 
         plot_name = ""
         for param in self.param_grid[self.model].keys():
             plot_name += "_" + param.replace("_", "") + str(self.clf.get_params()[param])
         plot_name += "_" + str(len(self.feature_df_train.columns)) + "features"
         plot_name += ".html"
+
+        #plot important features
+        plot_file = plot_dir +"/feature_"+ self.model
+        plot_file += plot_name
+        self.__plot_feature_importance(plot_file)
 
 
         if prec_rank:
@@ -878,7 +884,7 @@ class TrainContactPriorModel():
             plot_file += plot_name
 
             precision_recall_dict = self.predict_testset(method=self.model)
-            self.__plot_precision_vs_recall(plot_dir, precision_recall_dict)
+            self.__plot_precision_vs_recall(plot_file, precision_recall_dict)
 
     def get_param_grid(self):
         return self.param_grid[self.model]
