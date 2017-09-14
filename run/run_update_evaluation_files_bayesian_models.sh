@@ -26,9 +26,9 @@ echo "using " $OMP_NUM_THREADS "threads for omp parallelization"
 # example call
 #-------------------------------------------------------------------------------
 
-#contact_prior_model_file=$DATA"/bayesian_framework/contact_prior/random_forest/new_pipeline_5folds/random_forest/100000contacts_500000noncontacts_5window_8noncontactthreshold/random_forest_nestimators1000_classweight0_10.5_1_0.525_criterionentropy_maxdepth100_minsamplesleaf100_75features.pkl"
+#contact_prior_model_file=$DATA"/bayesian_framework/contact_prior/random_forest/new_pipeline_5folds/random_forest/classweight_10_noncontactthr8/100000contacts_500000noncontacts_5window_8noncontactthreshold/random_forest_nestimators1000_classweight0_10.5_1_0.525_criterionentropy_maxdepth100_minsamplesleaf100_75features.pkl"
 #coupling_prior_parameters_file=$DATA"/bayesian_framework/mle_for_couplingPrior_cath4.1/ccmpredpy_cd_gd/3/reg_prec100_mu01/diagonal_300000_nrcomponents3/parameters"
-#bash ~/opt/contactprediction/contact_prediction/run/run_update_evaluation_files_bayesian_methods.sh ccmpredpy_cd_gd $contact_prior_model_file $coupling_prior_parameters_file CD_3comp_reg100prec01mu_300k
+#bash ~/opt/contactprediction/contact_prediction/run/run_update_evaluation_files_bayesian_models.sh ccmpredpy_cd_gd $contact_prior_model_file $coupling_prior_parameters_file CD_3comp_reg100prec01mu_300k
 
 #-------------------------------------------------------------------------------
 # command line arguments
@@ -42,6 +42,7 @@ method_name=$4
 #-------------------------------------------------------------------------------
 # put command together
 #-------------------------------------------------------------------------------
+
 
 
 echo "add $method_name ..."
@@ -60,12 +61,13 @@ settings=$settings" $contact_prior_model_file"
 settings=$settings" $coupling_prior_parameters_file"
 settings=$settings" $method_name"
 
-settings=$settings" --n_proteins 100"
+settings=$settings" --n_proteins 500"
 settings=$settings" --n_threads $OMP_NUM_THREADS"
 settings=$settings" --sequence_separation 8"
 settings=$settings" --contact_threshold 8"
+####settings=$settings" --evaluate_likelihood"
 
 echo "Settings: "$settings
 jobname=update_eval_files_bayesian_model.$method_name
-bsub -W 12:00 -q mpi -m "mpi mpi2 mpi3_all hh sa" -n $OMP_NUM_THREADS -R span[hosts=1] -a openmp  -J $jobname -o job-$jobname-%J.out $CONTACT_PREDICTION_PATH/bayesian_model/update_evaluation_files.py $settings
+bsub -W 24:00 -q mpi -m "mpi mpi2 mpi3_all hh sa" -n $OMP_NUM_THREADS -R span[hosts=1] -a openmp  -J $jobname -o job-$jobname-%J.out $CONTACT_PREDICTION_PATH/bayesian_model/update_evaluation_files.py $settings
 
