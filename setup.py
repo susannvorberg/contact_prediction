@@ -60,14 +60,14 @@ likelihood_protein = extcpp(
         )
 
 counts = extc(
-            'contact_prior.ext.counts.libmsacounts',
-            sources=['contact_prior/ext/counts/msacounts.c']
+            'utils.ext.counts.libmsacounts',
+            sources=['utils/ext/counts/msacounts.c']
         )
 
 
 weighting = extc(
-            'contact_prior.ext.weighting.libweighting',
-            sources=['contact_prior/ext/weighting/weighting.c']
+            'utils.ext.weighting.libweighting',
+            sources=['utils/ext/weighting/weighting.c']
         )
 
 setup(
