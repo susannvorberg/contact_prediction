@@ -5,7 +5,7 @@ import plotly.graph_objs as go
 from plotly.offline import plot as plotly_plot
 from plotly import tools
 import colorlover as cl
-from io_utils import AMINO_ACIDS
+from .io_utils import AMINO_ACIDS
 
 
 def plot_feature_importance(features, feature_importance, number_features=20, plot_out=None):
