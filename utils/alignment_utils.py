@@ -1,8 +1,8 @@
 from collections import Counter
 import numpy as np
 from scipy.stats import entropy
-import utils.ext.counts as counts
-import utils.ext.weighting as weighting
+from .ext import counts
+from .ext import weighting
 
 def compute_gaps_per_position(alignment):
 
