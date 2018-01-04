@@ -117,7 +117,7 @@ def read_fasta(fasta_file):
     try:
         aln_iterator = aio.read(fasta_file, format='fasta', seq_count=1)
     except ValueError as e:
-        print e
+        print(e)
         return
 
     seq = list(aln_iterator)[0].seq._data
