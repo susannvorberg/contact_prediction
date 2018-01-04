@@ -55,7 +55,8 @@ L_dependent(L_dependent)
     try	{
         read_braw();
         arma::vec diag_regularizer_w 		= arma::vec(400);
-        this->regularizer_w =  arma::diagmat(diag_regularizer_w.fill(lambda_w));
+        //use new lambda_w*2 because this is the true derivative of the regularizer
+        this->regularizer_w =  arma::diagmat(diag_regularizer_w.fill(this->lambda_w));
     }
     catch (std::exception& e){
         std::cout << "Error reading in braw ("<< protein_id <<") : " << e.what() <<  std::endl;
@@ -64,7 +65,9 @@ L_dependent(L_dependent)
     //std::cout << "finished braw..."  <<  std::endl;
 
 
-    try {set_qijab();}	//sets qijab and Nij
+    try {
+        set_qijab();
+    }	//sets qijab and Nij
     catch (std::exception& e){
         std::cout << "Error reading in qijab ("<< protein_id <<"): " << e.what() <<  std::endl;
         exit (EXIT_FAILURE);
@@ -177,7 +180,7 @@ double Likelihood_Protein::get_N_i_j(int i, int j) const {
  */
 arma::vec Likelihood_Protein::get_neg_log_likelihood_pairwise() const{
 
-	return(-log_likelihood);
+	return(-this->log_likelihood);
 }
 
 
@@ -189,7 +192,7 @@ arma::vec Likelihood_Protein::get_neg_log_likelihood_pairwise() const{
  */
 double Likelihood_Protein::get_neg_log_likelihood() const{
 
-    double neg_log_likelihood_allpairs = -arma::sum(log_likelihood);
+    double neg_log_likelihood_allpairs = -arma::sum(this->log_likelihood);
 	return(neg_log_likelihood_allpairs);
 }
 
@@ -242,10 +245,6 @@ arma::vec Likelihood_Protein::get_gradient_mu_comp(int component){
 arma::vec Likelihood_Protein::get_gradient_precisionMatrix_comp(int component){
 
     arma::vec vec_grad_precMat = this->grad_precMat.col(component);
-
-    if (this->L_dependent){
-        vec_grad_precMat *= this->L;
-    }
 
     //gradient of NEGATIVE loglikelihood
     return -vec_grad_precMat;
@@ -711,6 +710,21 @@ void Likelihood_Protein::compute_negLL(int nr_threads_prot)
 
             log_density(k) = log(weight_k) + gaussian_ratio_logdensity;
 
+
+//            if ((i == 0) && (j == 12)){
+//                std::cout  << " " << std::endl;
+//                std::cout  << protein_id << " i: " << i << " j: " << j << " contact=" << contact << " component: " << k << std::endl;
+//                std::cout  << "triple_product : " << triple_product  << std::endl;
+//                std::cout  << "log_det_A : " << log_det_A  << std::endl;
+//                std::cout  << "lambda_ij_k_mat(0,1) : " << lambda_ij_k_mat(0,1) << "lambda_ij_k_mat(0,2) : " << lambda_ij_k_mat(0,2) << "lambda_ij_k_mat(2,0) : " << lambda_ij_k_mat(2,0)  << std::endl;
+//                std::cout  << "mu_ij_k_vec(0) : " << mu_ij_k_vec(0) << "mu_ij_k_vec(1) : " << mu_ij_k_vec(1) << "mu_ij_k_vec(2) : " << mu_ij_k_vec(2)  << std::endl;
+//                std::cout  << "Gaussian log density: " << gaussian_ratio_logdensity << std::endl;
+//                std::cout  << "log_density(k): " << log_density(k)<< std::endl;
+//                std::cout  << "log(weight_k): " << log(weight_k) << " weight_k: " << weight_k << std::endl ;
+//            }
+
+
+
 		}//end loop over components k
 
 
@@ -723,6 +737,13 @@ void Likelihood_Protein::compute_negLL(int nr_threads_prot)
 
 		//save neg likelihood of current pair
 		double f = log(sum_resp) + a_max;
+
+//        if ((i == 0) && (j == 12)){
+//            std::cout  << "a_max : " << a_max  << std::endl;
+//            std::cout  << "sum_resp : " << sum_resp  << std::endl;
+//            std::cout  << "f : " << f  << std::endl;
+//        }
+
 
 		if(! std::isnormal(f)) {
 				std::cout  << "ERROR: likelihood cannot be computed for protein " << protein_id << ", i " << i << ", j " << j << " ("<< contact <<"): " << f << std::endl;
@@ -780,8 +801,6 @@ void Likelihood_Protein::compute_f_df(int hessian_pseudocount)
         arma::vec vqij = mq_ij.col(lin_index);
         double N_ij = mN_ij(i,j);
 		arma::vec w_ij = w_ij3d.tube(i,j);
-		//arma::vec vqij = q_ij3d.tube(i,j);
-
 		//diagonal matrix Qij = diag(q'ji)
 		//q'ijab = q(x_i=a, x_j=b) - (lambda_w * wijab / N_ij) --> has been precomputed
 		arma::mat Qij 		= arma::diagmat(vqij);
@@ -832,6 +851,10 @@ void Likelihood_Protein::compute_f_df(int hessian_pseudocount)
 			lambda_ij_k.slice(k) 	    = lambda_ij_k_mat;
 
 
+
+
+
+
             //debugging: we assume diagonal Hessian ================================================================
 //            arma::mat lambda_ij_k_mat_inv(400,400,arma::fill::zeros);
 //            lambda_ij_k_mat_inv.diag() = 1.0 / lambda_ij_k_mat.diag();
@@ -865,7 +888,6 @@ void Likelihood_Protein::compute_f_df(int hessian_pseudocount)
 																			lambda_ij_k_mat,
 																			this->parameters.get_log_det_inv_covMat(k),
 																			log_det_lambda_ij_k(k) );
-
 
 
             if(this->debug > 0 and gaussian_ratio_logdensity>1000){
@@ -909,8 +931,6 @@ void Likelihood_Protein::compute_f_df(int hessian_pseudocount)
 
 				continue;
 		} else log_likelihood(pair) = f;
-
-
 
 
         // Compute ALL gradients for ALL components
