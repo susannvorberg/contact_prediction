@@ -11,8 +11,8 @@ import argparse
 import os
 import plotly.graph_objs as go
 from plotly.offline import plot as plotly_plot
-import utils.io_utils as io
-import utils.alignment_utils as au
+from ..utils import io_utils as io
+from ..utils import alignment_utils as au
 
 def plot_amino_acid_distribution_per_position(alignment_file, plot_file=None, freq=True):
 
