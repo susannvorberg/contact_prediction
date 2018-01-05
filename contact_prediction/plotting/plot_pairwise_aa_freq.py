@@ -12,8 +12,7 @@ from collections import Counter
 
 import numpy as np
 from ..utils import io_utils as io
-
-import contact_prediction.utils.plot_utils as plots
+from ..utils import plot_utils as plots
 
 
 def plot_aa_frequencies(alignment, protein_name, residue_i, residue_j, plot_out=None, frequencies=True):
