@@ -1,7 +1,5 @@
-
-import numpy.distutils.intelccompiler
 from setuptools import setup, Extension, find_packages
-import os
+
 
 
 #-D_GLIBCXX_USE_CXX11_ABI=0: because GCC 5 issue with dual ABI: https://gcc.gnu.org/onlinedocs/gcc-5.2.0/libstdc++/manual/manual/using_dual_abi.html
