@@ -1,0 +1,186 @@
+#!/usr/bin/env python
+
+#===============================================================================
+### This script plots the distribution over diversity in a given dataset
+### Dataset must be path to directory with psicov files
+#===============================================================================
+
+import argparse
+import glob
+# ===============================================================================
+### Load libraries
+# ===============================================================================
+import os
+
+import numpy as np
+import pandas as pd
+import utils.alignment_utils as ali_ut
+import utils.io_utils as io
+
+import contact_prediction.utils.plot_utils as p
+
+
+def plot_boxplot_for_statistic(stats_df, column_name, title, jitter_pos=None, plot_out=None):
+
+    statistics_dict={}
+    sorted_folds=[]
+
+    #all folds
+    for fold in np.unique(stats_df['fold']):
+        name='Fold ' + str(fold)
+        sorted_folds.append(name)
+        statistics_dict[name] = stats_df[stats_df['fold'] == fold][column_name].tolist()
+    statistics_dict['all Folds'] = stats_df[column_name].tolist()
+    sorted_folds.append('all Folds')
+
+
+    p.plot_boxplot(
+        statistics_dict,
+        title, column_name,
+        colors=None,
+        jitter_pos=2, orient='v',
+        print_total=True,
+        order=sorted_folds,
+        plot_out=plot_out
+    )
+
+
+
+def plot_stacked_barchart_cath(stats_df, title, type="stack", relative=True, plot_out=None):
+
+    statistics_dict = {}
+    for cath in np.unique(stats_df['cath_topology']):
+        statistics_dict['CATH ' + str(cath)] = {}
+        stats_df_cath = stats_df[stats_df['cath_topology'] == cath]
+
+        statistics_dict['CATH ' + str(cath)]['all folds'] = 0
+        for fold in np.unique(stats_df['fold']):
+            statistics_dict['CATH ' + str(cath)]['fold ' + str(fold)] = len(stats_df_cath[stats_df_cath['fold'] == fold])
+            statistics_dict['CATH ' + str(cath)]['all folds'] += statistics_dict['CATH ' + str(cath)]['fold ' + str(fold)]
+
+    df = pd.DataFrame(statistics_dict)
+
+    if(relative):
+        df=df.apply(lambda x: x/np.sum(x), axis=1)
+
+    p.plot_barplot(df.to_dict(), title, 'CATH classes', type='stack', colors=None, plot_out=plot_out)
+
+
+
+def main():
+
+
+    # ===============================================================================
+    ### Parse arguments
+    # ===============================================================================
+
+    parser = argparse.ArgumentParser(description='plot statistics about dataset.')
+    parser.add_argument("-d", "--dataset_files",    type=str, help="path to directory with dataset description files")
+    parser.add_argument("-a", "--alignments",       type=str, help="path to directory with alignment files")
+    parser.add_argument("-o", "--plot_out",         type=str, help="path to directory where to put plot")
+
+    args = parser.parse_args()
+
+    plot_out = args.plot_out
+    alignment_path = args.alignments
+    dataset_files = args.dataset_files
+
+    print ("--------------------------------------------------------")
+    print ("plot_out: \t"                   + str(plot_out))
+    print ("path to alignemnt files: \t"    + str(alignment_path))
+    print ("path to dataset files: \t"      + str(dataset_files))
+    print ("--------------------------------------------------------")
+
+    #plot_out           = "/home/vorberg/work/plots/bayesian_framework/dataset_statistics/dataset_cath4.1/"
+    #alignment_path     = "/home/vorberg/work/data/benchmarkset_cathV4.1/psicov/"
+    #dataset_files      = "/home/vorberg/work/data/benchmarkset_cathV4.1/dataset/dataset_properties/"
+
+
+    dataset_folds={}
+    for file in glob.glob(dataset_files + "/*n5e01*"):
+        id = os.path.basename(file).split("_")[2]
+        dataset_folds[id] = pd.read_table(file, skipinitialspace=True)
+        dataset_folds[id].columns=['domain', 'resolution', 'CATH', 'L', 'N']
+
+
+    stats = {
+        'protein' :        [],
+        'diversity' :      [],
+        'fold' :           [],
+        'N':               [],
+        'L':               [],
+        'percent_gaps':    [],
+        'cath_topology':   [],
+    }
+
+
+    for fold in dataset_folds.keys():
+        for index, row in dataset_folds[fold].iterrows():
+            protein = row['domain']
+            cath = row['CATH']
+
+            psicov_file = alignment_path + "/" + protein +".filt.psc"
+
+            #if it does not exist, it has been filtered due to
+            #combs ambiguity or alignment filter
+            if os.path.exists(psicov_file):
+                alignment = io.read_alignment(psicov_file)
+
+                L = len(alignment[0])
+                N = len(alignment)
+
+                percent_gaps = ali_ut.compute_gaps_per_position(alignment)
+                percent_gaps_alignment = np.mean(percent_gaps)
+
+                stats['protein'].append(protein)
+                stats['diversity'].append(np.sqrt(N)/L)
+                stats['N'].append(N)
+                stats['L'].append(L)
+                stats['percent_gaps'].append(percent_gaps_alignment)
+                stats['fold'].append(fold)
+                stats['cath_topology'].append(int(cath.split(".")[0]))
+
+    stats_df = pd.DataFrame(stats)
+
+    #===============================================================================
+    ### Plot
+    #===============================================================================
+
+
+
+    plot_boxplot_for_statistic(
+        stats_df, 'diversity', 'Distribution of Diversity (sqrt(N)/L)', jitter_pos=2,
+        plot_out=plot_out +"/diversity_dataset_boxplot.html"
+    )
+
+    plot_boxplot_for_statistic(
+        stats_df, 'N', 'Distribution of MSA size (# sequences)', jitter_pos=2,
+        plot_out=plot_out + "/msa_size_dataset_boxplot.html")
+
+    plot_boxplot_for_statistic(
+        stats_df, 'L', 'Distribution of protein lengths', jitter_pos=2,
+        plot_out=plot_out + "/protein_length_dataset_boxplot.html")
+
+    plot_boxplot_for_statistic(
+        stats_df, 'percent_gaps', 'Distribution of gap percentage',  jitter_pos=2,
+        plot_out=plot_out +"/gap_percentage_boxplot.html")
+
+    plot_stacked_barchart_cath(
+        stats_df,
+        'Proportion of CATH topologies (1,2,3) in all folds',
+        type='stack',
+        relative=True,
+        plot_out=plot_out + "/cath_topologies_stacked_relative.html"
+    )
+
+    plot_stacked_barchart_cath(
+        stats_df,
+        'Proportion of CATH topologies (1,2,3) in all folds',
+        type='stack',
+        relative=False,
+        plot_out=plot_out + "/cath_topologies_stacked_absolute.html"
+    )
+
+
+if __name__ == '__main__':
+    main()

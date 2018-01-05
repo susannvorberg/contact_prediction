@@ -60,14 +60,14 @@ def extc(name, sources=[], include_dirs=[], library_dirs=[], libraries=[], extra
 #         )
 
 counts = extc(
-            'utils.ext.counts.libmsacounts',
-            sources=['utils/ext/counts/msacounts.c']
+            'contact_prediction.utils.ext.counts.libmsacounts',
+            sources=['contact_prediction/utils/ext/counts/msacounts.c']
         )
 
 
 weighting = extc(
-            'utils.ext.weighting.libweighting',
-            sources=['utils/ext/weighting/weighting.c']
+            'contact_prediction.utils.ext.weighting.libweighting',
+            sources=['contact_prediction/utils/ext/weighting/weighting.c']
         )
 
 
