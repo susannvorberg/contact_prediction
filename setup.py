@@ -75,5 +75,6 @@ setup(
     license="AGPLv3",
     url="https://github.com/susannvorberg/contact_prediction",
     packages=find_packages(),
+    install_requires=['biopython', 'msgpack-python', 'numpy', 'pandas', 'plotly', 'scipy'],
     ext_modules=[counts, weighting]
 )
