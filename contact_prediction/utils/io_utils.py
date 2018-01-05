@@ -4,6 +4,7 @@ import numpy as np
 import Bio.AlignIO as aio
 import msgpack
 import gzip
+import base64
 
 AMINO_ACIDS = "ARNDCQEGHILKMFPSTWYV-"
 
@@ -72,6 +73,18 @@ def read_alignment(alignment_file, format="psicov"):
             f.close()
         except IOError:
             print ("Could not open psicov file: " + alignment_file )
+
+    elif format == "b64":
+
+        try:
+            content_type, content_string = alignment_file.split(',')
+            decoded_string = base64.decodestring(content_string)
+            decoded_split_str = decoded_string.split("\n")
+
+            alignment = np.array([[AMINO_INDICES[c] for c in x.strip()] for x in decoded_split_str[:-1]], dtype=np.uint8)
+
+        except:
+            print ("Could not open psicov file by reading from b64 encoded binary string!")
 
     else:
 
