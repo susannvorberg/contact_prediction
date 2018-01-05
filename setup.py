@@ -70,12 +70,13 @@ weighting = extc(
             sources=['utils/ext/weighting/weighting.c']
         )
 
+
 setup(
-    name="contact_prediction",
+    name="contactprediction",
     version="1.0.0",
     description="cpp utils",
     license="AGPLv3",
+    url="https://github.com/susannvorberg/contact_prediction",
     packages=find_packages(),
-    ext_modules=[counts, weighting],
-    scripts=['contact_prior/grid_search_RF.py']
+    ext_modules=[counts, weighting]
 )
