@@ -14,11 +14,9 @@ from plotly.offline import plot as plotly_plot
 from ..utils import io_utils as io
 from ..utils import alignment_utils as au
 
-def plot_amino_acid_distribution_per_position(alignment_file, plot_file=None, freq=True):
+def plot_amino_acid_distribution_per_position(alignment, title, plot_file=None, freq=True):
 
-    # read alignment
-    protein = os.path.basename(alignment_file).split(".")[0]
-    alignment = io.read_alignment(alignment_file)
+
     N = float(len(alignment))
     L = len(alignment[0])
 
@@ -45,7 +43,7 @@ def plot_amino_acid_distribution_per_position(alignment_file, plot_file=None, fr
 
     layout = go.Layout(
         barmode='stack',
-        title="Distribution of Amino Acids per position in alignment of " + str(protein) + "<br> N="+str(N) + ", L="+str(L),
+        title=title,
         xaxis=dict(title="Alignment Position"),
         yaxis=dict(
             title="Amino Acid Distribution",
@@ -78,8 +76,17 @@ def main():
     #alignment_file="/home/vorberg/work/data/benchmarkset_cathV4.1/psicov/" + protein + ".filt.psc"
     #plot_file = "/home/vorberg/alignment_"+protein+".html"
 
-    plot_amino_acid_distribution_per_position(alignment_file, plot_file, freq=True)
-    plot_amino_acid_distribution_per_position(alignment_file, plot_file, freq=False)
+
+    alignment = io.read_alignment(alignment_file)
+    protein = os.path.basename(alignment_file).split(".")[0]
+    N = float(len(alignment))
+    L = len(alignment[0])
+
+    title="Distribution of Amino Acids per position in alignment of " + str(protein) + \
+          "<br> N="+str(N) + ", L="+str(L)
+
+    plot_amino_acid_distribution_per_position(alignment, title, plot_file, freq=True)
+    plot_amino_acid_distribution_per_position(alignment, title, plot_file, freq=False)
 
 
 
