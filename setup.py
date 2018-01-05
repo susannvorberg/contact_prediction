@@ -1,6 +1,5 @@
-import numpy.distutils.intelccompiler
+####import numpy.distutils.intelccompiler
 from setuptools import setup, Extension, find_packages
-
 
 #-D_GLIBCXX_USE_CXX11_ABI=0: because GCC 5 issue with dual ABI: https://gcc.gnu.org/onlinedocs/gcc-5.2.0/libstdc++/manual/manual/using_dual_abi.html
 
@@ -19,7 +18,13 @@ from setuptools import setup, Extension, find_packages
 #                      extra_compile_args=extra_compile_args,
 #                      extra_link_args=extra_link_args)
 
-def extc(name, sources=[], include_dirs=[], library_dirs=[], libraries=[], extra_compile_args=['-g -fopenmp -std=c99'], extra_link_args=['-g -fopenmp']):
+def extc(name,
+         sources=[],
+         include_dirs=[],
+         library_dirs=[],
+         libraries=[],
+         extra_compile_args=['-g', '-fopenmp','-std=c99'],
+         extra_link_args=['-g', '-fopenmp']):
     return Extension(name, include_dirs=include_dirs, library_dirs=library_dirs, libraries=libraries, sources=sources, extra_compile_args=extra_compile_args, extra_link_args=extra_link_args)
 
 
@@ -77,5 +82,6 @@ setup(
     url="https://github.com/susannvorberg/contact_prediction",
     packages=find_packages(),
     install_requires=['biopython', 'msgpack-python', 'numpy', 'pandas', 'plotly', 'scipy'],
+    setup_requires=['numpy'],
     ext_modules=[counts, weighting]
 )
