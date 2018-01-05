@@ -11,19 +11,16 @@ import os
 from collections import Counter
 
 import numpy as np
-import utils.io_utils as io
+from ..utils import io_utils as io
 
 import contact_prediction.utils.plot_utils as plots
 
 
-def plot_aa_frequencies(alignment_file, plot_out, residue_i, residue_j, frequencies=True):
+def plot_aa_frequencies(alignment, protein_name, residue_i, residue_j, plot_out=None, frequencies=True):
 
-    # read alignment
-    protein = os.path.basename(alignment_file).split(".")[0]
-    alignment = io.read_alignment(alignment_file)
+
     N = float(len(alignment))
     L = len(alignment[0])
-
 
     # compute percentage of gaps per position
     alignment = alignment.transpose()
@@ -48,20 +45,26 @@ def plot_aa_frequencies(alignment_file, plot_out, residue_i, residue_j, frequenc
         aa_freq_i /= N
         aa_freq_j /= N
 
-    if frequencies:
-        plot_file = plot_out + "/amino_acid_freq_" + protein + "_" + str(residue_i) + "_" + str(residue_j) + ".html"
-        title = "Visualisation of amino acid frequencies for protein " + protein + \
-                "<br>with L="+str(L)+" and N="+str(N)+" and Nij="+str(Nij)+\
-                "<br>residues i: " + str(residue_i) + " and j: " + str(residue_j)
+    if plot_out is None:
+        title=""
+        return plots.plot_aa_freq_matrix(
+            pairwise_freq, aa_freq_i, aa_freq_j, residue_i, residue_j, title, frequencies, plot_out )
     else:
-        plot_file = plot_out + "/amino_acid_counts_" + protein + "_" + str(residue_i) + "_" + str(residue_j) + ".html"
-        title = "Visualisation of amino acid counts for protein " + protein + \
-                "<br>with L="+str(L)+" and N="+str(N)+" and Nij="+str(Nij)+\
-                "<br> residues i: " + str(residue_i) + " and j: " + str(residue_j)
-    plots.plot_aa_freq_matrix(pairwise_freq, aa_freq_i, aa_freq_j, residue_i, residue_j, title, frequencies, plot_file)
+        if frequencies:
+            plot_file = plot_out + "/amino_acid_freq_" + protein_name + "_" + str(residue_i) + "_" + str(
+                residue_j) + ".html"
+            title = "Visualisation of amino acid frequencies for protein " + protein_name + \
+                    "<br>with L=" + str(L) + " and N=" + str(N) + " and Nij=" + str(Nij) + \
+                    "<br>residues i: " + str(residue_i) + " and j: " + str(residue_j)
+        else:
+            plot_file = plot_out + "/amino_acid_counts_" + protein_name + "_" + str(residue_i) + "_" + str(
+                residue_j) + ".html"
+            title = "Visualisation of amino acid counts for protein " + protein_name + \
+                    "<br>with L=" + str(L) + " and N=" + str(N) + " and Nij=" + str(Nij) + \
+                    "<br> residues i: " + str(residue_i) + " and j: " + str(residue_j)
 
-
-
+        plots.plot_aa_freq_matrix(
+            pairwise_freq, aa_freq_i, aa_freq_j, residue_i, residue_j, title, frequencies, plot_file)
 
 def main():
 
@@ -91,7 +94,10 @@ def main():
     #plot_freq=False
     #plot_freq=True
 
-    plot_aa_frequencies(alignment_file, plot_out, residue_i, residue_j, plot_freq)
+    alignment = io.read_alignment(alignment_file)
+    protein_name = os.path.basename(alignment_file).split(".")[0]
+
+    plot_aa_frequencies(alignment, protein_name, plot_out, residue_i, residue_j, plot_freq)
 
 
 
