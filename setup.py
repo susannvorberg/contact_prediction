@@ -72,7 +72,7 @@ weighting = extc(
 
 
 setup(
-    name="contactprediction",
+    name="contact_prediction",
     version="1.0.0",
     description="cpp utils",
     license="AGPLv3",
