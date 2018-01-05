@@ -13,57 +13,57 @@ from collections import Counter
 import numpy as np
 from ..utils import io_utils as io
 from ..utils import plot_utils as plots
+from ..utils import alignment_utils as au
 
-
-def plot_aa_frequencies(alignment, protein_name, residue_i, residue_j, plot_out=None, frequencies=True):
+def plot_aa_frequencies(alignment, protein_name, residue_i, residue_j, plot_frequencies=True, plot_type="heatmap", plot_out=None):
 
 
     N = float(len(alignment))
     L = len(alignment[0])
 
-    # compute percentage of gaps per position
-    alignment = alignment.transpose()
+    single_counts, pairwise_counts = au.compute_counts(alignment, compute_weights=True)
+    neff = au.compute_neff(alignment)
 
-    #note: gaps are 0
-    pairwise_counts = Counter(zip(alignment[residue_i], alignment[residue_j]))
-    pairwise_freq = np.zeros((21, 21))
-    for key, value in pairwise_counts.iteritems():
-            pairwise_freq[key[0], key[1]] = value
+    #gap  = 20
+    single_counts_res_i = single_counts[residue_i-1, :]
+    single_counts_res_j = single_counts[residue_j-1, :]
+    pairwise_counts_ij  = pairwise_counts[residue_i-1, residue_j-1, : , :]
 
-    Nij = pairwise_freq[1:, 1:].sum()
+    Nij = np.round(np.sum(pairwise_counts_ij[:20, :20]), decimals=3)
 
-    if(frequencies):
-        pairwise_freq /= N
-    pairwise_freq=pairwise_freq.flatten()
+    if(plot_frequencies):
+        single_counts_res_i /= neff
+        single_counts_res_j /= neff
+        pairwise_counts_ij /= neff
 
-    aa_freq_i = np.zeros(21)
-    aa_freq_j = np.zeros(21)
-    aa_freq_i[Counter(alignment[residue_i]).keys()] = np.array(Counter(alignment[residue_i]).values())
-    aa_freq_j[Counter(alignment[residue_j]).keys()] = np.array(Counter(alignment[residue_j]).values())
-    if (frequencies):
-        aa_freq_i /= N
-        aa_freq_j /= N
+
+    if plot_frequencies:
+        colorbar_title="frequency"
+    else:
+        colorbar_title="counts"
 
     if plot_out is None:
         title=""
-        return plots.plot_aa_freq_matrix(
-            pairwise_freq, aa_freq_i, aa_freq_j, residue_i, residue_j, title, frequencies, plot_out )
+        return plots.plot_coupling_matrix(
+            pairwise_counts_ij, single_counts_res_i, single_counts_res_j, residue_i, residue_j,
+            title, colorbar_title, 'continous', type=plot_type, plot_file=None)
     else:
-        if frequencies:
-            plot_file = plot_out + "/amino_acid_freq_" + protein_name + "_" + str(residue_i) + "_" + str(
-                residue_j) + ".html"
-            title = "Visualisation of amino acid frequencies for protein " + protein_name + \
-                    "<br>with L=" + str(L) + " and N=" + str(N) + " and Nij=" + str(Nij) + \
-                    "<br>residues i: " + str(residue_i) + " and j: " + str(residue_j)
+        if plot_frequencies:
+            title = "Amino acid frequencies for protein " + protein_name + ", residues i: " + str(
+                residue_i) + " and j: " + str(residue_j) + \
+                    "<br>with L=" + str(L) + " and N=" + str(N) + " and Nij=" + str(Nij)
+            plot_file = plot_out + "/amino_acid_freq_" + protein_name + "_" + str(residue_i) + "_" + str(residue_j) + "_" + plot_type + ".html"
         else:
-            plot_file = plot_out + "/amino_acid_counts_" + protein_name + "_" + str(residue_i) + "_" + str(
-                residue_j) + ".html"
-            title = "Visualisation of amino acid counts for protein " + protein_name + \
-                    "<br>with L=" + str(L) + " and N=" + str(N) + " and Nij=" + str(Nij) + \
-                    "<br> residues i: " + str(residue_i) + " and j: " + str(residue_j)
+            title = "Amino acid counts for protein " + protein_name + ", residues i: " + str(
+                residue_i) + " and j: " + str(residue_j) + \
+                    "<br>with L=" + str(L) + " and N=" + str(N) + " and Nij=" + str(Nij)
+            plot_file = plot_out + "/amino_acid_counts_" + protein_name + "_" + str(residue_i) + "_" + str(residue_j) + "_" + plot_type + ".html"
 
-        plots.plot_aa_freq_matrix(
-            pairwise_freq, aa_freq_i, aa_freq_j, residue_i, residue_j, title, frequencies, plot_file)
+        plots.plot_coupling_matrix(
+            pairwise_counts_ij, single_counts_res_i, single_counts_res_j,
+            residue_i, residue_j, title, colorbar_title,
+            'continous', type=plot_type, plot_file=plot_file
+        )
 
 def main():
 
