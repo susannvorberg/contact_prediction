@@ -9,12 +9,11 @@
 #===============================================================================
 import argparse
 import os
-import numpy as np
 
 import plotly.graph_objs as go
 from plotly.offline import plot as plotly_plot
 import contact_prediction.utils.io_utils as io
-import utils.alignment_utils as ali_ut
+from ..utils import alignment_utils as ali_ut
 
 
 
