@@ -991,7 +991,6 @@ def draw_box(values, parameter_name, color=None, orient='v', jitter_pos=None):
 
     return (box)
 
-
 def plot_boxplot(statistics_dict, title, y_axis_title, colors=None, jitter_pos=None, orient='v', print_total=False, order=None, plot_out=None):
     """
     Plot the distribution of the statistics in the dictionary as boxplots
@@ -1068,7 +1067,6 @@ def plot_boxplot(statistics_dict, title, y_axis_title, colors=None, jitter_pos=N
     else:
         return plot
 
-
 def plot_scatter(scatter_dict, title, x_axis_title, y_axis_title, showlegend=False, colors = None, plot_out=None):
     data=[]
     for name, values in scatter_dict.iteritems():
@@ -1107,7 +1105,6 @@ def plot_scatter(scatter_dict, title, x_axis_title, y_axis_title, showlegend=Fal
         plotly_plot(plot, filename=plot_out, auto_open=False)
     else:
         return plot
-
 
 def jitter_plot(values_dict, title, annotations=None, colors=None, plot_out=None):
     """
