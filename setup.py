@@ -82,6 +82,5 @@ setup(
     url="https://github.com/susannvorberg/contact_prediction",
     packages=find_packages(),
     install_requires=['biopython', 'msgpack-python', 'numpy', 'pandas', 'plotly', 'scipy'],
-    setup_requires=['numpy'],
     ext_modules=[counts, weighting]
 )
