@@ -76,7 +76,6 @@ def evaluationmeasure_vs_rank(evaluation_statistics, methods, evaluation_measure
 
     return evaluation_by_rank
 
-
 def compute_evaluation_metrics(eval_file, ranks, methods, contact_thr=8, seqsep=12 ):
 
     ### load eval and eval_meta file ======================================================================
@@ -147,8 +146,6 @@ def compute_evaluation_metrics(eval_file, ranks, methods, contact_thr=8, seqsep=
             protein_eval_metrics['methods'][method]["recall"][rank_id]      = np.array(recall)[rank]
 
     return protein_eval_metrics
-
-
 
 def compute_rollingmean_in_scatterdict(evaluation_statistics, methods, property):
     scatter_dict = mean_precision_per_protein(evaluation_statistics, methods)
@@ -237,7 +234,6 @@ def compute_mean_error(cb_distance, score, contact_thr):
 
     return df.mean_error.tolist()
 
-
 def compute_precision_recall(true_class, score):
     """
     Compute Precision and Recall
@@ -256,7 +252,6 @@ def compute_precision_recall(true_class, score):
 
     return df.precision.tolist(), df.recall.tolist(), df.score.tolist()
 
-
 def compute_apc_corrected_matrix(cmat):
     '''
         Subtract the average product correction term
@@ -267,8 +262,7 @@ def compute_apc_corrected_matrix(cmat):
     apc_term = mean[:, np.newaxis] * mean[np.newaxis, :] / np.mean(cmat)
     return cmat - apc_term
 
-
-def compute_l2norm_from_braw(braw, apc=False):
+def compute_l2norm_from_braw(braw_xpair, apc=False):
     '''
     Compute the l2norm of all residue pairs
 
@@ -278,14 +272,13 @@ def compute_l2norm_from_braw(braw, apc=False):
     '''
 
     #compute l2norm without gap state
-    mat = np.sqrt(np.sum(braw.x_pair[:,:,:20,:20] * braw.x_pair[:,:,:20,:20], axis=(2, 3)))
+    mat = np.sqrt(np.sum(braw_xpair[:,:,:20,:20] * braw_xpair[:,:,:20,:20], axis=(2, 3)))
 
     #apply apc)
     if(apc):
         mat   = compute_apc_corrected_matrix(mat)
 
     return mat
-
 
 def compute_l2norm_from_brawfile(braw_file, apc=False):
     '''
