@@ -2,16 +2,14 @@
 
 import argparse
 import os
+from ..utils import pdb_utils as pdb
+from ..utils import io_utils as io
+from ..utils import benchmark_utils as bu
+from ..utils import plot_utils as pu
+from ..utils import ccmraw as raw
 
 import numpy as np
 import pandas as pd
-import raw
-import utils.benchmark_utils as bu
-import utils.io_utils as io
-import utils.pdb_utils as pdb
-
-import contact_prediction.utils.plot_utils as pu
-
 
 #===============================================================================
 ### Parse arguments
@@ -36,10 +34,7 @@ def parse_arguments():
 
     return args
 
-def plot_precision_vs_rank(pdb_file, seqsep, contact_thr, mat, plot_out_dir):
-
-    distance_matrix = pdb.distance_map(pdb_file)
-    protein = os.path.basename(pdb_file).split(".")[0]
+def plot_precision_vs_rank(dict_scores, distance_matrix, seqsep, contact_thr, title, plot_out= None):
 
     # get residue pairs that are resolved and (j-i) > seqsep
     indices_pairs_resolved = zip(*np.where(~np.isnan(distance_matrix)))
@@ -52,7 +47,6 @@ def plot_precision_vs_rank(pdb_file, seqsep, contact_thr, mat, plot_out_dir):
             'i': list(zip(*ij_indices)[0]),
             'j': list(zip(*ij_indices)[1]),
             'cb_distance': distance_matrix[list(zip(*ij_indices)[0]), list(zip(*ij_indices)[1])],
-            'score' : mat[list(zip(*ij_indices)[0]), list(zip(*ij_indices)[1])]
         }
     )
 
@@ -60,53 +54,52 @@ def plot_precision_vs_rank(pdb_file, seqsep, contact_thr, mat, plot_out_dir):
     eval_df['class'] = (eval_df['cb_distance'] <= contact_thr) * 1
     eval_df = eval_df[eval_df['j'] >= (eval_df['i'] + seqsep)]
 
-    eval_df = eval_df.sort_values(by=['i', 'j'])
-    eval_df.reset_index(inplace=True)
 
     #define x-axis: Ranks dependent on protein length L
     ranks = np.linspace(1, 0, 20, endpoint=False)[::-1]
-    L = mat.shape[0]
+    L = distance_matrix.shape[0]
     ranks_L = np.round(L * ranks).astype(int)
     ranks_L = np.array([rank for rank in ranks_L if rank < len(eval_df)])
 
+    eval_dict = {'rank': ranks}
 
-    #compute precision at ranks
-    precision, recall, threshold = bu.compute_precision_recall(eval_df['class'], eval_df['score'])
-    precision_rank   = [np.nan] * len(ranks)
-    for rank_id, rank in enumerate(ranks_L):
-        precision_rank[rank_id]   = np.array(precision)[rank]
+    for name, mat in dict_scores.iteritems():
+        print name
+        eval_df[name] = mat[list(zip(*ij_indices)[0]), list(zip(*ij_indices)[1])]
 
-    eval_dict = {
-        'score': {
-            'mean': precision_rank,
-            'size': 1
+        # compute precision at ranks
+        precision, recall, threshold = bu.compute_precision_recall(eval_df['class'], eval_df[name])
+        precision_rank = [np.nan] * len(ranks)
+        for rank_id, rank in enumerate(ranks_L):
+            precision_rank[rank_id] = np.array(precision)[rank]
+
+        eval_dict[name] = {
+                'mean': precision_rank,
+                'size': 1
         }
-        ,
-        'rank': ranks
-    }
 
-    mean_precision = np.nanmean(precision_rank)
+    # eval_df = eval_df.sort_values(by=['i', 'j'])
+    # eval_df.reset_index(inplace=True)
 
     # plot
-    title = "Precision (PPV) vs rank (dependent on protein length L) for {0}".format(protein)
-    title += "<br> L={0}, mean precision over all ranks={1:g}".format(L, mean_precision)
     yaxistitle = 'Precision'
-    plotname = plot_out_dir + "/" + protein + "_precision_vs_rank_" + \
-               str(seqsep) + "seqsep_" + str(contact_thr) + "contacthr.html"
-    pu.plot_evaluationmeasure_vs_rank_plotly(eval_dict, title, yaxistitle, plotname)
-
-
-
+    if plot_out is None:
+        return pu.plot_evaluationmeasure_vs_rank_plotly(eval_dict, title, yaxistitle, plot_out=None)
+    else:
+        pu.plot_evaluationmeasure_vs_rank_plotly(eval_dict, title, yaxistitle, plot_out=plot_out)
 
 def main():
 
     args=parse_arguments()
 
     #debug
+
     # mat_file        = "/home/vorberg/1mkc_A_00.mat"
+    # braw_file       = "/home/vorberg/1c75A00.alpha00.sigdecay5e-6.mat.braw.gz"
+    # braw_file = "/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/ccmpred-pll-centerv/braw/1c75A00.filt.braw.gz"
     # plot_dir        = "/home/vorberg/"
-    # pdb_file        = "/home/vorberg/work/data//benchmarkset_cathV4/dompdb_CATHv4_renum_seqtom/1mkcA00_ren.pdb"
-    # seqsep          = 6
+    # pdb_file        = "/home/vorberg/work/data/benchmarkset_cathV4.1/pdb_renum_combs/1mkcA00.pdb"
+    # seqsep          = 8
     # contact_threshold = 8
     # apc             = True
 
@@ -128,8 +121,17 @@ def main():
         braw = raw.parse_msgpack(braw_file)
         mat = bu.compute_l2norm_from_braw(braw, apc)
 
-    plot_precision_vs_rank(pdb_file, seqsep, contact_threshold, mat, plot_dir)
+    dict_scores = {
+        'score1' : mat
+    }
 
+    protein=os.path.basename(pdb_file).split(".")[0]
+    title = "Precision (PPV) vs rank (dependent on protein length L) for {0}".format(protein)
+    plot_out = plot_dir + "/" + protein + "_precision_vs_rank_" + \
+               str(seqsep) + "seqsep_" + str(contact_threshold) + "contacthr.html"
+    distance_matrix = pdb.distance_map(pdb_file)
+
+    plot_precision_vs_rank(dict_scores, pdb_file, seqsep, contact_threshold, title, plot_out)
 
 if __name__ == '__main__':
     main()
