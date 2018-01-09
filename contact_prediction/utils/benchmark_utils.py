@@ -1,9 +1,9 @@
 import pandas as pd
 import numpy as np
 import os
-import raw
+from ..utils import ccmraw as raw
 import json
-import utils as u
+from ..utils import utils as u
 
 def subset_evaluation_dict(evaluation_statistics, bins, subset_property, methods, evaluation_measure):
 
