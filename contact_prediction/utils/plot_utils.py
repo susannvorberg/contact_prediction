@@ -5,10 +5,10 @@ import plotly.graph_objs as go
 from plotly.offline import plot as plotly_plot
 from plotly import tools
 import colorlover as cl
-from .io_utils import AMINO_ACIDS
+from .io_utils import AMINO_ACIDS, AB_INDICES
+import sys
 
-
-def plot_feature_importance(features, feature_importance, number_features=20, plot_out=None):
+def plot_feature_importance(features, feature_importance, title, number_features=20, only_top_features=False, plot_out=None):
 
     df = pd.DataFrame({
         'features' : features,
@@ -19,15 +19,15 @@ def plot_feature_importance(features, feature_importance, number_features=20, pl
 
     data = []
 
-
-    data.append(
-        go.Bar(
-            x=df['feature_importance'].values[:number_features],
-            y=df['features'].values[:number_features],
-            orientation='h',
-            name=str(number_features) + 'least important features'
+    if not only_top_features:
+        data.append(
+            go.Bar(
+                x=df['feature_importance'].values[:number_features],
+                y=df['features'].values[:number_features],
+                orientation='h',
+                name=str(number_features) + 'least important features'
+            )
         )
-    )
 
 
     data.append(
@@ -39,25 +39,26 @@ def plot_feature_importance(features, feature_importance, number_features=20, pl
         )
     )
 
-
     plot = {
         "data": data,
         "layout": go.Layout(
-            title='Feature Importance ranked by mean importance of feature in all trees',
-            xaxis=dict(title='feature importance (Gini Impurity)'),
+            title=title,
+            xaxis=dict(title='feature importance (Gini importance)'),
             margin=go.Margin(l=300),
             font = dict(size = 18)
 
         )
     }
 
+    if title=="":
+        plot['layout']['margin']['t'] = 10
 
     if plot_out is not None:
         plotly_plot(plot, filename=plot_out, auto_open=False)
     else:
         return plot
 
-def plot_pairwise_couplings_density(scatter_dict, title, plot_out=None):
+def plot_pairwise_couplings_density(scatter_dict, title, histograms=True, plot_out=None):
 
     x_axis_title  = scatter_dict.keys()[0]
     y_axis_title  = scatter_dict.keys()[1]
@@ -65,83 +66,125 @@ def plot_pairwise_couplings_density(scatter_dict, title, plot_out=None):
     x = scatter_dict[x_axis_title]
     y = scatter_dict[y_axis_title]
 
+    plot_min= -1.5
+    plot_max = 1.5
 
+    #adapted from red colorscale cl.scales['9']['seq']['Reds']
     colorscale = [
-        [0, '#7A4579'],        #0
-        [1./10000, '#D56073'], #10
-        [1./1000, 'rgb(236,158,105)'],  #100
-        [1./100, (1, 1, 0.2)],   #1000
-        [1./10, (0.98,0.98,0.98)],       #10000
-        [1., 'rgb(0, 0, 0)']              #100000
+        [0, 'rgb(255,255,255)'],
+        [0.111111, 'rgb(255,245,240)'],
+        [0.222222, 'rgb(254,224,210)'],
+        [0.333333, 'rgb(252,187,161)'],
+        [0.444444, 'rgb(252,146,114)'],
+        [0.555555, 'rgb(251,106,74)'],
+        [0.666666, 'rgb(239,59,44)'],
+        [0.777777, 'rgb(203,24,29)'],
+        [0.888888, 'rgb(165,15,21)'],
+        [1.0, 'rgb(103,0,13)']
     ]
 
+    data=[]
+    for gridline in [-1, -0.5, 0, 0.5, 1]:
+        data.append(
+            go.Scatter(
+                x=[gridline, gridline], y=[plot_min, plot_max], mode='lines', showlegend=False,
+                line=dict(width=1, color='lightgrey')
+            )
+        )
+        data.append(
+            go.Scatter(
+                x=[plot_min, plot_max], y=[gridline, gridline], mode='lines', showlegend=False,
+                line=dict(width=1, color='lightgrey')
+            )
+        )
 
+    trace_contour = go.Histogram2dcontour(
+        x=x, y=y, name='density', ncontours=30,
+        colorscale=colorscale,  # choose a pre-defined color scale
+        reversescale=False,
+        showscale=False
+    )
 
-    trace1 = go.Scatter(
+    trace_points = go.Scatter(
         x=x, y=y, mode='markers', name='points',
         marker=dict(color='rgb(102,0,0)', size=5, opacity=0.4),
         hoverinfo='text',
         text=[x_axis_title + ": " + str(a) + "<br>" + y_axis_title + ": " + str(b) for a, b in zip(x, y)]
     )
-    trace2 = go.Histogram2dcontour(
-        x=x, y=y, name='density', ncontours=50,
-        colorscale='Hot',  # choose a pre-defined color scale
-        reversescale=True,
-        showscale=False
-    )
-    trace3 = go.Histogram(
-        x=x, name='x density',
-        marker=dict(color='rgb(255, 237, 222)'),
-        yaxis='y2'
-    )
-    trace4 = go.Histogram(
-        y=y, name='y density', marker=dict(color='rgb(255, 237, 222)'),
-        xaxis='x2'
-    )
-    data = [trace1, trace2, trace3, trace4]
+
+    data.append(trace_contour)
+    data.append(trace_points)
+
+    if histograms:
+        hist1 = go.Histogram(
+            x=x, name='x density',
+            marker=dict(color='rgb(255, 237, 222)'),
+            yaxis='y2'
+        )
+        hist2 = go.Histogram(
+            y=y, name='y density', marker=dict(color='rgb(255, 237, 222)'),
+            xaxis='x2'
+        )
+
+        data.append(hist1)
+        data.append(hist2)
 
     layout = go.Layout(
         title=title,
-        font = dict(size = 18),
+        font = dict(size = 16),
         showlegend=False,
-        #autosize=False,
-        #width=1000,
-        #height=900,
         xaxis=dict(
             title=x_axis_title,
             exponentformat="e",
             showexponent='All',
-            domain=[0, 0.85],
             showgrid=False,
-            zeroline=False
+            zeroline=False,
+            showline=False,
+            showspikes=True,
+            scaleanchor="y",
+            scaleratio=1.0,
+            range=[plot_min,plot_max]
         ),
         yaxis=dict(
             title=y_axis_title,
             exponentformat="e",
             showexponent='All',
-            domain=[0, 0.85],
             showgrid=False,
-            zeroline=False
-        ),
-        margin=dict(
-            t=150
+            zeroline=False,
+            showline=False,
+            showspikes=True,
+            scaleanchor="x",
+            scaleratio=1.0,
+            range=[plot_min,plot_max]
         ),
         hovermode='closest',
-        bargap=0,
-        xaxis2=dict(
+        bargap=0
+    )
+
+
+
+    if histograms:
+        layout['xaxis']['domain']=[0, 0.85]
+        layout['yaxis']['domain']=[0, 0.85]
+        layout['xaxis2'] = dict(
             domain=[0.85, 1],
             showgrid=False,
             zeroline=False
         ),
-        yaxis2=dict(
+        layout['yaxis2'] = dict(
             domain=[0.85, 1],
             showgrid=False,
             zeroline=False
         )
-    )
+        layout['margin'] = dict(t=150)
+
+
+    if title == "":
+        layout['margin'] = dict(t=10)
 
     fig = go.Figure(
-        data=data, layout=layout
+        data=data,
+        layout=layout
     )
 
     if plot_out is not None:
@@ -255,8 +298,9 @@ def plot_scatter_meanprecision_per_protein_vs_feature(scatter_dict, title, xaxis
             y=values['mean_precision'],
             mode='markers',
             name=name,
+            opacity=0.3,
             marker = dict(
-                color = colors[scatter_dict.keys().index(name)]
+                color = colors[scatter_dict.keys().index(name)],
             ),
             text=values['annotation'],
             showlegend=True
@@ -270,7 +314,8 @@ def plot_scatter_meanprecision_per_protein_vs_feature(scatter_dict, title, xaxis
             y=values['rolling_mean'],
             mode='lines',
             line=dict(
-                color=colors[scatter_dict.keys().index(name)]
+                color=colors[scatter_dict.keys().index(name)],
+                width=3
             ),
             name='rolling mean '  + name,
             showlegend=True
@@ -280,6 +325,9 @@ def plot_scatter_meanprecision_per_protein_vs_feature(scatter_dict, title, xaxis
         "data": data,
         "layout": go.Layout(
             title=title,
+            font=dict(
+                size=18
+            ),
             yaxis1=dict(
                 title='Mean Precision over ranks',
                 exponentformat="e",
@@ -424,7 +472,90 @@ def plot_precision_vs_recall_plotly(precision_recall_dict, title, plot_out=None)
     else:
         return plot
 
-def plot_evaluationmeasure_vs_rank_plotly(evaluation_dict, title, yaxistitle, plot_out=None):
+def plot_evaluationmeasure_vs_rank_plotly_cv(evaluation_dict, title, yaxistitle, show_cv=True, plot_out=None):
+
+    data = []
+    options = evaluation_dict.keys()
+
+    #select colors
+    nr_options = len(options)
+    if nr_options > 12:
+        twelve_color_scale = cl.scales['12']['qual']['Paired']
+        legend_group_colors = cl.interp( twelve_color_scale, 20 )
+    else:
+        while (str(nr_options) not in cl.scales) and (nr_options <=11):
+            nr_options += 1
+
+        legend_group_colors = cl.scales[str(nr_options)]['qual']['Paired']
+
+
+    for nr, option in enumerate(sorted(options)):
+
+        ranks = evaluation_dict[option]['rank']
+
+        cv_prec=[]
+        for cv in sorted([key for key in evaluation_dict[option].keys() if key != 'rank']):
+
+            cv_prec.append(evaluation_dict[option][cv]['mean'])
+            if show_cv:
+                data.append(
+                    go.Scatter(
+                        x=[str(rank) for rank in ranks],
+                        y=evaluation_dict[option][cv]['mean'],
+                        name=cv,
+                        mode='lines',
+                        showlegend=False,
+                        legendgroup = option,
+                        opacity=0.5,
+                        line=dict(
+                            width=2,
+                            dash='dash',
+                            color=legend_group_colors[nr]
+                        )
+                    )
+                )
+
+        data.append(
+            go.Scatter(
+                x=[str(rank) for rank in ranks],
+                y=np.mean(cv_prec, axis=0),
+                name=option+" ("+str(np.round(np.mean(cv_prec), decimals=3))+")",
+                mode='lines',
+                showlegend=True,
+                legendgroup = option,
+                line=dict(
+                    width=4,
+                    dash='solid',
+                    color=legend_group_colors[nr]
+                )
+            )
+        )
+
+    plot = {
+        "data": data,
+        "layout": go.Layout(
+            title=title,
+            xaxis1=dict(
+                title='top ranked contact predictions [fraction of protein length L]',
+                tickvals=[str(rank) for rank in np.linspace(1, 0, 10, endpoint=False)[::-1]]), #tickvals=[str(rank)+"L" for rank in np.linspace(1, 0, 10, endpoint=False)[::-1]])
+            yaxis1=dict(
+                title=yaxistitle,
+                range=[0, 1]
+            ),
+            font=dict(size=18)
+        )
+    }
+
+    #move plot a bit upwards if there is no title
+    if title=="":
+        plot["layout"]['margin']['t'] = 10
+
+    if plot_out is not None:
+        plotly_plot(plot, filename=plot_out, auto_open=False)
+    else:
+        return plot
+
+def plot_evaluationmeasure_vs_rank_plotly(evaluation_dict, title, yaxistitle, legend_order=None, plot_out=None):
     """
     Plot average precision over proteins
     vs rank of predictions dependent on protein length L
@@ -434,39 +565,87 @@ def plot_evaluationmeasure_vs_rank_plotly(evaluation_dict, title, yaxistitle, pl
 
     data = []
 
-    methods = evaluation_dict.keys()
-    methods.remove('rank')
+
+    if legend_order is not None:
+        methods = legend_order
+    else:
+        methods = evaluation_dict.keys()
+        methods.remove('rank')
     max_value=1
 
-    for method in methods:
+    method_colors = np.array(cl.scales[str(max(3, len(methods)))]['qual']['Set1'])
+
+    #just in case legend groups are specified
+    legend_group_dict = {}
+    linetype = ['dash', 'dot', 'longdash', 'dashdot', 'longdashdot', 'solid']
+    for nr, method in enumerate(methods):
+        print(nr, method)
+        sys.stdout.flush()
+        if 'legend_group' in evaluation_dict[method]:
+            legend_group_dict[evaluation_dict[method]['legend_group']] = {}
+
+    if len(legend_group_dict.keys()) > 0:
+        legend_group_colors = cl.scales[str(len(legend_group_dict.keys()))]['qual']['Set1']
+
+        for nr, legend_group_name in enumerate(sorted(legend_group_dict.keys())):
+            print(nr, legend_group_name)
+            sys.stdout.flush()
+            legend_group_dict[legend_group_name] = {}
+            legend_group_dict[legend_group_name]['color'] = legend_group_colors[nr]
+            legend_group_dict[legend_group_name]['counter'] = 0
+
+
+
+    for nr, method in enumerate(methods):
         max_value = np.max([max_value, np.max(evaluation_dict[method]['mean'])])
-        data.append(go.Scatter(x=[str(rank) for rank in np.round(evaluation_dict['rank'], decimals=2)],
-                               y=evaluation_dict[method]['mean'],
-                               name=method + "("+str(evaluation_dict[method]['size'],)+" proteins)",
-                               mode='lines'
-                               )
-                    )
+        method_trace = go.Scatter(
+            x=[str(rank) for rank in np.round(evaluation_dict['rank'], decimals=2)],
+            y=evaluation_dict[method]['mean'],
+            name=method + "("+str(evaluation_dict[method]['size'],)+" proteins)",
+            mode='lines',
+            line=dict(
+                width=4,
+                color=method_colors[nr]
+            )
+        )
+
+        if 'legend_group' in evaluation_dict[method]:
+            legend_group_name = evaluation_dict[method]['legend_group']
+            print(nr, method, legend_group_name)
+            sys.stdout.flush()
+            method_trace['legendgroup'] = legend_group_name
+            method_trace['line']['color']   = legend_group_dict[legend_group_name]['color']
+            method_trace['line']['dash']    = linetype[legend_group_dict[legend_group_name]['counter']]
+            legend_group_dict[legend_group_name]['counter'] += 1
+
+        data.append(method_trace)
 
     plot = {
         "data": data,
-        "layout": go.Layout(title=title,
-                            xaxis1=dict(title='top ranked contact predictions [fraction of protein length L]',
-                                        tickvals=[str(rank) for rank in np.linspace(1, 0, 10, endpoint=False)[::-1]]), #tickvals=[str(rank)+"L" for rank in np.linspace(1, 0, 10, endpoint=False)[::-1]])
-                            yaxis1=dict(title=yaxistitle,
-                                        range=[0, max_value]
-                            ),
-                            font=dict(size=18)
-                            )
+        "layout": go.Layout(
+            title=title,
+            xaxis1=dict(
+                #title='top ranked contact predictions [fraction of protein length L]',
+                title='#predicted contacts / protein length',
+                tickvals=[str(rank) for rank in np.linspace(1, 0, 10, endpoint=False)[::-1]]), #tickvals=[str(rank)+"L" for rank in np.linspace(1, 0, 10, endpoint=False)[::-1]])
+            yaxis1=dict(
+                title=yaxistitle,
+                range=[0, max_value]
+            ),
+            font=dict(size=18)
+        )
     }
 
-
+    #move plot a bit upwards if there is no title
+    if title=="":
+        plot["layout"]['margin']['t'] = 10
 
     if plot_out is not None:
         plotly_plot(plot, filename=plot_out, auto_open=False)
     else:
         return plot
 
-def plot_precision_rank_facetted_plotly(precision_rank, title, plot_out=None):
+def plot_precision_rank_facetted_plotly(precision_rank, title, legend_order=None, plot_out=None):
     """
     Plot average precision over proteins
     vs rank of predictions dependent on protein length L
@@ -483,50 +662,120 @@ def plot_precision_rank_facetted_plotly(precision_rank, title, plot_out=None):
 
     nr_rows = int(np.ceil(len(precision_rank.keys()) / 2.0))
     nr_cols = 2
+    textsize = 18
+
+
+    if legend_order is not None:
+        methods = list(legend_order)
+    else:
+        methods = [col for col in precision_rank[precision_rank.keys()[0]].keys() if col != 'rank']
 
     #define colors for methods
-    methods = [col for col in precision_rank[precision_rank.keys()[0]].keys() if col != 'rank']
-    method_colors={}
-    colors = np.array(cl.scales[str(max(3, len(methods)))]['qual']['Set1'])
-    for num,method in enumerate(methods):
-        method_colors[method] = colors[num]
+    method_colors = np.array(cl.scales[str(max(3, len(methods)))]['qual']['Set1'])
 
-
-    # make subplot for each facet
-    fig = tools.make_subplots(rows=nr_rows,
-                              cols=nr_cols,
-                              subplot_titles=tuple(sorted(precision_rank.keys())),
-                              print_grid=False
-                              )
-
+    data = []
+    annotations=[]
     for plot_id, facet in enumerate(sorted(precision_rank.keys())):
-        plot = plot_evaluationmeasure_vs_rank_plotly(precision_rank[facet], title, 'precision', plot_out=None)
+        plot = plot_evaluationmeasure_vs_rank_plotly(precision_rank[facet], title, 'precision', legend_order=methods, plot_out=None)
         col = plot_id % nr_cols
         row = (plot_id - col) / nr_cols
 
-        #add traces to subplot
-        for trace in plot['data']:
+        for id, trace in enumerate(plot['data']):
             trace['name'] = trace['name'].split("(")[0] #removes the protein count
+            trace['legendgroup'] = trace['name']
+            trace['line']['width'] = 3
+            trace['line']['color'] = method_colors[id]
+
             if col != 0 or row != 0:
                 trace['showlegend'] = False
-            trace['legendgroup'] = trace['name']
-            trace['line'] = {'color': method_colors[trace['name']]}
-            fig.append_trace(trace, row + 1, col + 1)
+
+            if col == 0:
+                trace["xaxis"] = 'x'
+            else:
+                trace["xaxis"] = 'x2'
+
+            if row == 0:
+                trace["yaxis"] = 'y2'
+            else:
+                trace["yaxis"] = 'y'
+
+            data.append(trace)
 
 
-        # adjust axis for all plots
-        fig['layout']['xaxis' + str(plot_id + 1)].update(plot['layout']['xaxis1'])
-        fig['layout']['yaxis' + str(plot_id + 1)].update(plot['layout']['yaxis1'])
+        subplot_title  = {
+            'text': facet.split("<")[1] + " Q" + facet.split(":")[0][-1] + " =" + facet.split("=")[-1],
+            'font':{ 'size': textsize-2},
+            'xanchor': 'center',
+            'yanchor': 'bottom',
+            'showarrow': False,
+            'yref': 'paper',
+            'xref': 'paper'
+        }
 
-    #global layout settings
-    fig['layout']['font'] = {'size': 18}  # set global font size
-    fig['layout']['title'] = title
+        if col == 0:
+            subplot_title["x"] = 0.225
+        else:
+            subplot_title["x"] = 0.775
+        if row == 0:
+            subplot_title["y"] = 0.98
+        else:
+            subplot_title["y"] = 0.47
+
+        annotations.append(subplot_title)
+
+    #add x-axis title as annotation
+    xaxis_title = {
+            'text': plot['layout']['xaxis1']['title'],
+            'font':{ 'size': textsize+2},
+            'xanchor': 'center',
+            'yanchor': 'bottom',
+            'showarrow': False,
+            'yref': 'paper',
+            'xref': 'paper',
+            'x': 0.5,
+            'y': -0.1
+        }
+    annotations.append(xaxis_title)
+
+    layout = go.Layout(
+        xaxis=dict(
+            domain=[0, 0.49]
+        ),
+        yaxis=dict(
+            title=plot['layout']['yaxis1']['title'],
+            domain=[0, 0.48],
+            range=[0,1],
+            zeroline=False
+        ),
+        xaxis2=dict(
+            domain=[0.51, 1]
+        ),
+        yaxis2=dict(
+            title=plot['layout']['yaxis1']['title'],
+            domain=[0.52, 1],
+            range=[0,1],
+            zeroline=False
+        ),
+        font = dict(size = textsize),
+        title = title,
+        annotations = annotations
+        #legend=dict(orientation='h', xanchor='center', x=0.5)
+    )
+
+    #move plot a bit upwards if there is no title
+    if title=="":
+        layout['margin']['t'] = 10
+        #layout['legend'] = dict(orientation='h', xanchor='center', yanchor='bottom', y=1.1, x=0.5)
+
+    fig = go.Figure(data=data, layout=layout)
 
     if plot_out is not None:
         plotly_plot(fig, filename=plot_out, auto_open=False)
     else:
         return fig
 
+
+#contact/coup[ling matrices
 def plot_contact_map_someScore_plotly(plot_matrix, title, seqsep, gaps_percentage_plot=None, plot_file=None):
     
     #sort matrix by confidence score
@@ -535,9 +784,7 @@ def plot_contact_map_someScore_plotly(plot_matrix, title, seqsep, gaps_percentag
 
     data = []
 
-    # colorscale from red (small distance) to blue(large distance)
-    distance_colors = cl.scales['10']['div']['RdBu']
-    distance_colorscale = [[i / 9.0, distance_colors[i]] for i in range(10)]
+
 
     #add predicted contact map
     data.append(
@@ -586,49 +833,52 @@ def plot_contact_map_someScore_plotly(plot_matrix, title, seqsep, gaps_percentag
         sub_L5_true  = plot_matrix.query('distance > 0').head(int(L/5)).query('contact > 0')
         sub_L5_false = plot_matrix.query('distance > 0').head(int(L/5)).query('contact < 1')
 
-        #Mark TP and FP in the plot with little crosses
-        tp = go.Scatter(
-            x = sub_L5_true['residue_i'].tolist() + sub_L5_true['residue_j'].tolist(),
-            y = sub_L5_true['residue_j'].tolist() + sub_L5_true['residue_i'].tolist(),
-            mode = 'markers',
-            marker = dict(
-                symbol=134,
-                color="green",
-                line=dict(width=2),
-                size=12
-            ),#size_tp, sizeref=np.max([size_tp + size_fp])/15, sizemode = 'diameter'),
-            name="TP (L/5)",
-            hoverinfo="none"
-        )
+        if len(sub_L5_true) > 0:
+            #Mark TP and FP in the plot with little crosses
+            tp = go.Scatter(
+                x = sub_L5_true['residue_i'].tolist() + sub_L5_true['residue_j'].tolist(),
+                y = sub_L5_true['residue_j'].tolist() + sub_L5_true['residue_i'].tolist(),
+                mode = 'markers',
+                marker = dict(
+                    symbol=134,
+                    color="green",
+                    line=dict(width=2),
+                    size=12
+                ),#size_tp, sizeref=np.max([size_tp + size_fp])/15, sizemode = 'diameter'),
+                name="TP (L/5)",
+                hoverinfo="none"
+            )
 
         #'rgb(255,247,188)', 'rgb(254,196,79)'
         green_yello_red = ['rgb(254,196,79)', 'rgb(222,45,38)']
-        max_tp = np.max(plot_matrix[plot_matrix.contact > 0]['distance'])
+        max_tp = 8
         max_fp = np.max(plot_matrix[plot_matrix.contact < 1]['distance'])
         fp_distance_range =   int(np.ceil((max_fp - max_tp)/10.0)*10)
         green_yello_red_interpolated = cl.interp(green_yello_red, fp_distance_range)
         data_color = [green_yello_red_interpolated[int(x-max_tp)] for x in sub_L5_false['distance']]
 
+        if len(sub_L5_false) > 0:
+            fp = go.Scatter(
+                x = sub_L5_false['residue_i'].tolist() + sub_L5_false['residue_j'].tolist(),
+                y = sub_L5_false['residue_j'].tolist() + sub_L5_false['residue_i'].tolist(),
+                mode = 'markers',
+                marker = dict(
+                    symbol=134,
+                    #color="red",
+                    color = data_color * 2,
+                    colorscale=green_yello_red_interpolated,
+                    line=dict(width=2),
+                    size=12
+                ),#size_fp, sizeref=np.max([size_tp + size_fp])/15, sizemode = 'diameter'),
+                name="FP (L/5)",
+                hoverinfo="none"
+            )
 
-        fp = go.Scatter(
-            x = sub_L5_false['residue_i'].tolist() + sub_L5_false['residue_j'].tolist(),
-            y = sub_L5_false['residue_j'].tolist() + sub_L5_false['residue_i'].tolist(),
-            mode = 'markers',
-            marker = dict(
-                symbol=134,
-                #color="red",
-                color = data_color * 2,
-                colorscale=green_yello_red_interpolated,
-                line=dict(width=2),
-                size=12
-            ),#size_fp, sizeref=np.max([size_tp + size_fp])/15, sizemode = 'diameter'),
-            name="FP (L/5)",
-            hoverinfo="none"
-        )
 
-        #colorscale from red (small distance) to blue(large distance)
-        distance_colors = cl.scales['10']['div']['RdBu']
-        distance_colorscale = [[i/9.0, distance_colors[i] ]for i in range(10)]
+        # colorscale from red (small distance) to blue(large distance)
+        zmax = np.max(plot_matrix.distance)
+        percent_at_contact_thr = 8 / zmax
+        distance_colorscale = [[0, 'rgb(128, 0, 0)'], [percent_at_contact_thr, 'rgb(255, 255, 255)'], [1, 'rgb(22, 96, 167)']]
 
         #define triangle on opposite site of Predictions 
         heatmap_observed = go.Heatmap(
@@ -636,6 +886,8 @@ def plot_contact_map_someScore_plotly(plot_matrix, title, seqsep, gaps_percentag
             y=plot_matrix.residue_i.tolist(),
             z=plot_matrix.distance.tolist(),
             name='observed',
+            zmin = 0,
+            zmax = zmax,
             colorscale=distance_colorscale,
             #colorscale='Greys', reversescale=True,
             #colorscale=distance_colors_interpol, reversescale=True,
@@ -649,9 +901,11 @@ def plot_contact_map_someScore_plotly(plot_matrix, title, seqsep, gaps_percentag
 
         #put all plot elements in data list
         data[1] = heatmap_observed
-        data.append(tp)
-        data.append(fp)
 
+        if len(sub_L5_true) > 0:
+            data.append(tp)
+        if len(sub_L5_false) > 0:
+            data.append(fp)
 
     fig = tools.make_subplots(rows=2, cols=1, shared_xaxes=True, print_grid=False)
 
@@ -659,17 +913,21 @@ def plot_contact_map_someScore_plotly(plot_matrix, title, seqsep, gaps_percentag
         fig.append_trace(trace, 2, 1)
 
     fig['layout']['title']  = title
-    fig['layout']['width']  = 1100
-    fig['layout']['height'] = 1000
     fig['layout']['legend'] = {'x': 1.02,'y': 1}  # places legend to the right of plot
 
     fig['layout']['xaxis1']['title'] = 'j'
     fig['layout']['xaxis1']['range'] = [0.5,L+0.5]
     fig['layout']['xaxis1']['domain'] = [0.0, 1.0]
+    fig['layout']['xaxis1']['zeroline'] = False
 
     fig['layout']['yaxis2']['title'] = 'i'
     fig['layout']['yaxis2']['range'] = [0.5, L + 0.5]
     fig['layout']['yaxis2']['domain'] = [0.0, 1.0]
+    fig['layout']['yaxis2']['scaleanchor'] = "x"
+    fig['layout']['yaxis2']['scaleratio'] = 1.0
+    fig['layout']['yaxis2']['zeroline'] = False
+
+    fig['layout']['font']['size']=18
 
     if gaps_percentage_plot is not None:
         for trace in gaps_percentage_plot['data']:
@@ -677,6 +935,7 @@ def plot_contact_map_someScore_plotly(plot_matrix, title, seqsep, gaps_percentag
 
         # contact map domain 0-0.9
         fig['layout']['yaxis2']['domain'] = [0.0, 0.9]
+
 
         #xaxis range only to 0.9 so that contact map is square
         fig['layout']['xaxis1']['domain'] = [0.0, 0.9]
@@ -690,15 +949,23 @@ def plot_contact_map_someScore_plotly(plot_matrix, title, seqsep, gaps_percentag
     else:
         return fig
 
-def plot_coupling_matrix(couplings, single_terms_i, single_terms_j, residue_i, residue_j, protein, plot_file=None ):
+def plot_bubbles_aminoacids(couplings, xaxis_title, yaxis_title,  title, diverging=True, plot_file=None):
 
     grid = np.indices((20, 20))
-    x = [item+1 for sublist in grid[0] for item in sublist]
-    y = [item+1 for sublist in grid[1] for item in sublist]
+    x = [item for sublist in grid[0] for item in sublist]
+    y = [item for sublist in grid[1] for item in sublist]
 
-    #colorscale from red (small distance) to blue(large distance)
-    distance_colors = cl.scales['10']['div']['RdBu']
-    distance_colorscale = [[i/9.0, distance_colors[i] ] for i in range(10)]
+    if diverging:
+        #colorscale from red (small distance) to blue(large distance)
+        distance_colors = cl.scales['10']['div']['RdBu']
+        distance_colorscale = [[i/9.0, distance_colors[i] ] for i in range(10)]
+        scaled_couplings = np.abs(couplings) / np.std(couplings)
+    else:
+        distance_colors = cl.scales['9']['seq']['Reds']
+        if np.max(couplings) > 0:
+            distance_colors = distance_colors[::-1]
+        distance_colorscale = [[i/8.0, distance_colors[i] ] for i in range(9)]
+        scaled_couplings = np.abs(couplings) / np.std(couplings)
 
     bubbles= go.Scatter(
             x=x,
@@ -706,7 +973,7 @@ def plot_coupling_matrix(couplings, single_terms_i, single_terms_j, residue_i, r
             mode='markers',
             text=couplings,
             marker = dict(
-                size = np.abs(couplings) * 50,
+                size = scaled_couplings*5,
                 sizemode="diameter",
                 colorscale=distance_colorscale,#'RdBl',
                 reversescale=True,
@@ -718,70 +985,222 @@ def plot_coupling_matrix(couplings, single_terms_i, single_terms_j, residue_i, r
             showlegend=False
         )
 
+
+    fig = go.Figure(
+        data=[bubbles],
+        layout=go.Layout(
+            xaxis = dict(
+                title=xaxis_title,
+                showgrid = True,
+                showline = False,
+                showspikes = True,
+                tickmode="array",
+                tickvals=[4, 7, 0, 19, 9, 10, 12, 14, 8, 18, 17, 13, 1, 6, 11, 3, 5, 2,15, 16],
+                ticktext=[AMINO_ACIDS[a] for a in [4, 7, 0, 19, 9, 10, 12, 14, 8, 18, 17, 13, 1, 6, 11, 3, 5, 2,15, 16] ],
+                type="category",
+                categoryorder="array",
+                categoryarray=[4, 7, 0, 19, 9, 10, 12, 14, 8, 18, 17, 13, 1, 6, 11, 3, 5, 2,15, 16]
+            ),
+            yaxis = dict(
+                title=yaxis_title,
+                scaleanchor = "x",
+                scaleratio = 1.0,
+                showspikes=True,
+                tickmode="array",
+                tickvals=[4, 7, 0, 19, 9, 10, 12, 14, 8, 18, 17, 13, 1, 6, 11, 3, 5, 2, 15, 16],
+                ticktext=[AMINO_ACIDS[a] for a in[4, 7, 0, 19, 9, 10, 12, 14, 8, 18, 17, 13, 1, 6, 11, 3, 5, 2, 15, 16]],
+                type="category",
+                categoryorder="array",
+                categoryarray=[4, 7, 0, 19, 9, 10, 12, 14, 8, 18, 17, 13, 1, 6, 11, 3, 5, 2,15, 16]
+            ),
+            title=title,
+            font = dict(size=18),
+            hovermode='closest'
+
+        )
+    )
+
+
+
+    if title == "":
+        fig['layout']['margin']['t']=10
+
+
+    if plot_file:
+        plotly_plot(fig, filename=plot_file, auto_open=False)
+    else:
+        return fig
+
+def plot_coupling_matrix(couplings, single_terms_i, single_terms_j, residue_i, residue_j, title, colorbar_title, colorscale_type, type="bubble", plot_file=None ):
+
+
+    #reorder correlations
+    coupling_df = pd.DataFrame(couplings.transpose())
+    nr_states = couplings.shape[0]
+    coupling_df.columns=list(AMINO_ACIDS[:nr_states])
+    coupling_df.index=list(AMINO_ACIDS[:nr_states])
+
+    amino_acid_order = [4, 7, 0, 19, 9, 10, 12, 14, 8, 18, 17, 13, 1, 6, 11, 3, 5, 2, 15, 16, 20]
+    amino_acids_ordered = [AMINO_ACIDS[a] for a in amino_acid_order]
+    coupling_df = coupling_df[amino_acids_ordered[:nr_states]]
+    coupling_df = coupling_df.reindex(index = amino_acids_ordered[:nr_states])
+
+
+    single_terms_i_ordered =  single_terms_i[amino_acid_order[:nr_states]]
+    single_terms_j_ordered =  single_terms_j[amino_acid_order[:nr_states]]
+
+
+    if colorscale_type == "diverging":
+        max_normalisiert = np.max(couplings) + np.abs(np.min(couplings))
+        percent_data_at_zero = (0 + np.abs(np.min(couplings))) / max_normalisiert
+        colorscale = [[0, 'rgb(22, 96, 167)'], [percent_data_at_zero, 'rgb(255, 255, 255)'], [1, 'rgb(128, 0, 0)']]
+
+    else:
+        colorscale = "Greys"
+
+
+    if type == "bubble":
+
+        grid = np.indices((nr_states, nr_states))
+        x = [item for sublist in grid[0] for item in sublist]
+        y = [item for sublist in grid[1] for item in sublist]
+
+        couplings_ordered = coupling_df.transpose().values.flatten()
+        scaled_couplings = np.abs((couplings_ordered - np.mean(couplings_ordered)) / np.std(couplings_ordered))
+
+        coupling_plot = go.Scatter(
+                x=x,
+                y=y,
+                mode='markers',
+                text=couplings_ordered,
+                marker = dict(
+                    size = scaled_couplings*5,
+                    sizemode="diameter",
+                    colorscale=colorscale,#'RdBl',
+                    color = couplings_ordered,
+                    showscale=True,
+                    colorbar=dict(
+                        title=colorbar_title,
+                        titleside="right"
+                    )
+                ),
+
+                hoverinfo="x+y+text",
+                hoveron="points+fills",
+                showlegend=False
+            )
+
+        if colorscale_type != "diverging":
+            coupling_plot['marker']['reversescale'] = True
+
+    else:
+
+        coupling_plot = go.Heatmap(
+            z=np.array(coupling_df),
+            hoverinfo="x+y+z",
+            colorscale=colorscale,
+            colorbar=dict(
+                title=colorbar_title,
+                titleside="right"
+            )
+        )
+
+
+        if colorscale_type != "diverging":
+            coupling_plot['reversescale']=True
+
+
+
     singles_i  = go.Bar(
-        x = range(1,21),
-        y = single_terms_i,
+        x = range(20),
+        y = single_terms_i_ordered,
         orientation='v',
         showlegend=False,
         name="v_i:" + str(residue_i),
         marker = dict(
-            colorscale=distance_colorscale,#'RdBl',
-            reversescale=True,
-            color = single_terms_i,
-            showscale=False,
+            colorscale=colorscale,#'RdBl',
+            color = single_terms_i_ordered,
+            showscale=False
 
         )
     )
 
     singles_j  = go.Bar(
-        y = range(1,21),
-        x = single_terms_j,
+        y = range(20),
+        x = single_terms_j_ordered,
         orientation='h',
         showlegend=False,
         name="v_j:" + str(residue_j),
         marker=dict(
-            colorscale=distance_colorscale,#'RdBl',
-            reversescale=True,
-            color=single_terms_j,
-            showscale=False,
+            colorscale=colorscale,#'RdBl',
+            color=single_terms_j_ordered,
+            showscale=False
         )
     )
 
+    if colorscale_type != "diverging":
+        singles_i['marker']['reversescale'] = True
+        singles_j['marker']['reversescale'] = True
 
 
     fig = tools.make_subplots(rows=2, cols=2, shared_xaxes=True, shared_yaxes=True, print_grid=False)
-    fig.append_trace(singles_j, 1, 1)
-    fig.append_trace(bubbles, 1, 2)
-    fig.append_trace(singles_i, 2, 2)
+    fig.append_trace(singles_j, 1, 1)       # y=1, x=1
+    fig.append_trace(coupling_plot, 1, 2)   # y=1, x=2
+    fig.append_trace(singles_i, 2, 2)       # y=2, x=2
 
 
-    fig['layout']['xaxis2']['title'] = 'i: '+str(residue_i)
+
     fig['layout']['xaxis1']['domain'] = [0.0, 0.1]
-    fig['layout']['xaxis2']['domain'] = [0.1, 1.0]
+    fig['layout']['xaxis1']['showgrid'] = False
+    fig['layout']['xaxis1']['showline'] = False
 
-    fig['layout']['yaxis1']['title'] = 'j:'+str(residue_j)
-    fig['layout']['yaxis1']['domain'] = [0.1, 1.0]
     fig['layout']['yaxis2']['domain'] = [0.0, 0.1]
+    fig['layout']['yaxis2']['showgrid'] = False
+    fig['layout']['yaxis2']['showline'] = False
 
-    fig['layout']['title']="Visualisation of coupling matrix for protein "+ protein +" and residues i: " + str(residue_i) + " and j: " + str(residue_j)
-    fig['layout']['width']=1000
-    fig['layout']['height']=1000
+
+
+    fig['layout']['xaxis2']['title'] = 'residue i = '+str(residue_i)
+    fig['layout']['xaxis2']['domain'] = [0.1, 1.0]
+    fig['layout']['xaxis2']['range'] = range(nr_states)
+    fig['layout']['xaxis2']['showgrid'] = True
+    fig['layout']['xaxis2']['showline'] = False
+    fig['layout']['xaxis2']['showspikes'] = True
+
+
+
+    fig['layout']['yaxis1']['title'] = 'residue j = '+str(residue_j)
+    fig['layout']['yaxis1']['domain'] = [0.1, 1.0]
+    fig['layout']['yaxis1']['range'] = range(nr_states)
+    fig['layout']['yaxis1']['showgrid'] = True
+    fig['layout']['yaxis1']['showline'] = False
+    fig['layout']['yaxis1']['showspikes'] = True
+    fig['layout']['yaxis1']['scaleanchor'] = "x2"
+    fig['layout']['yaxis1']['scaleratio'] = 1.0
+
+
+    fig['layout']['title']=title
     fig['layout']['font']['size']=18
+    fig['layout']['hovermode']='closest'
+
 
     fig['layout']['xaxis2']['tickmode']="array"
-    fig['layout']['xaxis2']['tickvals']=[5, 8,1,20,10,11,13, 15,9, 19,18,14, 2,7,12,4,  6,3,16,17]
-    fig['layout']['xaxis2']['ticktext']=[AMINO_ACIDS[a] for a in [5, 8,1,20,10,11,13, 15,9, 19,18,14, 2,7,12,4,  6,3,16,17] ]
+    fig['layout']['xaxis2']['tickvals']=range(nr_states)
+    fig['layout']['xaxis2']['ticktext']=list(coupling_df.columns)
     fig['layout']['xaxis2']['type']="category"
     fig['layout']['xaxis2']['categoryorder']="array"
-    fig['layout']['xaxis2']['categoryarray']=[5, 8, 1, 20, 10, 11, 13, 15, 9, 19, 18, 14, 2, 7, 12, 4, 6, 3,16, 17]
+    fig['layout']['xaxis2']['categoryarray']=range(nr_states)
+
 
     fig['layout']['yaxis1']['tickmode']="array"
-    fig['layout']['yaxis1']['tickvals']=[5, 8,1,20,10,11,13, 15,9, 19,18,14, 2,7,12,4,  6,3,16,17]
-    fig['layout']['yaxis1']['ticktext']=[AMINO_ACIDS[a] for a in [5, 8,1,20,10,11,13, 15,9, 19,18,14, 2,7,12,4,  6,3,16,17] ]
+    fig['layout']['yaxis1']['tickvals']=range(nr_states)
+    fig['layout']['yaxis1']['ticktext']=list(coupling_df.columns)
     fig['layout']['yaxis1']['type']="category"
     fig['layout']['yaxis1']['categoryorder']="array"
-    fig['layout']['yaxis1']['categoryarray']=[5, 8, 1, 20, 10, 11, 13, 15, 9, 19, 18, 14, 2, 7, 12, 4, 6, 3,16, 17]
+    fig['layout']['yaxis1']['categoryarray']=range(nr_states)
 
+    if title == "":
+        fig['layout']['margin']['t']=10
 
 
     if plot_file:
@@ -789,108 +1208,8 @@ def plot_coupling_matrix(couplings, single_terms_i, single_terms_j, residue_i, r
     else:
         return fig
 
-def plot_aa_freq_matrix(pair_freq, single_freq_i, single_freq_j, residue_i, residue_j, title, frequencies=True, plot_file=None):
-    grid = np.indices((21, 21))
-    x = [item  for sublist in grid[0] for item in sublist]
-    y = [item  for sublist in grid[1] for item in sublist]
-
-    # colorscale from red (small distance) to blue(large distance)
-    distance_colors = cl.scales['10']['div']['RdBu']
-    distance_colorscale = [[i / 9.0, distance_colors[i]] for i in range(10)]
-
-    if(frequencies):
-        bubble_size = pair_freq * 500
-    else:
-        bubble_size = (np.array(pair_freq) / np.max(pair_freq)) * 50
-
-    bubbles = go.Scatter(
-        x=x,
-        y=y,
-        mode='markers',
-        text=pair_freq,
-        marker=dict(
-            size=bubble_size,
-            sizemode="diameter",
-            colorscale=distance_colorscale,  # 'RdBl',
-            reversescale=True,
-            color=pair_freq,
-            showscale=True
-        ),
-        hoverinfo="x+y+text",
-        hoveron="points+fills",
-        showlegend=False
-    )
-
-    singles_i = go.Bar(
-        x=range(21),
-        y=single_freq_i,
-        orientation='v',
-        showlegend=False,
-        name="aa_freq_i:" + str(residue_i),
-        marker=dict(
-            colorscale=distance_colorscale,  # 'RdBl',
-            reversescale=True,
-            color=single_freq_i,
-            showscale=False,
-
-        )
-    )
-
-    singles_j = go.Bar(
-        y=range(21),
-        x=single_freq_j,
-        orientation='h',
-        showlegend=False,
-        name="aa_freq_j:" + str(residue_j),
-        marker=dict(
-            colorscale=distance_colorscale,  # 'RdBl',
-            reversescale=True,
-            color=single_freq_j,
-            showscale=False,
-        )
-    )
-
-    fig = tools.make_subplots(rows=2, cols=2, shared_xaxes=True, shared_yaxes=True)
-    fig.append_trace(singles_j, 1, 1)
-    fig.append_trace(bubbles, 1, 2)
-    fig.append_trace(singles_i, 2, 2)
-
-    fig['layout']['xaxis2']['title'] = 'i: ' + str(residue_i)
-    fig['layout']['xaxis1']['domain'] = [0.0, 0.1]
-    fig['layout']['xaxis2']['domain'] = [0.1, 1.0]
-
-    fig['layout']['yaxis1']['title'] = 'j:' + str(residue_j)
-    fig['layout']['yaxis1']['domain'] = [0.1, 1.0]
-    fig['layout']['yaxis2']['domain'] = [0.0, 0.1]
-
-    fig['layout']['title'] = title
-    fig['layout']['width'] = 1000
-    fig['layout']['height'] = 1000
-    fig['layout']['font']['size'] = 18
-
-    fig['layout']['xaxis2']['tickmode'] = "array"
-    fig['layout']['xaxis2']['tickvals'] = [0, 5, 8, 1, 20, 10, 11, 13, 15, 9, 19, 18, 14, 2, 7, 12, 4, 6, 3, 16, 17]
-    fig['layout']['xaxis2']['ticktext'] = [AMINO_ACIDS[a] for a in
-                                           [0, 5, 8, 1, 20, 10, 11, 13, 15, 9, 19, 18, 14, 2, 7, 12, 4, 6, 3, 16, 17]]
-    fig['layout']['xaxis2']['type'] = "category"
-    fig['layout']['xaxis2']['categoryorder'] = "array"
-    fig['layout']['xaxis2']['categoryarray'] = [0, 5, 8, 1, 20, 10, 11, 13, 15, 9, 19, 18, 14, 2, 7, 12, 4, 6, 3, 16, 17]
-
-    fig['layout']['yaxis1']['tickmode'] = "array"
-    fig['layout']['yaxis1']['tickvals'] = [0, 5, 8, 1, 20, 10, 11, 13, 15, 9, 19, 18, 14, 2, 7, 12, 4, 6, 3, 16, 17]
-    fig['layout']['yaxis1']['ticktext'] = [AMINO_ACIDS[a] for a in
-                                           [0, 5, 8, 1, 20, 10, 11, 13, 15, 9, 19, 18, 14, 2, 7, 12, 4, 6, 3, 16, 17]]
-    fig['layout']['yaxis1']['type'] = "category"
-    fig['layout']['yaxis1']['categoryorder'] = "array"
-    fig['layout']['yaxis1']['categoryarray'] = [0, 5, 8, 1, 20, 10, 11, 13, 15, 9, 19, 18, 14, 2, 7, 12, 4, 6, 3, 16, 17]
-
-    if plot_file:
-        plotly_plot(fig, filename=plot_file, auto_open=False)
-    else:
-        return fig
 
 #basic plotly plots
-
 def plot_barplot(statistics_dict, title, y_axis_title, type='stack', colors=None, showlegend=False, plot_out=None):
     """
     Plot the distribution of the statistics in the dictionary as barplots
@@ -1057,7 +1376,7 @@ def plot_boxplot(statistics_dict, title, y_axis_title, colors=None, jitter_pos=N
     if orient == 'h':
         plot['layout']['xaxis'].update(plot['layout']['yaxis'])
         plot['layout']['yaxis'] = {}
-        plot['layout']['margin']['l'] = 150
+        plot['layout']['margin']['l'] = 200
 
     if title=="":
         plot['layout']['margin']['t'] = 10
@@ -1067,7 +1386,7 @@ def plot_boxplot(statistics_dict, title, y_axis_title, colors=None, jitter_pos=N
     else:
         return plot
 
-def plot_scatter(scatter_dict, title, x_axis_title, y_axis_title, showlegend=False, colors = None, plot_out=None):
+def plot_scatter(scatter_dict, title, x_axis_title, y_axis_title, showlegend=False, colors = None,  plot_out=None, log_x=False):
     data=[]
     for name, values in scatter_dict.iteritems():
         scatter_data = go.Scatter(
@@ -1086,13 +1405,14 @@ def plot_scatter(scatter_dict, title, x_axis_title, y_axis_title, showlegend=Fal
     plot = {
         "data": data,
         "layout" : go.Layout(
+            font = dict(size=18),
             title = title,
-            yaxis1 = dict(
+            yaxis = dict(
                 title=y_axis_title,
                 exponentformat="e",
                 showexponent='All'
             ),
-            xaxis1 = dict(
+            xaxis = dict(
                 title=x_axis_title,
                 exponentformat="e",
                 showexponent='All'
@@ -1100,6 +1420,8 @@ def plot_scatter(scatter_dict, title, x_axis_title, y_axis_title, showlegend=Fal
         )
     }
 
+    if log_x:
+        plot['layout']['xaxis']['type']='log'
 
     if plot_out is not None:
         plotly_plot(plot, filename=plot_out, auto_open=False)
@@ -1194,3 +1516,80 @@ def jitter_plot(values_dict, title, annotations=None, colors=None, plot_out=None
     else:
         return plot
 
+def plot_heatmap(couplings, x_title, y_title, colorbar_title, title, plot_out=None):
+
+
+    #reorder correlations
+    coupling_df = pd.DataFrame(couplings.transpose())
+    nr_states = couplings.shape[0]
+    coupling_df.columns=list(AMINO_ACIDS[:nr_states])
+    coupling_df.index=list(AMINO_ACIDS[:nr_states])
+
+    amino_acid_order = [4, 7, 0, 19, 9, 10, 12, 14, 8, 18, 17, 13, 1, 6, 11, 3, 5, 2, 15, 16, 20]
+    amino_acids_ordered = [AMINO_ACIDS[a] for a in amino_acid_order]
+    coupling_df = coupling_df[amino_acids_ordered[:nr_states]]
+    coupling_df = coupling_df.reindex(index = amino_acids_ordered[:nr_states])
+
+
+    max_normalisiert = np.max(couplings) + np.abs(np.min(couplings))
+    percent_data_at_zero = (0 + np.abs(np.min(couplings))) / max_normalisiert
+    colorscale = [[0, 'rgb(22, 96, 167)'], [percent_data_at_zero, 'rgb(255, 255, 255)'], [1, 'rgb(128, 0, 0)']]
+
+
+    coupling_plot = go.Heatmap(
+        z=np.array(coupling_df),
+        hoverinfo="x+y+z",
+        colorscale=colorscale,
+        colorbar=dict(
+            title=colorbar_title,
+            titleside="right"
+        )
+    )
+
+    fig = go.Figure(
+        data=[coupling_plot],
+        layout = go.Layout(
+            yaxis = dict(
+                title = y_title,
+                showline = False,
+                showspikes = True,
+                scaleanchor = "x",
+                scaleratio = 1.0
+            ),
+            xaxis = dict(
+                title = x_title,
+                showline=False,
+                showspikes=True,
+                scaleanchor="y",
+                scaleratio=1.0
+            ),
+            title=title,
+            font = dict(size=18),
+            hovermode='closest'
+        ))
+
+
+    fig['layout']['xaxis']['tickmode']="array"
+    fig['layout']['xaxis']['tickvals']=range(nr_states)
+    fig['layout']['xaxis']['ticktext']=list(coupling_df.columns)
+    fig['layout']['xaxis']['type']="category"
+    fig['layout']['xaxis']['categoryorder']="array"
+    fig['layout']['xaxis']['categoryarray']=range(nr_states)
+
+
+    fig['layout']['yaxis']['tickmode']="array"
+    fig['layout']['yaxis']['tickvals']=range(nr_states)
+    fig['layout']['yaxis']['ticktext']=list(coupling_df.columns)
+    fig['layout']['yaxis']['type']="category"
+    fig['layout']['yaxis']['categoryorder']="array"
+    fig['layout']['yaxis']['categoryarray']=range(nr_states)
+
+
+    if title == "":
+        fig['layout']['margin']['t']=10
+
+
+    if plot_out:
+        plotly_plot(fig, filename=plot_out, auto_open=False)
+    else:
+        return fig

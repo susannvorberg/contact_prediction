@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import os
-import ccmraw as raw
+import raw
 import json
 import utils as u
 
@@ -18,14 +18,14 @@ def subset_evaluation_dict(evaluation_statistics, bins, subset_property, methods
             subset_property ,
             np.round(bins[bin+1], decimals=2)
         )
-
-        precision_dict_bin = {
-            protein:protein_eval_metrics for protein, protein_eval_metrics in evaluation_statistics['proteins'].iteritems()
-            if (protein_eval_metrics[subset_property] > bins[bin])
-               and (protein_eval_metrics[subset_property] <= bins[bin+1])}
+        precision_dict_bin = {protein:protein_eval_metrics
+                              for protein, protein_eval_metrics in evaluation_statistics['proteins'].iteritems()
+                              if (protein_eval_metrics[subset_property] > bins[bin])
+                              and (protein_eval_metrics[subset_property] <= bins[bin+1])}
 
         bin_title += " (" + str(len(precision_dict_bin)) + " proteins)"
         precision_rank[bin_title] = {'rank': ranks}
+
         for method in methods:
             protein_ranks = [protein_eval_metrics['methods'][method][evaluation_measure]
                              for protein_eval_metrics in precision_dict_bin.values()]
@@ -68,7 +68,9 @@ def evaluationmeasure_vs_rank(evaluation_statistics, methods, evaluation_measure
     # compute mean "measure" over all ranks
     evaluation_by_rank = {'rank': evaluation_statistics['ranks']}
 
+
     for method in methods:
+
         measure_per_method_all_proteins_all_ranks = [protein_eval_metrics['methods'][method][evaluation_measure]
                                                      for protein_eval_metrics in evaluation_statistics['proteins'].values()]
         evaluation_by_rank[method] = {}
@@ -76,7 +78,6 @@ def evaluationmeasure_vs_rank(evaluation_statistics, methods, evaluation_measure
         evaluation_by_rank[method]['size'] = len(measure_per_method_all_proteins_all_ranks)
 
     return evaluation_by_rank
-
 
 def compute_evaluation_metrics(eval_file, ranks, methods, contact_thr=8, seqsep=12 ):
 
@@ -159,7 +160,7 @@ def compute_rollingmean_in_scatterdict(evaluation_statistics, methods, property)
 
         df = pd.DataFrame(scatter_dict[method])
         df = df.sort_values(by=property)
-        df['rolling_mean'] = df['mean_precision'].rolling(window=window_size, min_periods=1, center=True).mean()
+        df['rolling_mean'] = df['mean_precision'].rolling(window=window_size,min_periods=1, center=True).mean()
         scatter_dict[method] = df.to_dict(orient='list')
 
     return scatter_dict
@@ -201,6 +202,8 @@ def mean_precision_per_protein(evaluation_statistics, methods):
         #mean precision for this method for all proteins
         scatter_dict[method]['mean_precision'] = [np.nanmean(protein_eval_metrics['methods'][method]['precision'])
                                    for protein_eval_metrics in evaluation_statistics['proteins'].values()]
+
+
         #protein annotations
         scatter_dict[method]['annotation'] = [
             "protein: " + protein +
@@ -213,8 +216,6 @@ def mean_precision_per_protein(evaluation_statistics, methods):
             for protein, protein_eval_metrics in evaluation_statistics['proteins'].iteritems()]
 
     return scatter_dict
-
-
 
 def compute_mean_error(cb_distance, score, contact_thr):
     """
@@ -252,6 +253,8 @@ def compute_precision_recall(true_class, score):
 
     return df.precision.tolist(), df.recall.tolist(), df.score.tolist()
 
+
+
 def compute_apc_corrected_matrix(cmat):
     '''
         Subtract the average product correction term
@@ -262,7 +265,7 @@ def compute_apc_corrected_matrix(cmat):
     apc_term = mean[:, np.newaxis] * mean[np.newaxis, :] / np.mean(cmat)
     return cmat - apc_term
 
-def compute_l2norm_from_braw(braw_xpair, apc=False):
+def compute_l2norm_from_braw(braw, apc=False):
     '''
     Compute the l2norm of all residue pairs
 
@@ -272,7 +275,7 @@ def compute_l2norm_from_braw(braw_xpair, apc=False):
     '''
 
     #compute l2norm without gap state
-    mat = np.sqrt(np.sum(braw_xpair[:,:,:20,:20] * braw_xpair[:,:,:20,:20], axis=(2, 3)))
+    mat = np.sqrt(np.sum(braw.x_pair[:,:,:20,:20] * braw.x_pair[:,:,:20,:20], axis=(2, 3)))
 
     #apply apc)
     if(apc):
@@ -297,34 +300,27 @@ def compute_l2norm_from_brawfile(braw_file, apc=False):
     return compute_l2norm_from_braw(braw, apc)
 
 def compute_sum_from_braw(braw):
-    """
+    '''
     Compute the l2norm of all residue pairs
 
     :param braw: raw coupling values
     :param apc: compute apc corrected l2norm
     :return: l2norm (-apc) score matrix
-    """
-    mat = np.sum(braw.x_pair[:, :, :20, :20], axis=(2, 3))
+    '''
+
+    #compute l2norm without gap state
+    mat = np.sum(braw.x_pair[:,:,:20,:20], axis=(2, 3))
+
     return mat
 
-def compute_entropy_corrected_mat(braw_xpair, neff, lambda_w, single_freq, squared=True):
-    """
+def compute_entropy_corrected_mat(braw, single_freq, squared=True):
 
-    Compute frobenius or summed squared score and correct it from entropy bias
+    neff = u.find_dict_key('neff', braw.meta['workflow'][0])
+    lambda_w = u.find_dict_key('lambda_pair', braw.meta['workflow'][0])
 
-    :param braw_xpair: coupling values
-    :param neff: effective number of sequences (from sequence weighting)
-    :lambda_w: regularization coefficient for couplings
-    :param single_freq: single amino acid frequencies (weighted)
-    :param squared: whether to compute frobenius norm score or summed squared score
-    :return:
-    """
+    uij, scaling_factor_eta = compute_correction(single_freq, neff, lambda_w, braw.x_pair, entropy=True, squared=squared)
 
-    uij, scaling_factor_eta = compute_correction(
-        single_freq, neff, lambda_w, braw_xpair,
-        entropy=True, squared=squared)
-
-    mat_braw = np.sum(braw_xpair[:, :, :20, :20] * braw_xpair[:, :, :20, :20], axis=(3, 2))
+    mat_braw = np.sum(braw.x_pair[:,:,:20,:20] * braw.x_pair[:,:,:20,:20], axis=(3, 2))
 
     if not squared:
         corrected_mat = np.sqrt(mat_braw) - scaling_factor_eta * np.sqrt(np.sum(uij, axis=(3, 2)))
@@ -333,89 +329,100 @@ def compute_entropy_corrected_mat(braw_xpair, neff, lambda_w, single_freq, squar
 
     return corrected_mat
 
-def compute_scaling_factor_eta(x_pair, ui, uij, nr_states, squared=True):
-    """
 
-    :param x_pair: coupling values
-    :param ui: single correction term
-    :param uij: pairwise correction term
-    :param nr_states: 20 or 21 depending on whether using gaps or not
-    :param squared: whether to compute frobenius norm score or summed squared score
-    :return:
-    """
-    scaling_factor_eta = 1
+
+def compute_scaling_factor_eta(x_pair, ui, uij, nr_states, squared=True):
+    scaling_factor_eta=1
 
     if squared:
+        # compute scaling factor in matrix form
+        # L=single_freq.shape[0]
+        # upper_indices = np.triu_indices(L, k=1)
+
         x_pair_sq = x_pair * x_pair
-        prod = x_pair_sq[:, :, :nr_states, :nr_states] * uij
+        prod = x_pair_sq[:,:,:nr_states,:nr_states] * uij #(L,L,21,21) (L,L,21,21)
         scaling_factor_eta = np.sum(prod)
+        #scaling_factor_eta = np.sum(prod[upper_indices[0], upper_indices[1], :, :])
+        # print "scaling_factor_eta: ", scaling_factor_eta
+
+        # ui_sq = ui * ui
+        # uij_sq = np.transpose(np.multiply.outer(ui_sq, ui_sq), (0,2,1,3))
+        # denominator = np.sum(uij_sq[upper_indices[0], upper_indices[1], :, :])
         sum_ui_sq = np.sum(ui * ui)
         denominator = sum_ui_sq * sum_ui_sq
+        # print "denominator: ", denominator
         scaling_factor_eta /= denominator
+        # print "scaling_factor_eta: ", scaling_factor_eta
+
+
+        # compute scaling factor element-wise for testing
+        # L = single_freq.shape[0]
+        # scaling_factor_eta = 0
+        # denominator=0
+        # ui_sq = ui * ui
+        # print "L: {0}".format(L)
+        # for i in range(L):
+        #     for j in range(L):
+        #         for a in range(20):
+        #             for b in range(20):
+        #                 scaling_factor_eta += (x_pair[i,j,a,b]*x_pair[i,j,a,b]) * ui[i,a] * ui[j,b]
+        #                 denominator += ui_sq[i,a] * ui_sq[j,b]
+        # print "scaling_factor_eta_elementwise: ", scaling_factor_eta
+        # print "denominator: ", denominator
+        # print "scaling_factor_eta_elementwise: ", scaling_factor_eta / denominator
+
     else:
-        c_ij = np.sqrt(np.sum(x_pair * x_pair, axis=(3, 2)))
-        e_ij = np.sqrt(np.sum(uij, axis=(3, 2)))
-        scaling_factor_eta = np.sum(c_ij * e_ij)
+        c_ij =  np.sqrt(np.sum(x_pair * x_pair, axis=(3,2)))
+        e_ij =  np.sqrt(np.sum(uij, axis=(3,2)))
+
+        scaling_factor_eta = np.sum(c_ij  * e_ij)
         denominator = np.sum(uij)
         scaling_factor_eta /= denominator
 
     return scaling_factor_eta
 
 def compute_correction(single_freq, neff, lambda_w, x_pair, entropy=True, squared=True):
-    """
-
-    :param single_freq: single position amino acid frequencies (weighted)
-    :param neff: effective number of sequences (from sequence weighting)
-    :param lambda_w: regularization coefficient for couplings
-    :param x_pair: coupling values
-    :param entropy: compute entropy or count correction
-    :param squared: whether to compute frobenius norm score or summed squared score
-    :return:
-    """
     nr_states = 20
 
+    # debugging
+    # N_factor = neff / np.sqrt(neff-1)
     N_factor = np.sqrt(neff) * (1.0 / lambda_w)
 
     if entropy:
-        ui = N_factor * single_freq[:, :nr_states] * -np.log2(single_freq[:, :nr_states])
+        #it doesn't matter whether x*log(x) or x * (-log(x)) --> when computing ui * ui the minus vanishes
+        ui = N_factor * single_freq[:, :nr_states] * (-np.log2(single_freq[:, :nr_states]))
     else:
         ui = N_factor * single_freq[:, :nr_states] * (1 - single_freq[:, :nr_states])
+    uij = np.transpose(np.multiply.outer(ui, ui), (0,2,1,3))
 
-    uij = np.transpose(np.multiply.outer(ui, ui), (0, 2, 1, 3))
+    ### compute scaling factor eta
     scaling_factor_eta = compute_scaling_factor_eta(x_pair, ui, uij, nr_states, squared=squared)
 
-    return (uij, scaling_factor_eta)
+    return(uij, scaling_factor_eta)
 
 def compute_correction_ij(single_freq, neff, lambda_w, x_pair, residue_i, residue_j, entropy=True, squared=True):
-    """
-
-    :param single_freq: single position amino acid frequencies (weighted)
-    :param neff: effective number of sequences (from sequence weighting)
-    :param lambda_w: regularization coefficient for couplings
-    :param x_pair: coupling values
-    :param residue_i:
-    :param residue_j:
-    :param entropy: compute entropy or count correction
-    :param squared: whether to compute frobenius norm score or summed squared score
-    :return:
-    """
 
     nr_states = 20
+
+    # debugging
+    # N_factor = neff / np.sqrt(neff-1)
     N_factor = np.sqrt(neff) * (1.0 / lambda_w)
+
     if entropy:
-        ui = N_factor * single_freq[:, :nr_states] * -np.log2(single_freq[:, :nr_states])
+        #it doesn't matter whether x*log(x) or x * (-log(x)) --> when computing ui * ui the minus vanishes
+        ui = N_factor * single_freq[:, :nr_states] * (-np.log2(single_freq[:, :nr_states]))
     else:
         ui = N_factor * single_freq[:, :nr_states] * (1 - single_freq[:, :nr_states])
+    uij = np.transpose(np.multiply.outer(ui, ui), (0,2,1,3))
 
-    uij = np.transpose(np.multiply.outer(ui, ui), (0, 2, 1, 3))
+    ### compute scaling factor eta
     scaling_factor_eta = compute_scaling_factor_eta(x_pair, ui, uij, nr_states, squared=squared)
-    correction = scaling_factor_eta * np.sum(uij, axis=(3, 2))
 
-    print('sqrt correction for i={0} and j={1}: {2}'.format(
-        residue_i, residue_j, np.sqrt(correction[residue_i - 1, residue_j - 1])))
-    print('correction for i={0} and j={1}: {2}'.format(
-        residue_i, residue_j, correction[residue_i - 1, residue_j - 1]))
+    ### compute correction
+    correction = scaling_factor_eta * np.sum(uij, axis=(3,2))
+    print "sqrt correction for i={0} and j={1}: {2}".format(residue_i, residue_j, np.sqrt(correction[residue_i-1, residue_j-1]))
+    print "correction for i={0} and j={1}: {2}".format(residue_i, residue_j, correction[residue_i-1, residue_j-1])
 
-    entropy_correction_ij = uij[residue_i - 1, residue_j - 1, :, :]
-
-    return (ui, entropy_correction_ij, scaling_factor_eta)
+    ##return correction components separately
+    entropy_correction_ij = uij[residue_i-1, residue_j-1, :, :]
+    return(ui, entropy_correction_ij, scaling_factor_eta)
