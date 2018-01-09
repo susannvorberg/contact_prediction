@@ -10,11 +10,11 @@
 
 import argparse
 import os
-import raw
-import utils.plot_utils as plots
-import utils.benchmark_utils as b
+from ..utils import ccmraw as raw
+from ..utils import plot_utils as plots
+from  ..utils import benchmark_utils as b
 import numpy as np
-import utils.pdb_utils as pdb
+from  ..utils import pdb_utils as pdb
 
 def plot_coupling_matrix_i_j(x_pair, x_single, protein, residue_i, residue_j, plot_out=None, plot_type="heatmap"):
     couplings = x_pair[residue_i-1, residue_j-1, :20, :20]
@@ -69,18 +69,18 @@ def main():
 
 
     #debugging
-    protein = "1a9xA05"#""1e3mA04"
-    binary_raw_file = "/home/vorberg/"+protein+".braw.gz"
-    binary_raw_file = "/home/vorberg/"+protein+".gx.gz"
-    binary_raw_file = "/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/ccmpred-pll-centerv/braw/"+protein+".filt.braw.gz"
-    residue_i=83
-    residue_j=7
-    #plot_out='/home/vorberg/work/plots/bayesian_framework/coupling_matrices_analysis/bubble_charts/'
-    plot_out="/home/vorberg/"
-    strongest_pairs = 5
-    sequence_separation = 10
+    # protein = "1a9xA05"#""1e3mA04"
+    # binary_raw_file = "/home/vorberg/"+protein+".braw.gz"
+    # binary_raw_file = "/home/vorberg/"+protein+".gx.gz"
+    # binary_raw_file = "/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/ccmpred-pll-centerv/braw/"+protein+".filt.braw.gz"
+    # residue_i=83
+    # residue_j=7
+    # #plot_out='/home/vorberg/work/plots/bayesian_framework/coupling_matrices_analysis/bubble_charts/'
+    # plot_out="/home/vorberg/"
+    # strongest_pairs = 5
+    # sequence_separation = 10
     only_contacts=True
-    pdb_file="/home/vorberg/work/data/benchmarkset_cathV4.1/pdb_renum_combs/"+protein+".pdb"
+    # pdb_file="/home/vorberg/work/data/benchmarkset_cathV4.1/pdb_renum_combs/"+protein+".pdb"
 
 
     if not os.path.exists(binary_raw_file):
