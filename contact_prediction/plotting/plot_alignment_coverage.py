@@ -12,7 +12,7 @@ import os
 
 import plotly.graph_objs as go
 from plotly.offline import plot as plotly_plot
-import contact_prediction.utils.io_utils as io
+from ..utils import io_utils as io
 from ..utils import alignment_utils as ali_ut
 
 
