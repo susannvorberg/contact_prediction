@@ -71,6 +71,11 @@ class Regularization():
                 gradients[parameter] = -np.array(self.parameters_diag_prec[parameter])  / (self.reg_coeff_diag_prec * self.reg_coeff_diag_prec)
                 # add derivative of exponential transformation
                 gradients[parameter] *= np.array(self.parameters_diag_prec[parameter])
+
+                #in case of regularizing the covariance matrix,
+                #the gradient looks like (inkl derivative of exp):
+                #gradients[parameter] = 1/(self.reg_coeff_diag_prec * self.reg_coeff_diag_prec) * 1/(np.array(self.parameters_diag_prec[parameter]) * np.array(self.parameters_diag_prec[parameter]))
+
         else:
             for parameter in self.parameters_diag_prec.keys():
                 gradients[parameter] = [0] * len(self.parameters_diag_prec[parameter])
@@ -96,8 +101,12 @@ class Regularization():
             for parameter in self.parameters_diag_prec.values():
                 reg += np.sum(np.array(parameter) * np.array(parameter))
 
+                #in case of regularizing the covariance matrix,
+                #the regularizer looks as follows:
+                #reg += np.sum(np.array(1/parameter) * np.array(1/parameter))
+
             #defines regularization strength
-            reg *= -1/(2*self.reg_coeff_diag_prec*self.reg_coeff_diag_prec)
+            reg *= -1.0/(2*self.reg_coeff_diag_prec*self.reg_coeff_diag_prec)
 
         return reg
 

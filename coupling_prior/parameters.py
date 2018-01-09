@@ -70,12 +70,15 @@ class Parameters():
 
     def _initialise_parameters_default(self, seed=None):
 
+        print("\nInitialise parameters with default values using:")
+        print("\tnr components: {0}".format(self.nr_components))
+        print("\tprecision matrix is {0} and it's determined wrt to L: {1}".format(self.sigma, self.prec_wrt_L))
+        print("\tfixed parameters that will not be optimized: {0}".format(self.fixed_parameters))
+
         if seed:
             np.random.seed(seed)
 
         #initialise parameters with a strong component at zero
-
-
         initial_means       = [0]       + [0] * (self.nr_components-1)
 
         initial_weights_contact = np.random.random(self.nr_components)
@@ -85,7 +88,7 @@ class Parameters():
 
         initial_precision   = [1/0.005]  + [1/0.05] * (self.nr_components-1) #precision  = 1/variance
         if self.prec_wrt_L:
-            initial_precision   = [1/1.0] + [1/0.8]* (self.nr_components-1) #precision  = 1/variance * L
+            initial_precision   = [1/10.0] + [1/0.8]* (self.nr_components-1) #precision  = 1/variance * L; default = 0.2 * L
 
 
         parameters = {}
@@ -128,12 +131,6 @@ class Parameters():
         if os.path.exists(self.parameter_file):
             self.read_parameters(self.parameter_file, transform=True)
         else:
-            if verbose:
-                print("\nInitialise parameters with default values using:")
-                print("\tnr components: {0}".format(self.nr_components))
-                print("\tprecision matrix is {0} and it's determined wrt to L: {1}".format(self.sigma, self.prec_wrt_L))
-                print("\tfixed parameters that will not be optimized: {0}".format(self.fixed_parameters))
-
             self.set_parameters_structured(self._initialise_parameters_default(seed), transform=True)
 
         if verbose:
@@ -179,6 +176,12 @@ class Parameters():
         self.prec_wrt_L = meta['prec_wrt_L']
 
     def read_parameters(self, parameter_file, transform=True):
+
+        if not os.path.exists(parameter_file):
+            print("\nParameter file {0} does not exist!".format(parameter_file))
+            return
+
+        print("\nRead parameters from {0}.".format(parameter_file))
 
         self.parameter_file = parameter_file
 

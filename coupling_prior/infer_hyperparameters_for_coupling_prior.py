@@ -50,6 +50,7 @@ def parse_args():
     grp_opt.add_argument("--maxit",         dest="maxit",       default=1000,       type=int, help="Set maximum number of iterations for optimization. [default %(default)s ]")
 
     parser.add_argument("--debug_mode",     dest="debug_mode",  default=0,          type=int, help="Set level of verbosity. [default %(default)s ]")
+    parser.add_argument("--python_parallel",dest="python_parallel",  action="store_true", default=False, help="Test Python parallel version. [default %(default)s ]")
 
     args = parser.parse_args()
 
@@ -114,6 +115,7 @@ def main():
     # reg_coeff_diagPrec = 10.0
     # method = 'L-BFGS-B'
     # maxit = 10
+    # python_parallel = False
 
 
     contact_thr                 = opt.contact_thr
@@ -143,6 +145,7 @@ def main():
     maxit = opt.maxit
 
     debug_mode = opt.debug_mode
+    python_parallel = opt.python_parallel
 
     #fold_id_dir             = opt. data_dir + "/benchmarkset_cathV4/benchmarkset_cathV4_combs/dataset_details/"
     # cvFolds = [1,2,4,5]
@@ -181,11 +184,12 @@ def main():
 
     #wrap it all up in the Likelihood environment
     likelihood = LikelihoodFct(plot_dir)
-    likelihood.set_debug_mode(debug_mode)
+    likelihood.set_debug_mode(debug_mode, python_parallel)
     likelihood.set_nr_threads_per_protein(nr_threads)
     likelihood.set_parameters(parameters)
     likelihood.set_regularizer(reg_coeff_mu, reg_coeff_diagPrec)
     likelihood.set_data(data)
+    likelihood.initialize_optimization_plot()
 
     #check gradients
     #likelihood.numerical_gradient(check_weights=True, check_mu=True, check_prec=True)

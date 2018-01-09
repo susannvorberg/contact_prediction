@@ -20,52 +20,93 @@ class LikelihoodProtein():
             self.lambda_w =  braw.meta['workflow'][0]['regularization']['lambda_pair']
         else:
             self.lambda_w = braw.meta['workflow'][0]['parameters']['regularization']['lambda_pair']
+
+
         self.lambda_w_mat = np.diag([self.lambda_w] * 400)
 
         self.residues_i = None
         self.residues_j = None
         self.contacts = None
 
-        self.parameters = None
-        self.covMatdiag = None
-        self.log_det_precMat = None
-
         self.f_pairwise = []
-
         #intialize gradients
         self.gradients = {}
 
+
+        self.nr_components = None
+        self.parameters_structured = None
+        self.fixed_parameters = None
+        self.prec_wrt_L=False
+        self.covMatdiag = None
+        self.log_det_precMat = None
 
     def set_pairs(self, i,j,contact):
         self.residues_i = i
         self.residues_j = j
         self.contacts = contact
 
+    def set_parameters_parallel(self, parameters, covMatdiag, log_det_precMat, nr_components, fixed_parameters, prec_wrt_L):
+
+        self.nr_components = nr_components
+        self.parameters_structured = parameters
+        self.fixed_parameters = fixed_parameters
+        self.prec_wrt_L=prec_wrt_L
+        self.covMatdiag = covMatdiag
+        self.log_det_precMat = log_det_precMat
+
+        #initialise gradient dict with zeros - only for parameters that will be optimized!
+        for parameter in self.parameters_structured.keys():
+            if parameter not in self.fixed_parameters:
+                self.gradients[parameter] = [0] * len(self.parameters_structured[parameter])
+
+
     def set_parameters(self, parameters):
 
-        self.parameters = parameters
-        self.covMatdiag = np.zeros((self.parameters.nr_components, 400))
-        self.log_det_precMat = np.zeros(self.parameters.nr_components)
 
-        for parameter in self.parameters.parameters_structured.keys():
+        self.parameters = parameters
+
+
+        sum_weight_contact = 0
+        sum_weight_bg = 0
+        for component in range(self.parameters.nr_components):
+
+            parameter = 'weight_contact_'+str(component)
+            if parameter not in self.parameters.fixed_parameters:
+                self.gradients[parameter] = [0] * len(self.parameters.parameters_structured[parameter])
+            self.parameters.parameters_structured[parameter] = np.exp(self.parameters.parameters_structured[parameter])
+            sum_weight_contact += self.parameters.parameters_structured[parameter]
+
+
+            parameter = 'weight_bg_'+str(component)
+            if parameter not in self.parameters.fixed_parameters:
+                self.gradients[parameter] = [0] * len(self.parameters.parameters_structured[parameter])
+            self.parameters.parameters_structured[parameter] = np.exp(self.parameters.parameters_structured[parameter])
+            sum_weight_bg += self.parameters.parameters_structured[parameter]
+
+
+            parameter = 'mu_'+str(component)
             if parameter not in self.parameters.fixed_parameters:
                 self.gradients[parameter] = [0] * len(self.parameters.parameters_structured[parameter])
 
-                if 'weight' in parameter:
-                    #transform
-                    self.parameters.parameters_structured[parameter] = np.exp(self.parameters.parameters_structured[parameter])
 
-                if 'prec' in parameter:
-                    component = int(parameter.split("_")[1])
+            parameter = 'prec_'+str(component)
+            if parameter not in self.parameters.fixed_parameters:
+                self.gradients[parameter] = [0] * len(self.parameters.parameters_structured[parameter])
+            self.parameters.parameters_structured[parameter] = np.exp(self.parameters.parameters_structured[parameter])
 
-                    #transform
-                    self.parameters.parameters_structured[parameter] = np.exp(self.parameters.parameters_structured[parameter])
+            if self.parameters.prec_wrt_L:
+                self.parameters.parameters_structured[parameter] *= self.L
 
-                    if self.parameters.prec_wrt_L:
-                        self.parameters.parameters_structured[parameter] *= self.L
+            self.covMatdiag[component] = 1.0 / np.array(self.parameters.parameters_structured[parameter])
+            self.log_det_precMat[component] =  np.sum(np.log(self.parameters.parameters_structured[parameter]))
 
-                    self.covMatdiag[component] = 1.0 / np.array(self.parameters.parameters_structured[parameter])
-                    self.log_det_precMat[component] =  np.sum(np.log(self.parameters.parameters_structured[parameter]))
+
+        for component in range(self.parameters.nr_components):
+            parameter = 'weight_contact_'+str(component)
+            self.parameters.parameters_structured[parameter] /= sum_weight_contact
+
+            parameter = 'weight_bg_'+str(component)
+            self.parameters.parameters_structured[parameter] /= sum_weight_bg
 
     def get_f(self):
         return np.sum(self.f_pairwise)
@@ -76,7 +117,8 @@ class LikelihoodProtein():
     def get_gradients(self):
         return self.gradients
 
-    def log_density_gaussian_ratio(self, log_det_lambdak, mu_k, lambda_k, log_det_lambdaijk, mu_ij_k, lambda_ij_k):
+    @staticmethod
+    def log_density_gaussian_ratio(log_det_lambdak, mu_k, lambda_k, log_det_lambdaijk, mu_ij_k, lambda_ij_k):
 
         gaussian_1 = log_det_lambdak   - np.matmul(mu_k,    np.matmul(lambda_k,    mu_k))
         gaussian_2 = log_det_lambdaijk - np.matmul(mu_ij_k, np.matmul(lambda_ij_k, mu_ij_k))
@@ -87,20 +129,18 @@ class LikelihoodProtein():
 
     def compute_gradients_protein(self, contact, responsibilities, mu_ij_k, lambda_ij_k_inv):
 
-        for parameter in self.parameters.parameters_structured.keys():
-            if parameter not in self.parameters.fixed_parameters:
 
+        for parameter in self.gradients.keys():
                 component = int(parameter.split("_")[-1])
 
-                grad = [0]
-                if "weight" in parameter:
-                    grad = self.compute_gradient_weight(contact, component, responsibilities)
+                if "weight_bg" in parameter and not contact:
+                    self.gradients[parameter] += self.compute_gradient_weight(contact, component, responsibilities)
+                elif "weight_contact" in parameter and contact:
+                    self.gradients[parameter] += self.compute_gradient_weight(contact, component, responsibilities)
                 elif "prec" in parameter:
-                    grad = self.compute_gradient_precMat(component, mu_ij_k, lambda_ij_k_inv, responsibilities)
+                    self.gradients[parameter] += self.compute_gradient_precMat(component, mu_ij_k, lambda_ij_k_inv, responsibilities)
                 elif "mu" in parameter:
-                    grad = self.compute_gradient_mu(component, mu_ij_k, responsibilities)
-
-                self.gradients[parameter] += grad
+                    self.gradients[parameter] += self.compute_gradient_mu(component, mu_ij_k, responsibilities)
 
     def compute_gradient_weight(self, contact, component, responsibilities ):
         """
@@ -110,10 +150,11 @@ class LikelihoodProtein():
         :param responsibilities:
         :return: gradient for LOG LIKELIHOOD
         """
+
         if contact:
-            weight_k = self.parameters.parameters_structured['weight_contact_'+str(component)]
+            weight_k = self.parameters_structured['weight_contact_'+str(component)]
         else:
-            weight_k = self.parameters.parameters_structured['weight_bg_'+str(component)]
+            weight_k = self.parameters_structured['weight_bg_'+str(component)]
 
         grad_weight = responsibilities[component] - weight_k
 
@@ -122,8 +163,8 @@ class LikelihoodProtein():
 
     def compute_gradient_mu(self, component, mu_ij_k, responsibilities):
 
-        mu_k = self.parameters.parameters_structured['mu_'+str(component)]
-        precMatdiag = self.parameters.parameters_structured['prec_'+ str(component)]
+        mu_k = self.parameters_structured['mu_'+str(component)]
+        precMatdiag = self.parameters_structured['prec_'+ str(component)]
 
         diff = mu_ij_k[component] - mu_k
 
@@ -134,8 +175,8 @@ class LikelihoodProtein():
         return -grad_mu
 
     def compute_gradient_precMat(self, component, mu_ij_k, lambda_ij_k_inv, responsibilities):
-        mu_k = self.parameters.parameters_structured['mu_'+str(component)]
-        precMatdiag = np.array(self.parameters.parameters_structured['prec_'+ str(component)])
+        mu_k = self.parameters_structured['mu_'+str(component)]
+        precMatdiag = np.array(self.parameters_structured['prec_'+ str(component)])
         covMatdiag = np.diag(self.covMatdiag[component])
 
         diff = mu_ij_k[component] - mu_k
@@ -143,25 +184,22 @@ class LikelihoodProtein():
 
         grad_precMat = 0.5 * responsibilities[component] * (covMatdiag - lambda_ij_k_inv[component] - outer_product_diff )
 
-        #derivative of exponential transformation
+        #derivative of exponential transformation (includes derivative of L if self.prec_wrt_L=True)
         grad_precMat[np.diag_indices_from(grad_precMat)] *= precMatdiag
 
+        #derivative of L
+        #if self.prec_wrt_L:
+        #    grad_precMat *= self.L
 
-        if self.parameters.sigma == 'isotrope':
-            if self.parameters.prec_wrt_L:
-                grad_precMat *= self.L
-            grad = np.full(400, -np.sum(np.diag(grad_precMat)))
-        elif self.parameters.sigma == 'diagonal':
-            grad = np.diag(-grad_precMat)
-        else:
-            grad = -grad_precMat
+        #diagonal of precision matrix
+        grad = np.diag(-grad_precMat)
 
         #gradient of NEG log likelihood
         return grad
 
     def compute_f_df(self, compute_gradients=True):
 
-        if self.parameters is None:
+        if self.parameters_structured is None:
             print("You first need to set parameters with 'set_parameters()'!")
             return
 
@@ -171,9 +209,9 @@ class LikelihoodProtein():
 
         #initialise f and gradients in case compute_f_df is called multiple times
         self.f_pairwise = [0] * len(self.residues_i)
-        for parameter in self.parameters.parameters_structured.keys():
-            if parameter not in self.parameters.fixed_parameters:
-                self.gradients[parameter] = [0] * len(self.parameters.parameters_structured[parameter])
+        # for parameter in self.parameters_structured.keys():
+        #     if parameter not in self.parameters.fixed_parameters:
+        #         self.gradients[parameter] = [0] * len(self.parameters.parameters_structured[parameter])
 
 
         #iterate over all residue pairs for this protein
@@ -199,22 +237,23 @@ class LikelihoodProtein():
             # print   "H_ij(0,1): " + str(Hij[0,1])  +  " H_ij(0,2): " + str(Hij[0,2]) +  " H_ij(2,0): " + str(Hij[2,0])
             # print   "Hij_wij_prod(0): " + str(Hij_wij_prod[0])  +  " Hij_wij_prod(1): " + str(Hij_wij_prod[1]) +  " Hij_wij_prod(2): " + str(Hij_wij_prod[2])
 
-            lambda_ij_k = np.zeros((self.parameters.nr_components, 400, 400))
-            lambda_ij_k_inv = np.zeros((self.parameters.nr_components, 400, 400))
-            mu_ij_k = np.zeros((self.parameters.nr_components, 400))
-            log_det_lambda_ij_k = np.zeros(self.parameters.nr_components)
-            log_density = np.zeros(self.parameters.nr_components)
+            lambda_ij_k = np.zeros((self.nr_components, 400, 400))
+            lambda_ij_k_inv = np.zeros((self.nr_components, 400, 400))
+            mu_ij_k = np.zeros((self.nr_components, 400))
+            log_det_lambda_ij_k = np.zeros(self.nr_components)
+            log_density = np.zeros(self.nr_components)
 
-            for component in range(self.parameters.nr_components):
+            for component in range(self.nr_components):
+
 
                 #define component specific parameters
-                precMat = np.diag(self.parameters.parameters_structured['prec_'+ str(component)])
-                precMatdiag = np.array(self.parameters.parameters_structured['prec_'+ str(component)])
-                mu_k = self.parameters.parameters_structured['mu_'+str(component)]
+                precMat = np.diag(self.parameters_structured['prec_'+ str(component)])
+                precMatdiag = np.array(self.parameters_structured['prec_'+ str(component)])
+                mu_k = self.parameters_structured['mu_'+str(component)]
                 if contact:
-                    weight_k = self.parameters.parameters_structured['weight_contact_'+str(component)]
+                    weight_k = self.parameters_structured['weight_contact_'+str(component)]
                 else:
-                    weight_k = self.parameters.parameters_structured['weight_bg_'+str(component)]
+                    weight_k = self.parameters_structured['weight_bg_'+str(component)]
 
 
                 #---------------- simplify computation in case that lambda_k is diagonal matrix
@@ -245,16 +284,17 @@ class LikelihoodProtein():
                     log_det_lambda_ij_k[component], mu_ij_k[component], lambda_ij_k[component]
                 )
 
-
                 log_density[component] = np.log(weight_k) + gaussian_ratio_logdensity
 
-
-                # if component ==0:
+                # if i == 0 and j == 12:
+                #     print("\ni={0} j={1} contact={2}".format(i,j,contact))
                 #     print  "triple_product: " + str(triple_product)
                 #     print  "log_det_A: " + str(log_det_A)
                 #     print  "lambda_ij_k_mat(0,1): " + str(lambda_ij_k[component,0,1])  +  " lambda_ij_k_mat(0,2): " + str(lambda_ij_k[component,0,2]) +  " lambda_ij_k_mat(2,0): " + str(lambda_ij_k[component,2,0])
-                #     print  "Gaussian log density : " + str(gaussian_ratio_logdensity)
                 #     print  "mu_ij_k_vec(0): " + str(mu_ij_k[component,0]) +  " mu_ij_k_vec(1): " + str(mu_ij_k[component,1]) +  " mu_ij_k_vec(2): " + str(mu_ij_k[component,2])
+                #     print  "Gaussian log density : " + str(gaussian_ratio_logdensity)
+                #     print  "log_density[component]: " + str(log_density[component])
+                #     print  "np.log(weight_k) : " + str(np.log(weight_k)) + " weight_k: " + str(weight_k)
 
 
 
@@ -265,12 +305,16 @@ class LikelihoodProtein():
             sum_resp = np.sum(responsibilities)
             responsibilities /= sum_resp
 
-
-
             #save NEG log likelihood of current pair
             f = np.log(sum_resp) + a_max
             if not np.isnan(f) and not np.isinf(f):
                 self.f_pairwise[nr] = -f
+
+            # if i == 0 and j == 12:
+            #     print  "a_max: " + str(a_max)
+            #     print  "sum_resp: " + str(sum_resp)
+            #     print("i={0} j={1} f={2}".format(i,j,f))
+
 
             # print   "resp: " + str(responsibilities[0]) + " f: " + str(f)
 

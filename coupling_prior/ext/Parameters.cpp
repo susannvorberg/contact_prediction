@@ -155,7 +155,7 @@ void Parameters::set_parameters(std::map<std::string, std::vector<double> > &par
 
 
 		if(component >= this->nr_components){
-			std::cout << "Parameter name for parameter (" << parameter_name << ") is not valid for setting with " << this->nr_components << " components: "  << component << std::endl;
+			std::cout << "Parameter name for parameter (" << parameter_name << ") is not valid for model with " << this->nr_components << " components: "  << component << std::endl;
 			return;
 		}
 

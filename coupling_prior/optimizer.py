@@ -58,8 +58,12 @@ class Optimizer():
 
         self.likelihood.debug_mode = self.debug_mode
 
+        f_df = self.likelihood.f_df
+        if self.likelihood.python_parallel:
+            f_df= self.likelihood.f_df_py
+
         res = scipy.optimize.minimize(
-            self.likelihood.f_df,
+            f_df,
             self.likelihood.parameters.get_parameters_linear(),
             method=self.method,
             jac=True,

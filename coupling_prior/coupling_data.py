@@ -34,6 +34,7 @@ class CouplingData():
         self.test_data = {}
         self.couplings_contacts = []
         self.couplings_noncontacts = []
+        self.avg_lambda_pair = 0
 
         #paths to data
         self.braw_dir       = ""
@@ -233,8 +234,6 @@ class CouplingData():
         #get training and test data
         self.collect_data(protein_set)
 
-        self.generate_coupling_decoy_set(size=1000)
-
         self.print_dataset_info()
 
     def collect_data(self, protein_set=[]):
@@ -315,7 +314,6 @@ class CouplingData():
             if len(indices_contact[0]) == 0 and len(indices_non_contact[0]) == 0:
                 continue
 
-
             protein_data = {}
             protein_data['N'] = N
             protein_data['L'] = L
@@ -326,6 +324,7 @@ class CouplingData():
             protein_data['residue_i'] = []
             protein_data['residue_j'] = []
             protein_data['contact'] = []
+
 
             # shuffle indices, so to not introduce any bias when choosing only the first X pairs from each protein
             random.seed(self.seed)
@@ -359,7 +358,7 @@ class CouplingData():
                         nr_pairs_contact_crossval += len(indices_contact[0][:self.maxcontacts_per_protein])
                         self.test_data[p] = protein_data
 
-                if len(indices_non_contact[0]) > 0 and nr_pairs_noncontact_crossval < self.nr_crossval_pairs:
+                if len(indices_non_contact[0]) > 0 and nr_pairs_noncontact_crossval < (self.nr_crossval_pairs * self.balance):
                         protein_data['residue_i'].extend(indices_non_contact[0][:self.maxnoncontacts_per_protein])
                         protein_data['residue_j'].extend(indices_non_contact[1][:self.maxnoncontacts_per_protein])
                         protein_data['contact'].extend([0] * len(indices_non_contact[0][:self.maxnoncontacts_per_protein]))
@@ -482,6 +481,9 @@ class CouplingData():
 
         couplings = []
         non_couplings = []
+        lambda_pair = []
+
+        print len(self.training_data)
 
         for p in self.training_data:
 
@@ -491,6 +493,11 @@ class CouplingData():
             residue_i   = np.array(self.training_data[p]['residue_i'])
             residue_j   = np.array(self.training_data[p]['residue_j'])
             contact     = np.array(self.training_data[p]['contact'])
+
+            if 'regularization' in braw.meta['workflow'][0]['parameters'].keys():
+                lambda_pair.append(braw.meta['workflow'][0]['parameters']['regularization']['lambda_pair'])
+            else:
+                lambda_pair.append(braw.meta['workflow'][0]['regularization']['lambda_pair'])
 
             indices_contact     = [residue_i[np.where(contact == 1)[0]], residue_j[np.where(contact == 1)[0]]]
             indices_non_contact = [residue_i[np.where(contact == 0)[0]], residue_j[np.where(contact == 0)[0]]]
@@ -513,6 +520,7 @@ class CouplingData():
 
         self.couplings_contacts = couplings[:size]
         self.couplings_noncontacts = non_couplings[:size]
+        self.avg_lambda_pair = np.mean(lambda_pair)
 
     def get_training_data(self):
         return(self.training_data)
@@ -520,8 +528,9 @@ class CouplingData():
     def get_test_data(self):
         return(self.test_data)
 
-    def get_decoy_set(self):
-        return(self.couplings_contacts, self.couplings_noncontacts)
+    def get_decoy_set(self, size=1000):
+        self.generate_coupling_decoy_set(size)
+        return(self.couplings_contacts, self.couplings_noncontacts, self.avg_lambda_pair)
 
     def print_dataset_info(self):
 

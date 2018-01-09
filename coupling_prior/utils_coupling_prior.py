@@ -13,11 +13,11 @@ def gaussian_mixture_density_2d(x, y, weights, means_ab, means_cd, covMats, log=
     else:
         sum_density = 0
     for component in range(len(weights)):
-        if (log):
-            sum_density = logAdd(sum_density, np.log(weights[component]) + multivariate_normal.logpdf([x, y], [
-                means_ab[component], means_cd[component]], covMats[component]))
-        else:
-            sum_density += weights[component] * multivariate_normal.pdf([x, y],
+        # if (log):
+        #     sum_density = logAdd(sum_density, np.log(weights[component]) + multivariate_normal.logpdf([x, y], [
+        #         means_ab[component], means_cd[component]], covMats[component]))
+        # else:
+        sum_density += weights[component] * multivariate_normal.pdf([x, y],
                                                                         [means_ab[component], means_cd[component]],
                                                                         covMats[component])
     return sum_density
