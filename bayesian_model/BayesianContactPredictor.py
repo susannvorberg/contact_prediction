@@ -10,6 +10,7 @@ from coupling_prior.parameters import Parameters
 import coupling_prior.ext.libproteinll as libproteinll
 from coupling_prior.likelihood_protein import LikelihoodProtein
 import raw
+import copy
 
 class BayesianContactPredictor():
     """
@@ -22,6 +23,7 @@ class BayesianContactPredictor():
         self.protein = os.path.basename(alignment_file).split(".")[0]
         self.msa = io.read_alignment(alignment_file)
         self.L = self.msa.shape[1]
+        self.N = self.msa.shape[0]
 
         self.sequence_separation    = 12
         self.contact_threshold      = 8
@@ -36,7 +38,7 @@ class BayesianContactPredictor():
 
         self.contact_likelihood_parameters = None
         self.contact_likelihood_meta = None
-        self.contact_likelihood_mat = None
+        self.contact_log_likelihood_mat = None
 
         self.contact_posterior_mat = None
 
@@ -66,10 +68,28 @@ class BayesianContactPredictor():
 
         return repr_string
 
+    def log_add(self, x, y):
+
+        logx = copy.deepcopy(x)
+        logy = copy.deepcopy(y)
+
+        switch_indices = np.where(logy > logx)
+        if len(switch_indices) > 0:
+            tmp = logx[switch_indices]
+            logx[switch_indices] = logy[switch_indices]
+            logy[switch_indices] = tmp
+
+        negdiff = logy - logx
+
+        return logx + np.log(1.0 + np.exp(negdiff))
 
     def get_meta(self):
 
         meta = {}
+
+        meta['L'] = self.L
+        meta['N'] = self.N
+
         if self.contact_likelihood_meta:
             meta['contact_likelihood_model'] = self.contact_likelihood_meta
 
@@ -151,29 +171,41 @@ class BayesianContactPredictor():
         meta['opt_code'] = 1
         io.write_matfile(self.contact_prior_mat[contact], contact_prior_mat_file, meta)
 
-    def write_contact_likelihood_mat(self, contact_likelihood_mat_file, contact=1):
+    def write_contact_likelihood_mat(self, contact_likelihood_mat_file, normalized=False, bayes_factor=False):
 
-        if self.contact_likelihood_mati is None:
+        if self.contact_log_likelihood_mat is None:
             print("You first need to compute contact likelihood with 'contact_likelihood()'!")
             return
 
         meta = {}
         meta['contact_likelihood_model'] = self.contact_likelihood_meta
         meta['opt_code'] = 1
-        io.write_matfile(self.contact_likelihood_mat[contact], contact_likelihood_mat_file, meta)
+        meta['contact_likelihood_model']['normalized'] = normalized
+        meta['contact_likelihood_model']['bayes_factor'] = bayes_factor
+
+        if normalized:
+            contact_likelihood_mat = self.normalize_logspace(self.contact_log_likelihood_mat)
+            contact_likelihood_mat =  contact_likelihood_mat[1]
+        elif bayes_factor:
+            contact_likelihood_mat = self.contact_log_likelihood_mat[1] - self.contact_log_likelihood_mat[0]
+        else:
+            contact_likelihood_mat = self.contact_log_likelihood_mat[1]
+
+        io.write_matfile(contact_likelihood_mat, contact_likelihood_mat_file, meta)
 
     def write_contact_posterior_mat(self, contact_posterior_mat_file, contact=1):
         if self.contact_posterior_mat is None:
             print("You first need to compute contact posterior with 'contact_posterior()'!")
             return
 
-        meta = {}
-        meta['contact_likelihood_model'] = self.contact_likelihood_meta
-        meta['contact_prior_model'] = self.contact_prior_meta
-        meta['opt_code'] = 1
+        meta = self.get_meta()
         io.write_matfile(self.contact_posterior_mat[contact], contact_posterior_mat_file, meta)
+        print("Successfully wrote bayesian posterior score for protein to {0}.".format(contact_posterior_mat_file))
 
-    def contact_prior(self, psipred_file, netsurfp_file, mi_file, omes_file, contact_prior_model_file=None):
+    def contact_prior(self, psipred_file, netsurfp_file, mi_file, omes_file,
+                      pll_braw_file=None, cd_braw_file=None, pcd_braw_file=None,
+                      bayposterior_mat_file=None, log_bayfactor_mat_file=None,
+                      contact_prior_model_file=None):
 
         #load the model
         if contact_prior_model_file:
@@ -206,6 +238,16 @@ class BayesianContactPredictor():
         AF.compute_psipred_features(psipred_file)
         AF.compute_netsurfp_features(netsurfp_file)
         AF.compute_single_features_in_window(window_size=window_size)
+        if pll_braw_file:
+            AF.compute_coupling_feature(pll_braw_file, "pLL", qij=False, raw_couplings=False)
+        if cd_braw_file:
+            AF.compute_coupling_feature(cd_braw_file, "CD", qij=False, raw_couplings=False)
+        if pcd_braw_file:
+            AF.compute_coupling_feature(pcd_braw_file, "PCD", qij=False, raw_couplings=False)
+        if bayposterior_mat_file:
+            AF.add_feature_from_mat(bayposterior_mat_file, "BayPost", apc=False)
+        if log_bayfactor_mat_file:
+            AF.add_feature_from_mat(log_bayfactor_mat_file, "logBayfactor", apc=False)
         feature_df_protein, class_df_protein = AF.get_feature_matrix()
 
         # use only features that the model was trained on
@@ -220,7 +262,7 @@ class BayesianContactPredictor():
         self.contact_prior_mat = np.zeros((len(distances), self.L, self.L))
 
         # predict with random forest model
-        print("Predict cotnact prior from sequence features...")
+        print("Predict contact prior from sequence features...")
         predictions_rf = self.contact_prior_model.predict_proba(feature_df_protein).transpose()
 
         for distance in distances:
@@ -254,7 +296,9 @@ class BayesianContactPredictor():
         )
 
         distances = [0, 1]
-        self.contact_likelihood_mat = np.zeros((len(distances), self.L, self.L))
+        self.contact_log_likelihood_mat = np.empty((len(distances), self.L, self.L))
+        self.contact_log_likelihood_mat.fill(np.nan)
+        #self.contact_likelihood_mat = np.zeros((len(distances), self.L, self.L))
 
         for distance in distances:
             LL.set_pairs_py(
@@ -265,8 +309,9 @@ class BayesianContactPredictor():
             LL.compute_negLL(self.n_threads)
             neg_log_likelihood = LL.get_neg_log_likelihood_pairwise_py()
 
-            likelihood_residue_pairs = np.exp(-np.array(neg_log_likelihood))
-            self.contact_likelihood_mat[distance, self.residues_i, self.residues_j] = likelihood_residue_pairs.tolist()
+            self.contact_log_likelihood_mat[distance, self.residues_i, self.residues_j] = -np.array(neg_log_likelihood)
+            #likelihood_residue_pairs = np.exp(-np.array(neg_log_likelihood))
+            #self.contact_likelihood_mat[distance, self.residues_i, self.residues_j] = likelihood_residue_pairs.tolist()
 
         # collect meta data
         self.contact_likelihood_meta = {}
@@ -292,7 +337,7 @@ class BayesianContactPredictor():
         lik_protein.set_parameters(self.contact_likelihood_parameters)
 
         distances = [0, 1]
-        self.contact_likelihood_mat = np.zeros((len(distances), self.L, self.L))
+        self.contact_log_likelihood_mat = np.zeros((len(distances), self.L, self.L))
 
         for distance in distances:
             lik_protein.set_pairs(
@@ -304,8 +349,9 @@ class BayesianContactPredictor():
             lik_protein.compute_f_df(compute_gradients=False)
             neg_log_likelihood = lik_protein.get_f_pairwise()
 
-            likelihood_residue_pairs = np.exp(-np.array(neg_log_likelihood))
-            self.contact_likelihood_mat[distance, self.residues_i, self.residues_j] = likelihood_residue_pairs.tolist()
+            self.contact_log_likelihood_mat[distance, self.residues_i, self.residues_j] = -np.array(neg_log_likelihood)
+            #likelihood_residue_pairs = np.exp(-np.array(neg_log_likelihood))
+            #self.contact_likelihood_mat[distance, self.residues_i, self.residues_j] = likelihood_residue_pairs.tolist()
 
         # collect meta data
         self.contact_likelihood_meta = {}
@@ -317,34 +363,56 @@ class BayesianContactPredictor():
 
     def contact_posterior(self):
 
-        if (self.contact_prior_mat is None) or (self.contact_likelihood_mat is None):
+        if (self.contact_prior_mat is None) or (self.contact_log_likelihood_mat is None):
             print("You need to compute both contact likelihood and contact prior first!")
             return
 
-        assert(self.contact_likelihood_mat.shape == self.contact_prior_mat.shape), "Contact prior and likelihood mat are not of same shape!"
+        assert(self.contact_log_likelihood_mat.shape == self.contact_prior_mat.shape), "Contact prior and likelihood mat are not of same shape!"
 
-        posterior_unnormalized = self.contact_likelihood_mat * self.contact_prior_mat
-        sum = posterior_unnormalized.sum(axis=0)
-
-        self.contact_posterior_mat = posterior_unnormalized / sum
+        posterior_logspace_unnormalized = self.contact_log_likelihood_mat + np.log(self.contact_prior_mat)
+        self.contact_posterior_mat = self.normalize_logspace(posterior_logspace_unnormalized)
+        #not in log space
+        #posterior_unnormalized = self.contact_likelihood_mat * self.contact_prior_mat
+        #sum = posterior_unnormalized.sum(axis=0)
+        #self.contact_posterior_mat = posterior_unnormalized / sum
 
         # sanity check: predictions for all distances (contact/noncontact) should sum to 1
         assert (np.abs(np.nanmax(np.sum(self.contact_posterior_mat, axis=0)) - np.nanmin(
             np.sum(self.contact_posterior_mat, axis=0))) < 1e-10), "Sum of posterior probabilities is not 1"
 
     def get_contact_prior(self, contact=1):
-        if not self.contact_prior_mat:
+        if self.contact_prior_mat is None:
             print("You need to compute contact prior first!")
             return
 
         return self.contact_prior_mat[contact]
 
-    def get_contact_likelihood(self, contact=1):
-        if not self.contact_likelihood_mat:
+    def normalize_logspace(self, unnormalized_log_mat_list):
+
+        if len(unnormalized_log_mat_list) < 2:
+            print("Less than 2 entries in list. No need to normalize.")
+            return
+
+        log_sum = self.log_add(unnormalized_log_mat_list[0], unnormalized_log_mat_list[1])
+
+        if len(unnormalized_log_mat_list) > 2:
+            for id in range(2, len(unnormalized_log_mat_list)):
+                log_sum = self.log_add(log_sum, unnormalized_log_mat_list[id])
+
+        return(np.exp(unnormalized_log_mat_list - log_sum))
+
+    def get_contact_likelihood(self, contact=1, normalized=False, bayes_factor=False):
+        if self.contact_log_likelihood_mat is None:
             print("You need to compute contact lieklihood first!")
             return
 
-        return self.contact_likelihood_mat[contact]
+        if normalized:
+            contact_likelihood_mat = self.normalize_logspace(self.contact_log_likelihood_mat)
+            return contact_likelihood_mat[contact]
+        elif bayes_factor:
+            return self.contact_log_likelihood_mat[1] - self.contact_log_likelihood_mat[0]
+        else:
+            return self.contact_log_likelihood_mat[contact]
 
     def get_contact_posterior(self, contact=1):
         if self.contact_posterior_mat is None:
