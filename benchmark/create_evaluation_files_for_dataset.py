@@ -12,11 +12,14 @@
 ### load libraries ===============================================================================
 import argparse
 import os
-import pandas as pd
+
 import numpy as np
-import contact_prior.ext.weighting as weighting
-from benchmark import Benchmark
+import pandas as pd
+
+import utils.ext.weighting as weighting
 import utils.io_utils as io
+from benchmark import Benchmark
+
 
 def parse_args():
 
@@ -68,29 +71,28 @@ def main():
     b.create_evaluation_files(pdb_dir, alignment_dir, min_seqsep, dataset_folds['#  domain'].tolist())
 
     # Annotate eval_meta files with cath and fold
-    for eval_file in b.eval_files:
-        meta_file = eval_file.replace(".eval", ".meta")
-        protein_name=os.path.basename(eval_file).split(".")[0]
+    for protein in b.proteins:
 
-        cath_class= dataset_folds[dataset_folds['#  domain'] == protein_name]['CATH-topology'].values[0].lstrip()
-        fold = dataset_folds[dataset_folds['#  domain'] == protein_name]['fold'].values[0]
+        print protein
 
-        alignment_file=alignment_dir+"/"+protein_name+".filt.psc"
+        cath_class = dataset_folds[dataset_folds['#  domain'] == protein]['CATH-topology'].values[0].lstrip()
+        fold = dataset_folds[dataset_folds['#  domain'] == protein]['fold'].values[0]
+
+        alignment_file=alignment_dir+"/"+protein+".filt.psc"
         if not os.path.exists(alignment_file):
             print("Alignment File {0} does not exist (used for annotating eval file with Neff). Skip.".format(alignment_file))
             continue
 
         alignment = io.read_alignment(alignment_file)
-        weights = weighting.calculate_weights_simple(alignment, 0.8, True)
+        weights = weighting.calculate_weights_simple(alignment, 0.8, False)
         neff=np.sum(weights)
 
-        meta={}
-        meta['protein'] = {
+        meta = {
             'cath class': cath_class,
             'fold': fold,
             'neff' : neff
         }
-        b.add_meta_data(meta_file, meta)
+        b.add_protein_meta_data(protein, meta)
 
 
 

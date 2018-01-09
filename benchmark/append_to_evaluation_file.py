@@ -44,6 +44,5 @@ def main():
     #Add method to benchmark set ===============================================================================
     b.add_method_from_file(method_name, method_dir, is_mat_file=mat_file, apc=apc, update=update)
 
-
 if __name__ == '__main__':
     main()
