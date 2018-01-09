@@ -6,7 +6,6 @@ import os
 from AlignmentFeatures import AlignmentFeatures
 from sklearn.model_selection import PredefinedSplit
 from sklearn.model_selection import GridSearchCV
-from sklearn.model_selection import cross_val_predict
 from sklearn.ensemble import RandomForestClassifier
 import xgboost as xgb
 import utils.plot_utils as plot
@@ -32,7 +31,14 @@ class TrainContactPriorModel():
         self.netsurfp_dir = None
         self.mi_dir = None
         self.omes_dir = None
-        self.braw_dir = None
+
+        #path to data that is optional
+        self.pll_braw_dir = None
+        self.cd_braw_dir = None
+        self.pcd_braw_dir = None
+        self.bayposterior_mat_dir = None
+        self.bayesfactor_mat_dir = None
+
 
         self.dataset_properties = pd.DataFrame()
         self.dataset_ids_training = [1,2,3,4,5]
@@ -64,28 +70,29 @@ class TrainContactPriorModel():
 
 
         self.cores = 8
+        self.seed = 123
 
         #grid CV settings
         self.estimator = {
-            'random_forest': RandomForestClassifier(random_state=123, verbose=1, n_jobs=self.cores),
-            'xgboost': xgb.XGBClassifier(seed=123, silent=False, nthread=self.cores)
+            'random_forest': RandomForestClassifier(random_state=self.seed, verbose=1, n_jobs=self.cores),
+            'xgboost': xgb.XGBClassifier(seed=self.seed, silent=False, nthread=self.cores)
         }
-
 
 
         self.param_grid = {
             'random_forest': {
                 'n_estimators': [1000],
-                'min_samples_leaf': [100],
-                'max_depth': [100],
-                'criterion': ["entropy"],
-                'class_weight': [
-                    None,
-                    "balanced",
-                    {0: 0.6,   1: 3},         # ==> n_samples/(n_classes * np.bincount(y) fuer ratio 1:5
-                    {0: 0.55,  1: 5.5},       # ==> n_samples/(n_classes * np.bincount(y) fuer ratio 1:10
-                    {0: 0.525, 1: 10.5},      # ==> n_samples/(n_classes * np.bincount(y) fuer ratio 1:20
-                    {0: 10.5, 1: 0.525}]
+                'min_samples_leaf': [1, 10, 100],
+                'max_depth': [10],
+                #'criterion': ["gini"],
+                'max_features': ['log2', 'sqrt', 0.15]
+                #'class_weight': [None]
+                    # None,
+                    # "balanced",
+                    # {0: 0.6,   1: 3},         # ==> n_samples/(n_classes * np.bincount(y) fuer ratio 1:5
+                    # {0: 0.55,  1: 5.5},       # ==> n_samples/(n_classes * np.bincount(y) fuer ratio 1:10
+                    # {0: 0.525, 1: 10.5},      # ==> n_samples/(n_classes * np.bincount(y) fuer ratio 1:20
+                    # {0: 10.5, 1: 0.525}]
             },
             'xgboost': {
                 'learning_rate': [0.005],
@@ -101,6 +108,7 @@ class TrainContactPriorModel():
 
         self.clf_gridcv = None
         self.clf = None
+
 
     def __repr__(self):
 
@@ -140,7 +148,8 @@ class TrainContactPriorModel():
         return repr_string
 
 
-    def __get_features_for_protein(self, alignment_file, pdb_file, psipred_file, netsurfp_file, mi_file, omes_file, braw_file,
+    def __get_features_for_protein(self, alignment_file, pdb_file, psipred_file, netsurfp_file, mi_file, omes_file,
+                                   pll_braw_file, cd_braw_file, pcd_braw_file, bayposterior_mat_file, log_bayfactor_mat_file,
                                    contact_threshold, non_contact_threshold ,
                                    max_nr_contacts_per_protein, max_nr_non_contacts_per_protein):
 
@@ -176,8 +185,16 @@ class TrainContactPriorModel():
         AF.compute_contact_prior_given_L(contact_thr=contact_threshold, seqsep=self.sequence_separation)
         AF.compute_psipred_features(psipred_file)
         AF.compute_netsurfp_features(netsurfp_file)
-        if braw_file:
-            AF.compute_coupling_feature(braw_file, qij=True)
+        if pll_braw_file:
+            AF.compute_coupling_feature(pll_braw_file, "pLL", qij=False, raw_couplings=False)
+        if cd_braw_file:
+            AF.compute_coupling_feature(cd_braw_file, "CD", qij=False, raw_couplings=False)
+        if pcd_braw_file:
+            AF.compute_coupling_feature(pcd_braw_file, "PCD", qij=False, raw_couplings=False)
+        if bayposterior_mat_file:
+            AF.add_feature_from_mat(bayposterior_mat_file, "BayPost", apc=False)
+        if log_bayfactor_mat_file:
+            AF.add_feature_from_mat(log_bayfactor_mat_file, "logBayfactor", apc=False)
         AF.compute_single_features_in_window(window_size=self.window_size)
 
         #print(AF)
@@ -216,12 +233,18 @@ class TrainContactPriorModel():
             class_df_dataset_id    = pd.DataFrame()
             current_nr_contacts = 0
             current_nr_noncontacts = 0
+
             if nr_proteins is None:
                 nr_proteins_per_dataset = len(self.dataset_properties.query('dataset_id == '+str(dataset_id)))
             print("Compute features for dataset {0}".format(dataset_id))
 
+            #random selection of proteins
+            protein_subset = self.dataset_properties.query('dataset_id == '+str(dataset_id))['protein'].values
+            np.random.seed(self.seed)
+            np.random.shuffle(protein_subset)
+
             protein_counter = 0
-            for protein in self.dataset_properties.query('dataset_id == '+str(dataset_id))['protein'].values:
+            for protein in protein_subset:
 
                 alignment_file = self.alignment_dir + "/" + protein.strip() + ".filt.psc"
                 pdb_file = self.pdb_dir + "/" + protein.strip() + ".pdb"
@@ -229,6 +252,11 @@ class TrainContactPriorModel():
                 netsurfp_file = self.netsurfp_dir + "/" + protein.strip() + ".filt.netsurfp"
                 mi_file = self.mi_dir + "/"+ protein.strip() + ".filt.mi.mat"
                 omes_file = self.omes_dir + "/"+ protein.strip() + ".filt.omes.mat"
+                pll_braw_file = None
+                cd_braw_file = None
+                pcd_braw_file = None
+                bayposterior_mat_file = None
+                bayfactor_mat_file = None
 
                 if not os.path.exists(alignment_file):
                     print("    Alignment file {0} does not exist. Skip protein {1}!".format(alignment_file, protein))
@@ -237,6 +265,7 @@ class TrainContactPriorModel():
                 #get alignment statistics
                 N = sum(1 for line in open(alignment_file))
                 if(N < 10):
+                    print("    Less than 10 sequences for alignment file {0}. Skip protein {1}!".format(alignment_file, protein))
                     continue
 
                 if not os.path.exists(pdb_file):
@@ -251,16 +280,41 @@ class TrainContactPriorModel():
                     print("    NetsurfP file {0} does not exist. Skip protein {1}!".format(netsurfp_file, protein))
                     continue
 
-                braw_file = None
-                if self.braw_dir is not None:
-                    braw_file = self.braw_dir + "/" + protein.strip() + ".filt.braw.gz"
-                    if not os.path.exists(braw_file):
-                        print("    Braw file {0} does not exist. Skip protein {1}!".format(braw_file, protein))
+
+                if self.pll_braw_dir is not None:
+                    pll_braw_file = self.pll_braw_dir + "/" + protein.strip() + ".filt.braw.gz"
+                    if not os.path.exists(pll_braw_file):
+                        print("    pLL braw file {0} does not exist. Skip protein {1}!".format(pll_braw_file, protein))
+                        continue
+
+                if self.cd_braw_dir is not None:
+                    cd_braw_file = self.cd_braw_dir + "/" + protein.strip() + ".filt.braw.gz"
+                    if not os.path.exists(cd_braw_file):
+                        print("    CD braw file {0} does not exist. Skip protein {1}!".format(cd_braw_file, protein))
+                        continue
+
+                if self.pcd_braw_dir is not None:
+                    pcd_braw_file = self.pcd_braw_dir + "/" + protein.strip() + ".filt.braw.gz"
+                    if not os.path.exists(pcd_braw_file):
+                        print("    PCD braw file {0} does not exist. Skip protein {1}!".format(pcd_braw_file, protein))
+                        continue
+
+                if self.bayposterior_mat_dir is not None:
+                    bayposterior_mat_file = self.bayposterior_mat_dir + "/" + protein.strip() + ".bayesian_3comp_pLL.mat"
+                    if not os.path.exists(bayposterior_mat_file):
+                        print("    bayesian posterior mat file {0} does not exist. Skip protein {1}!".format(bayposterior_mat_file, protein))
+                        continue
+
+                if self.bayesfactor_mat_dir is not None:
+                    bayfactor_mat_file = self.bayesfactor_mat_dir + "/" + protein.strip() + ".bayesian_3comp_pLL.mat"
+                    if not os.path.exists(bayfactor_mat_file):
+                        print("    bayes factor mat file {0} does not exist. Skip protein {1}!".format(bayfactor_mat_file, protein))
                         continue
 
 
                 feature_df_protein, class_df_protein = self.__get_features_for_protein(
-                    alignment_file, pdb_file, psipred_file, netsurfp_file, mi_file, omes_file, braw_file,
+                    alignment_file, pdb_file, psipred_file, netsurfp_file, mi_file, omes_file,
+                    pll_braw_file, cd_braw_file, pcd_braw_file, bayposterior_mat_file, bayfactor_mat_file,
                     contact_threshold, non_contact_threshold,
                     max_nr_contacts_protein, max_nr_noncontacts_protein
                 )
@@ -345,8 +399,8 @@ class TrainContactPriorModel():
         results = self.clf_gridcv.cv_results_
 
         title="Results of grid search with crossvalidation for {0} hyperparameters".format(self.model)
-        y_axis_title=self.clf_gridcv.scoring + "cross-validation"
-        plot_name = plot_dir + "/grid_search_cv_results_"+self.clf_gridcv.scoring + "_"+self.model+".html"
+        y_axis_title=self.clf_gridcv.scoring + " in 5-fold cross-validation"
+
 
         df=pd.DataFrame(results)
         df.sort_values(by='rank_test_score', inplace=True)
@@ -361,8 +415,17 @@ class TrainContactPriorModel():
             plot_order.append(parameter_setting)
             statistics_dict[parameter_setting]=row.select(lambda col: 'split' in col and 'test_score' in col).values
 
-
+        plot_name = plot_dir + "/grid_search_cv_results_" + self.clf_gridcv.scoring + "_" + self.model + ".html"
         plot.plot_boxplot(statistics_dict, title, y_axis_title, colors=None, jitter_pos=1, orient='h', print_total=False, order=plot_order[::-1], plot_out=plot_name)
+        plot_name = plot_dir + "/grid_search_cv_results_" + self.clf_gridcv.scoring + "_" + self.model + "_notitle.html"
+        plot.plot_boxplot(statistics_dict, "", y_axis_title, colors=None, jitter_pos=1, orient='h', print_total=False, order=plot_order[::-1], plot_out=plot_name)
+
+        statistics_dict_top5={}
+        for parameter_setting in plot_order[:5]:
+            statistics_dict_top5[parameter_setting] = statistics_dict[parameter_setting]
+
+        plot_name = plot_dir + "/grid_search_cv_results_top5" + self.clf_gridcv.scoring + "_" + self.model + "_notitle.html"
+        plot.plot_boxplot(statistics_dict_top5, "", y_axis_title, colors=None, jitter_pos=1, orient='h', print_total=False, order=plot_order[:5][::-1], plot_out=plot_name)
 
     def __plot_feature_importance(self, plot_file):
 
@@ -372,11 +435,37 @@ class TrainContactPriorModel():
 
         print("\nPlot feature importance to {0}.".format(plot_file))
 
+        title = 'Feature Importance ranked by mean importance of feature in all trees'
+
         plot.plot_feature_importance(
             self.features,
             self.feature_importance_mean,
+            title,
             number_features=20,
+            only_top_features=False,
             plot_out=plot_file
+        )
+
+        plot_file_top = plot_file.split(".")[0] + "_top.html"
+
+        plot.plot_feature_importance(
+            self.features,
+            self.feature_importance_mean,
+            title,
+            number_features=10,
+            only_top_features=True,
+            plot_out=plot_file_top
+        )
+
+        plot_file_top = plot_file.split(".")[0] + "_top_notitle.html"
+
+        plot.plot_feature_importance(
+            self.features,
+            self.feature_importance_mean,
+            "",
+            number_features=10,
+            only_top_features=True,
+            plot_out=plot_file_top
         )
 
     def predict_testset(self, method):
@@ -401,11 +490,15 @@ class TrainContactPriorModel():
 
         return predictions
 
-    def compute_prec_rank(self, method):
+    def compute_prec_rank(self, method, clf=None):
 
         if len(self.class_df_test) == 0:
             print("You need to generate a dataset with generate_data() before plotting precision vs recall!")
             exit()
+
+
+        if clf is None:
+            clf = self.clf
 
         # define general proportions of protein length
         ranks = np.linspace(1, 0, 20, endpoint=False)[::-1]
@@ -420,7 +513,7 @@ class TrainContactPriorModel():
         for protein in proteins:
             protein_features = self.feature_df_test.iloc[self.class_df_test.query('protein == @protein').index.values]
             true_class = self.class_df_test.query('protein == @protein')['contact'].values
-            pred_prob = self.clf.predict_proba(protein_features.as_matrix()).transpose()[1]
+            pred_prob = clf.predict_proba(protein_features.as_matrix()).transpose()[1]
             prec, _, _ = bu.compute_precision_recall(true_class, pred_prob)
 
             L = self.class_df_test.query('protein == @protein')['L'].values[0]
@@ -436,7 +529,53 @@ class TrainContactPriorModel():
 
         return precision_rank
 
-    def __plot_precision_vs_rank(self, plot_file, precision_rank):
+    def __plot_precision_vs_rank_CV(self, plot_file, precision_rank_cv, cv_option):
+        if len(self.class_df_test) == 0:
+            print("You need to generate a dataset with generate_data() before plotting precision vs recall!")
+            exit()
+
+        print("\nPlot precision vs rank for CV to {0}".format(plot_file))
+
+        nr_proteins = len(np.unique(self.class_df_test['protein'].values))
+
+        title = 'Precision (PPV) vs rank (dependent on L) <br>'
+        title += "5-fold CV for {0} <br>".format(cv_option)
+        title += "test on {0} proteins".format( nr_proteins)
+
+        yaxistitle = 'Mean Precision over Proteins'
+
+        plot.plot_evaluationmeasure_vs_rank_plotly_cv(precision_rank_cv, title, yaxistitle, show_cv=True, plot_out=plot_file)
+
+        plot_file_nocv = plot_file.split(".")[0] + "_nocv.html"
+        plot.plot_evaluationmeasure_vs_rank_plotly_cv(precision_rank_cv, title, yaxistitle, show_cv=False, plot_out=plot_file_nocv)
+
+
+        title = ""
+        plot_file_nottitle = plot_file.split(".")[0] + "_notitle.html"
+        plot.plot_evaluationmeasure_vs_rank_plotly_cv(precision_rank_cv, title, yaxistitle, show_cv=True, plot_out=plot_file_nottitle)
+
+        plot_file_nottitle = plot_file.split(".")[0] + "_nocv_notitle.html"
+        plot.plot_evaluationmeasure_vs_rank_plotly_cv(precision_rank_cv, title, yaxistitle, show_cv=False, plot_out=plot_file_nottitle)
+
+        if len(precision_rank_cv.keys()) > 6:
+            mean_mean_prec = {}
+            for option in precision_rank_cv.keys():
+                prec = []
+                for cv in precision_rank_cv[option].keys():
+                    if cv != 'rank':
+                        prec.append(np.mean(precision_rank_cv[option][cv]['mean']))
+                mean_mean_prec[option] = np.mean(prec)
+
+            top_keys = [t[0] for t in sorted(mean_mean_prec.items(), key=lambda x: x[1], reverse=True)[:5]]
+
+            reduced_dict = {}
+            for top_key in top_keys:
+                reduced_dict[top_key] = precision_rank_cv[top_key]
+
+            plot_file_nottitle = plot_file.split(".")[0] + "_top5_notitle.html"
+            plot.plot_evaluationmeasure_vs_rank_plotly_cv(reduced_dict, title, yaxistitle, show_cv=True, plot_out=plot_file_nottitle)
+
+    def __plot_precision_vs_rank(self, plot_file, precision_rank, legend_order=None):
 
         if self.clf is None:
             print("You first need to learn a model with train_model() before plotting precision vs recall!")
@@ -458,7 +597,10 @@ class TrainContactPriorModel():
 
         yaxistitle = 'Mean Precision over Proteins'
 
-        plot.plot_evaluationmeasure_vs_rank_plotly(precision_rank, title, yaxistitle, plot_file)
+        plot.plot_evaluationmeasure_vs_rank_plotly(precision_rank, title, yaxistitle, legend_order, plot_file)
+        title = ""
+        plot_file_nottitle = plot_file.split(".")[0] + "_notitle.html"
+        plot.plot_evaluationmeasure_vs_rank_plotly(precision_rank, title, yaxistitle, legend_order, plot_file_nottitle)
 
     def __plot_precision_vs_recall(self, plot_file, predictions):
 
@@ -603,7 +745,8 @@ class TrainContactPriorModel():
 
         joblib.dump(self.clf, filename + ".pkl")
 
-    def specify_paths_to_data(self, alignment_dir, pdb_dir, psipred_dir, netsurfp_dir, mi_dir, omes_dir, braw_dir):
+    def specify_paths_to_data(self, alignment_dir, pdb_dir, psipred_dir, netsurfp_dir, mi_dir, omes_dir,
+                              pll_braw_dir, cd_braw_dir, pcd_braw_dir, bayposterior_mat_dir, bayesfactor_mat_dir):
 
         self.alignment_dir = alignment_dir
         self.pdb_dir = pdb_dir
@@ -611,7 +754,11 @@ class TrainContactPriorModel():
         self.netsurfp_dir = netsurfp_dir
         self.mi_dir = mi_dir
         self.omes_dir = omes_dir
-        self.braw_dir = braw_dir
+        self.pll_braw_dir = pll_braw_dir
+        self.cd_braw_dir = cd_braw_dir
+        self.pcd_braw_dir = pcd_braw_dir
+        self.bayposterior_mat_dir = bayposterior_mat_dir
+        self.bayesfactor_mat_dir = bayesfactor_mat_dir
 
     def specify_dataset_ids(self, property_files_dir):
         for id, property_file in enumerate(sorted(glob.glob(property_files_dir + "/*"))):
@@ -651,7 +798,7 @@ class TrainContactPriorModel():
         self.feature_df_test, self.class_df_test = self.__generate_dataset(
             self.nr_contacts_test, self.nr_non_contacts_test, self.nr_proteins_test, self.dataset_ids_crossval, self.contact_threshold_test, self.non_contact_threshold_test)
 
-    def gridsearch_modelhyperparameters(self, plot_dir, param_dir):
+    def gridsearch_modelhyperparameters(self, plot_dir, param_dir, scoring_metric = "precision"):
 
         if len(self.class_df_train) == 0:
             print("You need to generate a dataset first with generate_data()")
@@ -663,13 +810,17 @@ class TrainContactPriorModel():
 
         ############ Note ################
         # using "average_precision" as metric ~ area under precision-recall-curve (checked in sklearn implementation)
-        # using only "precision" as metric would mean to evaluate ONLY ONE point in precision-recall curve: where threshold=0.5 (standard)
+        # using only "precision" as metric would mean to evaluate ONLY ONE point in precision-recall curve: using probability threshold=0.5 (standard)
+        #
+        # "precision" = sklearn.metrics.precision_score
+        #   - uses all predictions that have prob>0.5 and computes precision for these
         #
         # "average_precision" = sklearn.metrics.average_precision_score(y_true, y_score, average='macro', sample_weight=None)
         #   - flag average only applies to multi-class classification and can be ignored for binary prediction
         #   - sample_weight is ignored as well
         ##################################
-        scoring_metric="precision"
+        if scoring_metric not in ["precision", "average_precision"]:
+            scoring_metric="precision"
 
 
         self.clf_gridcv = GridSearchCV(
@@ -717,27 +868,31 @@ class TrainContactPriorModel():
 
             self._save_model(model_out)
 
-    def train_cv(self, parameters):
+    def train_cv(self, parameters, dataset_parameter, testset):
         if len(self.class_df_train) == 0:
             print("you need to generate a dataset first with generate_data()")
             exit()
 
 
-        self.clf = self.estimator[self.model]
-        self.clf.set_params(**parameters)
 
-        cv = PredefinedSplit(self.class_df_train['dataset_id'].values)
+        precision_cv={}
+        for cross_val_run in sorted(np.unique(self.class_df_train['dataset_id'].values)):
+            print("learn RF on cross-val subset {0}.".format(cross_val_run))
 
+            #train the model NOT on training set = cross_val_run
+            dataset_crossval_indices = self.class_df_train[self.class_df_train['dataset_id'] != cross_val_run].index
+            clf = self.estimator[self.model]
+            clf.set_params(**parameters)
+            clf.fit(self.feature_df_train.loc[dataset_crossval_indices], self.class_df_train.loc[dataset_crossval_indices]['contact'].values)
 
-        pred = cross_val_predict(self.clf,
-                        self.feature_df_train.as_matrix(),
-                        self.class_df_train['contact'].values,
-                        method = "predict_proba",
-                        cv=cv)
+            #test the model ONLY on training set = cross_val_run
+            self.feature_df_test = testset[cross_val_run]['f']
+            self.class_df_test = testset[cross_val_run]['c']
 
+            precision_cv.update(self.compute_prec_rank(method=dataset_parameter+"_cv"+str(cross_val_run), clf=clf))
 
-        #return predictions of class=1
-        return pred.transpose()[1]
+        return precision_cv
+
 
     def feature_selection(self, parameters, plot_dir, param_dir, n=5, save_model=False):
 
@@ -779,14 +934,15 @@ class TrainContactPriorModel():
             )
 
 
+        legend_order=[]
         for thresh in thresholds:
 
             nr_features = len(feature_reduced_datasets[thresh]['train'].columns)
-            method = str(nr_features) + 'features_importancethr' + str(np.round(thresh, decimals=3))
+            method = str(nr_features) + ' features '
+            legend_order.append(method)
 
             print("Train and test model for feature importance threshold {0} with {1} features".format(
                 np.round(thresh, decimals=3), nr_features))
-
 
             # reduced feature set
             self.feature_df_train = feature_reduced_datasets[thresh]['train']
@@ -828,30 +984,34 @@ class TrainContactPriorModel():
         # evaluate protein-wise
         plot_file = plot_dir + "/precision_vs_rank_featureselection" + self.model
         plot_file += plot_name
-        self.__plot_precision_vs_rank(plot_file, predictions_testset_proteinwise)
+        self.__plot_precision_vs_rank(plot_file, predictions_testset_proteinwise, legend_order)
 
-    def evaluate_cv(self, plot_dir, pred_cv, pred_test, pred_protein):
+    def evaluate_cv(self, plot_dir, precision_rank_cv, cv_option):
 
         plot_name = ""
-        for param in self.param_grid[self.model].keys():
-            plot_name += "_" + param.replace("_", "") + str(self.clf.get_params()[param])
-        plot_name += "_" + str(len(self.feature_df_train.columns)) + "features"
+        for param, value in self.param_grid[self.model].iteritems():
+            plot_name += "_" + param.replace("_", "") + str(value)
         plot_name += ".html"
 
-        #plot precision vs recall cross-validation
-        plot_file = plot_dir + "/precision_vs_recall_CV_" + self.model
-        plot_file += plot_name
-        self.__plot_precision_vs_recall(plot_file, pred_cv)
-
-        #plot precision vs recall test set
-        plot_file = plot_dir + "/precision_vs_recall_test_" + self.model
-        plot_file += plot_name
-        self.__plot_precision_vs_recall(plot_file, pred_test)
-
         # evaluate protein-wise
-        plot_file = plot_dir + "/precision_vs_rank_test_" + self.model
+        plot_file = plot_dir + "/precision_vs_rank_cv_on_test_" + self.model
         plot_file += plot_name
-        self.__plot_precision_vs_rank(plot_file, pred_protein)
+        self.__plot_precision_vs_rank_CV(plot_file, precision_rank_cv, cv_option)
+
+        # #plot precision vs recall cross-validation
+        # plot_file = plot_dir + "/precision_vs_recall_CV_" + self.model
+        # plot_file += plot_name
+        # self.__plot_precision_vs_recall(plot_file, pred_cv)
+        #
+        # #plot precision vs recall test set
+        # plot_file = plot_dir + "/precision_vs_recall_test_" + self.model
+        # plot_file += plot_name
+        # self.__plot_precision_vs_recall(plot_file, pred_test)
+        #
+        # # evaluate protein-wise
+        # plot_file = plot_dir + "/precision_vs_rank_test_" + self.model
+        # plot_file += plot_name
+        # self.__plot_precision_vs_rank(plot_file, pred_protein)
 
     def evaluate_model(self, plot_dir, prec_rank=True, prec_recall=True):
 

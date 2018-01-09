@@ -29,15 +29,20 @@ def parse_args():
     dataset = parser.add_argument_group("Settings for Dataset")
     dataset.add_argument("--nr_contacts",      type=int, default=10000, help="contacts: pairs with Cb < X")
     dataset.add_argument("--nr_non_contacts",  type=int, default=20000, help="non-contacts: pairs with Cb > X")
-    dataset.add_argument("--braw_dir",       type=str, default=None,     help="path to braw files")
     dataset.add_argument("--window_size",    type=int, default=5,        help="compute certain features over a window")
     dataset.add_argument("--seq_separation",         type=int, default=12,    help="minimal separation for pairs in sequence ")
     dataset.add_argument("--contact_threshold",      type=int, default=8,    help="contacts: pairs with Cb < X")
     dataset.add_argument("--non_contact_threshold",  type=int, default=20,   help="non-contacts: pairs with Cb > X")
     dataset.add_argument("--max_nr_contacts",           type=int, default=100,    help="max nr contacts per protein")
     dataset.add_argument("--max_nr_noncontacts",        type=int, default=500,   help="max nr non-contact per protein")
+    dataset.add_argument("--scoring_metric",        type=str, default="precision", choices=["precision", "average_precision"],   help="which metric to use for grid search")
 
-
+    add_features = parser.add_argument_group("Optional features")
+    add_features.add_argument("--pll_braw",            type=str, default=None,     help="path to pseudo-likelihood braw files")
+    add_features.add_argument("--cd_braw",             type=str, default=None,     help="path to contrastive divergence braw files")
+    add_features.add_argument("--pcd_braw",            type=str, default=None,     help="path to persistet contrastive divergence braw files")
+    add_features.add_argument("--bayposterior_mat",    type=str, default=None,     help="path to bayesian posterior mat files")
+    add_features.add_argument("--bayesfactor_mat",     type=str, default=None,     help="path to bayes factor mat files")
 
 
     args = parser.parse_args()
@@ -57,7 +62,6 @@ def main():
     netsurfp_dir            = args.netsurfp_dir
     mi_dir                  = args.mi_dir
     omes_dir                = args.omes_dir
-    braw_dir                = args.braw_dir
     parameter_dir           = args.parameter_dir
     plot_dir                = args.plot_dir
     nr_contacts             = args.nr_contacts
@@ -68,6 +72,12 @@ def main():
     seq_separation          = args.seq_separation
     contact_threshold       = args.contact_threshold
     non_contact_threshold   = args.non_contact_threshold
+    scoring_metric          = args.scoring_metric
+    pll_braw_dir            = args.pll_braw
+    cd_braw_dir             = args.cd_braw
+    pcd_braw_dir            = args.pcd_braw
+    bayposterior_mat_dir    = args.bayposterior_mat
+    bayesfactor_mat_dir     = args.bayesfactor_mat
     est                     = args.estimator
 
     #
@@ -85,6 +95,7 @@ def main():
     # nr_non_contacts    = 500
     # max_nr_contacts    = 100
     # max_nr_noncontacts = 500
+    # scoring_metric     = "precision"
     #
     # window_size             = 3
     # seq_separation          = 12
@@ -96,7 +107,9 @@ def main():
 
     #specifu all settings
     contact_prior_model.specify_dataset_ids(property_files_dir)
-    contact_prior_model.specify_paths_to_data(alignment_dir, pdb_dir, psipred_dir, netsurfp_dir, mi_dir, omes_dir, braw_dir)
+    contact_prior_model.specify_paths_to_data(alignment_dir, pdb_dir, psipred_dir, netsurfp_dir, mi_dir, omes_dir,
+                                              pll_braw_dir, cd_braw_dir, pcd_braw_dir,
+                                              bayposterior_mat_dir, bayesfactor_mat_dir)
     contact_prior_model.specify_dataset_properties(
         sequence_separation=seq_separation, window_size=window_size,
         max_nr_contacts_per_protein = max_nr_contacts,  max_nr_non_contacts_per_protein=max_nr_noncontacts
@@ -140,7 +153,7 @@ def main():
     contact_prior_model.print_param_grid()
 
     #do grid search on predefined parameter grid
-    contact_prior_model.gridsearch_modelhyperparameters(plot_dir, parameter_dir)
+    contact_prior_model.gridsearch_modelhyperparameters(plot_dir, parameter_dir, scoring_metric)
 
 
 
@@ -153,7 +166,7 @@ def main():
 
     print("\nEvaluate model on testset (whole proteins)...")
     sys.stdout.flush()
-    contact_prior_model.evaluate_model(plot_dir, prec_rank=True, prec_recall=True)
+    contact_prior_model.evaluate_model(plot_dir, prec_rank=True, prec_recall=False)
 
 if __name__ == '__main__':
     main()

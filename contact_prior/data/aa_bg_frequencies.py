@@ -82,6 +82,9 @@ aa_freq = {
 
 
 # amino acid background frequencies from Robinson and Robinson
+# Robinson AB, Robinson LR.
+# Distribution of glutamine and asparagine residues and their near neighbors in peptides and proteins.
+# Proc. Natl Acad. Sci. USA. 1991;88:8880-8884.
 robinson_robinson_dict = {
     'A': 0.07805,
     'C': 0.01925,

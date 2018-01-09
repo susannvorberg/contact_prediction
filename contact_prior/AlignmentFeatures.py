@@ -2,21 +2,23 @@
 
 import json
 import os
-import pandas as pd
-import numpy as np
 
-import utils.io_utils as io
-import utils.pdb_utils as pdb
-import utils.benchmark_utils as be
-import ext.counts
-import ext.weighting
-import contact_prior.data.aa_bg_frequencies as aa_background
-import contact_prior.data.physico_chemical_properties as physchemprop
-import contact_prior.data.potential_matrices as potential_matrices
-import contact_prior.data.contact_prior_model_given_L as cp
-import raw
+
+import numpy as np
+import pandas as pd
 import scipy.stats
 from sklearn.utils import shuffle
+import contact_prior.data.aa_bg_frequencies as aa_background
+import contact_prior.data.contact_prior_model_given_L as cp
+import contact_prior.data.physico_chemical_properties as physchemprop
+import contact_prior.data.potential_matrices as potential_matrices
+import raw
+import utils.benchmark_utils as be
+import utils.ext.weighting
+import utils.ext.counts
+import utils.io_utils as io
+import utils.pdb_utils as pdb
+
 
 class AlignmentFeatures():
     """
@@ -154,10 +156,10 @@ class AlignmentFeatures():
 
         :return:
         """
-        self.weights = ext.weighting.calculate_weights_simple(self.msa, 0.8, True)
+        self.weights = utils.ext.weighting.calculate_weights_simple(self.msa, 0.8, True)
         self.neff = np.sum(self.weights)
 
-        self.single_counts, self.pairwise_counts = ext.counts.both_counts(self.msa, self.weights)
+        self.single_counts, self.pairwise_counts = utils.ext.counts.both_counts(self.msa, self.weights)
 
 
         self.Ni = self.single_counts[:,:20].sum(1)
@@ -444,6 +446,17 @@ class AlignmentFeatures():
         for a in io.AMINO_ACIDS[:20]:
             self.features['single']['pssm_'+a] = pssm[:,io.AMINO_INDICES[a]]
 
+    def add_feature_from_mat(self, mat_file, method, apc=False):
+        if not os.path.exists(mat_file):
+            print ("Mat file for method {0} does not exist. Feature cannot be added!")
+            return
+        mat = np.loadtxt(mat_file)
+
+        if apc:
+            self.features['pair'][method +'_apc']= be.compute_apc_corrected_matrix(mat)
+        else:
+            self.features['pair'][method]= mat
+
     def compute_omes(self, omes_file=None):
         """
         According to Kass and Horovitz
@@ -532,21 +545,22 @@ class AlignmentFeatures():
 
         self.features['global']['prior_L']=np.array([cp.contact_prior_model_givenL[contact_thr][seqsep](self.L)/ (self.L-1)])
 
-    def compute_coupling_feature(self, braw_file, qij=False):
+    def compute_coupling_feature(self, braw_file, method, qij=False, raw_couplings=False):
         braw = raw.parse_msgpack(braw_file)
         couplings = braw.x_pair[:,:,:20,:20].reshape(self.L, self.L, 400)
 
-        for ab, ab_index in io.AB_INDICES.iteritems():
-            self.features['pair']['coupling_'+ab] = couplings[:,:,ab_index]
+        if raw_couplings:
+            for ab, ab_index in io.AB_INDICES.iteritems():
+                self.features['pair'][method+'_coupling_'+ab] = couplings[:,:,ab_index]
 
         #compute standard l2norm
-        self.features['pair']['l2norm+apc'] = be.compute_l2norm_from_braw(braw, apc=True)
+        self.features['pair'][method + '_l2norm+apc'] = be.compute_l2norm_from_braw(braw, apc=True)
 
         if qij:
             lambda_w = braw.meta['workflow'][0]['parameters']['regularization']['lambda_pair']
             model_prob = self.pairwise_frequencies - (braw.x_pair[:,:,:20,:20] * lambda_w / self.Nij[:, :, np.newaxis, np.newaxis])
             for ab, ab_index in io.AB_INDICES.iteritems():
-                self.features['pair']['model_prob_'+ab] = model_prob.reshape(self.L, self.L, 400)[:,:,ab_index]
+                self.features['pair'][method + '_model_prob_'+ab] = model_prob.reshape(self.L, self.L, 400)[:,:,ab_index]
 
     def compute_single_features_in_window(self, window_size):
         """

@@ -24,13 +24,20 @@ def parse_args():
     dataset = parser.add_argument_group("Settings for Dataset")
     dataset.add_argument("--nr_contacts",      type=int, default=10000, help="contacts: pairs with Cb < X")
     dataset.add_argument("--nr_non_contacts",  type=int, default=20000, help="non-contacts: pairs with Cb > X")
-    dataset.add_argument("--braw_dir",       type=str, default=None,     help="path to braw files")
     dataset.add_argument("--window_size",    type=int, default=3,        help="compute certain features over a window")
     dataset.add_argument("--seq_separation",         type=int, default=12,    help="minimal separation for pairs in sequence ")
     dataset.add_argument("--contact_threshold",      type=int, default=8,    help="contacts: pairs with Cb < X")
     dataset.add_argument("--non_contact_threshold",  type=int, default=20,   help="non-contacts: pairs with Cb > X")
     dataset.add_argument("--max_nr_contacts",           type=int, default=100,    help="max nr contacts per protein")
     dataset.add_argument("--max_nr_noncontacts",        type=int, default=500,   help="max nr non-contact per protein")
+
+    add_features = parser.add_argument_group("Optional features")
+    add_features.add_argument("--pll_braw",            type=str, default=None,     help="path to pseudo-likelihood braw files")
+    add_features.add_argument("--cd_braw",             type=str, default=None,     help="path to contrastive divergence braw files")
+    add_features.add_argument("--pcd_braw",            type=str, default=None,     help="path to persistet contrastive divergence braw files")
+    add_features.add_argument("--bayposterior_mat",    type=str, default=None,     help="path to bayesian posterior mat files")
+    add_features.add_argument("--bayesfactor_mat",     type=str, default=None,     help="path to bayes factor mat files")
+
 
     classifier = parser.add_argument_group("Select which classifier to use")
     classifier.add_argument("--random-forest",  dest="estimator", action="store_const", const="random_forest", default="random_forest", help="Use RandomForest Classifier(default)")
@@ -53,7 +60,6 @@ def main():
     netsurfp_dir       = args.netsurfp_dir
     mi_dir             = args.mi_dir
     omes_dir           = args.omes_dir
-    braw_dir           = args.braw_dir
     parameter_dir      = args.parameter_dir
     plot_dir           = args.plot_dir
 
@@ -65,6 +71,12 @@ def main():
     non_contact_threshold   = args.non_contact_threshold
     max_nr_contacts         = args.max_nr_contacts
     max_nr_noncontacts      = args.max_nr_noncontacts
+
+    pll_braw_dir            = args.pll_braw
+    cd_braw_dir             = args.cd_braw
+    pcd_braw_dir            = args.pcd_braw
+    bayposterior_mat_dir    = args.bayposterior_mat
+    bayesfactor_mat_dir     = args.bayesfactor_mat
 
     est                     = args.estimator
 
@@ -93,11 +105,11 @@ def main():
 
     parameters={
         'random_forest': {
-            'n_estimators':     1000,
-            'min_samples_leaf': 100,
-            'criterion':        'entropy',
-            'max_depth':        100,
-            'class_weight':     {0: 10.5, 1: 0.525}
+            'n_estimators': 1000,
+            'min_samples_leaf': 10,
+            'max_depth': 100,
+            'max_features': 0.30
+
         },
         'xgboost': {
             'max_depth':        2,
@@ -113,7 +125,8 @@ def main():
 
     #specify all settings
     contact_prior_model.specify_dataset_ids(property_files_dir)
-    contact_prior_model.specify_paths_to_data(alignment_dir, pdb_dir, psipred_dir, netsurfp_dir, mi_dir, omes_dir, braw_dir)
+    contact_prior_model.specify_paths_to_data(alignment_dir, pdb_dir, psipred_dir, netsurfp_dir, mi_dir, omes_dir,
+                                              pll_braw_dir, cd_braw_dir, pcd_braw_dir, bayposterior_mat_dir, bayesfactor_mat_dir )
     contact_prior_model.specify_dataset_properties(
         sequence_separation=seq_separation, window_size=window_size,
         max_nr_contacts_per_protein=max_nr_contacts, max_nr_non_contacts_per_protein=max_nr_noncontacts
@@ -135,13 +148,13 @@ def main():
     print("\nCompute features for testset from whole proteins...")
     sys.stdout.flush()
     contact_prior_model.generate_test_data(
-        nr_contacts_test=0, nr_non_contacts_test=0, nr_proteins_test=50,
+        nr_contacts_test=0, nr_non_contacts_test=0, nr_proteins_test=200,
         contact_threshold_test=8, non_contact_threshold_test=8)
 
     # evaluate the model on test set
     print("\n Evaluate model on test data...")
     sys.stdout.flush()
-    contact_prior_model.evaluate_model(plot_dir, prec_rank=True, prec_recall=True)
+    contact_prior_model.evaluate_model(plot_dir, prec_rank=True, prec_recall=False)
 
     print("\n Feature Selection")
     sys.stdout.flush()
