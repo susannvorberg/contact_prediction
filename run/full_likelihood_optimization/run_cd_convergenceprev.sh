@@ -13,7 +13,7 @@
 #   - learning rate: 0 --> wrt Neff
 #   - stopping criteria: decrease in gradient norm < 1e-8
 #
-#   and optimize regularizer dependent on L
+#   and optimize convergence_prev
 #
 ###################################################################################################################
 
@@ -22,7 +22,7 @@
 # example call
 #-------------------------------------------------------------------------------
 
-#bash ~/opt/contactprediction/contact_prediction/run/full_likelihood_optimization/run_cd_regularizer.sh 5
+#bash ~/opt/contactprediction/contact_prediction/run/full_likelihood_optimization/run_cd_convergenceprev.sh 5
 
 
 #-------------------------------------------------------------------------------
@@ -47,7 +47,7 @@ echo "using " $OMP_NUM_THREADS "threads for omp parallelization"
 data_subset=$1
 
 psicov_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/psicov/"
-mat_dir="/usr/users/svorber/work/data/benchmark_contrastive_divergence/phd/regularizer/"
+mat_dir="/usr/users/svorber/work/data/benchmark_contrastive_divergence/phd/convergence_prev/"
 init_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/ccmpred-pll-centerv/braw/"
 
 echo " "
@@ -65,7 +65,7 @@ echo " "
 # values to optimize
 #------------------------------------------------------------------------------
 
-lfactor_set="1e-2 5e-2 1e-1 2e-1 1"
+conv_prev_set="2 5 10"
 
 
 #------------------------------------------------------------------------------
@@ -75,13 +75,13 @@ lfactor_set="1e-2 5e-2 1e-1 2e-1 1"
 
 
 
-for lfactor in $lfactor_set;
+for conv_prev in $conv_prev_set;
 do
-    if [ ! -d "$mat_dir/$lfactor" ]; then
-        mkdir -p $mat_dir/$lfactor
+    if [ ! -d "$mat_dir/$conv_prev" ]; then
+        mkdir -p $mat_dir/$conv_prev
     fi
 
-    find $mat_dir/$lfactor/*log -size 0 -delete
+    find $mat_dir/$conv_prev/*log -size 0 -delete
 done
 
 
@@ -95,23 +95,23 @@ for psicov_file in $(ls $psicov_dir/*psc | head -n $data_subset);
 do
 	name=$(basename $psicov_file ".psc")
 
-    for lfactor in $lfactor_set;
+    for conv_prev in $conv_prev_set;
     do
-        matfile=$mat_dir/$lfactor/$name.mat
-        logfile=$mat_dir/$lfactor/$name.log
-        #braw_init_file=$init_dir"/"$name".braw.gz"
+        matfile=$mat_dir/$conv_prev/$name.mat
+        logfile=$mat_dir/$conv_prev/$name.log
+        braw_init_file=$init_dir"/"$name".braw.gz"
 
         if [ ! -f $logfile ] && [ -f $braw_init_file ];
         then
 
             settings=" -A -t 4 --wt-simple --max_gap_ratio 100 --maxit 5000"
-            settings=$settings" --reg-l2-lambda-single 10 --reg-l2-lambda-pair-factor $lfactor --reg-l2-scale_by_L"
+            settings=$settings" --reg-l2-lambda-single 10 --reg-l2-lambda-pair-factor 0.2 --reg-l2-scale_by_L"
             settings=$settings" --pc-uniform --pc-count 1 --pc-pair-count 1"
             settings=$settings" --center-v --fix-v"
             settings=$settings" --ofn-cd  --cd-gibbs_steps 1 --cd-sample_size 10"
             settings=$settings" --alg-gd --alpha0 0"
             settings=$settings" --decay --decay-start 1e-1 --decay-rate 5e-6 --decay-type sig"
-            settings=$settings" --early-stopping --epsilon 1e-8"
+            settings=$settings" --early-stopping --epsilon 1e-8 --convergence_prev $conv_prev"
             #settings=$settings" -i "$braw_init_file
             settings=$settings" "$psicov_file" "$matfile
             settings=$settings" > "$logfile
@@ -122,66 +122,14 @@ do
             echo "--------------------------------------------------"
             echo "learning rate: 0"
             echo "decay rate: 5e-6"
-            echo "lfactor: "$lfactor
+            echo "conv prev: "$conv_prev
             echo "log file: "$logfile
             echo $settings
             echo "--------------------------------------------------"
             echo " "
 
-            jobname=ccmpredpy_cd.alpha0.sig_decayrate5e-6.regularizer.$name
-            bsub -W 24:00 -q mpi -m "mpi mpi2 mpi3_all hh sa" -n $OMP_NUM_THREADS -R span[hosts=1] -a openmp  -J $jobname -o job-$jobname-%J.out ccmpred.py $settings
+            jobname=ccmpredpy_cd.conv_prev$conv_prev.$name
+            bsub -W 48:00 -q mpi -m "mpi mpi2 mpi3_all hh sa" -n $OMP_NUM_THREADS -R span[hosts=1] -a openmp  -J $jobname -o job-$jobname-%J.out ccmpred.py $settings
         fi
     done
-done
-
-
-
-#------------------------------------------------------------------------------
-# run for part of the files - lambda_v NOT fixed
-#------------------------------------------------------------------------------
-
-if [ ! -d "$mat_dir/vi_free" ]; then
-    mkdir -p $mat_dir/vi_free
-fi
-
-find $mat_dir/vi_free/*log -size 0 -delete
-
-
-for psicov_file in $(ls $psicov_dir/*psc | head -n $data_subset);
-do
-	name=$(basename $psicov_file ".psc")
-
-    matfile=$mat_dir/vi_free/$name.mat
-    logfile=$mat_dir/vi_free/$name.log
-
-    if [ ! -f $logfile ] && [ -f $braw_init_file ];
-    then
-
-        settings=" -A -t 4 --wt-simple --max_gap_ratio 100 --maxit 5000"
-        settings=$settings" --reg-l2-lambda-single 10 --reg-l2-lambda-pair-factor 0.2 --reg-l2-scale_by_L"
-        settings=$settings" --pc-uniform --pc-count 1 --pc-pair-count 1"
-        settings=$settings" --center-v "
-        settings=$settings" --ofn-cd  --cd-gibbs_steps 1 --cd-sample_size 10"
-        settings=$settings" --alg-gd --alpha0 0"
-        settings=$settings" --decay --decay-start 1e-1 --decay-rate 5e-6 --decay-type sig"
-        settings=$settings" --early-stopping --epsilon 1e-8"
-        #settings=$settings" -i "$braw_init_file
-        settings=$settings" "$psicov_file" "$matfile
-        settings=$settings" > "$logfile
-
-
-        echo " "
-        echo "parameters for ccmpred run for protein $name:"
-        echo "--------------------------------------------------"
-        echo "learning rate: 0"
-        echo "decay rate: 5e-6"
-        echo "lfactor: 0.2"
-        echo "log file: "$logfile
-        echo $settings
-        echo "--------------------------------------------------"
-        echo " "
-
-        jobname=ccmpredpy_cd.alpha0.sig_decayrate5e-6.regularizer.$name
-        bsub -W 24:00 -q mpi -m "mpi mpi2 mpi3_all hh sa" -n $OMP_NUM_THREADS -R span[hosts=1] -a openmp  -J $jobname -o job-$jobname-%J.out ccmpred.py $settings
-    fi
 done

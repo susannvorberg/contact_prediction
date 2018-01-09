@@ -41,7 +41,7 @@ echo "plot dir: "$PLOTS
 # start script
 #------------------------------------------------------------------------------
 
-for nrcontacts in 1000; #1000 10000 15000 30000 50000;
+for nrcontacts in   10000 20000; #1000 10000 15000 30000 50000;
 do
 
 
@@ -49,15 +49,17 @@ do
     PLOT_DIR=$PLOTS"/bayesian_framework/infer_lambdaw_benchmarkset_cath4.1/"$method"/isotrope1_"$nrcontacts"contacts_wrtL"$prec_wrt_L"/"
 
     if [ ! -d "$PARAM_DIR" ]; then
-      mkdir $PARAM_DIR
+      mkdir -p $PARAM_DIR
     fi
 
     if [ ! -d "$PLOT_DIR" ]; then
-      mkdir $PLOT_DIR
+      mkdir -p $PLOT_DIR
     fi
 
-    echo "nr contacts: " $nrcontacts
-    echo "dir : "$PARAM_DIR
+    echo "method: "$method
+    echo "nr contacts: "$nrcontacts
+    echo "param dir : "$PARAM_DIR
+    echo "plot dir : "$PLOT_DIR
 
     ###careful!
     rm -rf $PARAM_DIR"/parameters*"
@@ -73,7 +75,7 @@ do
     #------------------------------------
 
 
-    settings=$settings" --nr_crossval_pairs 100"
+    settings=$settings" --nr_crossval_pairs 10000"
     settings=$settings" --nr_training_pairs "$nrcontacts
 
     settings=$settings" --nr_threads 8"
@@ -82,6 +84,7 @@ do
     settings=$settings" --filter_pairs_by_Nij"
     settings=$settings" --maxcontacts_per_protein 250"
     settings=$settings" --maxnoncontacts_per_protein 1000"
+    settings=$settings" --non_contact_thr 25"
     settings=$settings" --diversity_thr 0.3"
 
 

@@ -13,7 +13,7 @@
 #   - decay rate: 10
 #   - stopping criteria: decrease in gradient norm < 1e-8
 #
-#   and optimize linear decay rate in [0.01 0.1 1]
+#   and optimize exponential decay rate in [5e-4 1e-3 5e-3]
 #
 ###################################################################################################################
 
@@ -22,7 +22,7 @@
 # example call
 #-------------------------------------------------------------------------------
 
-#bash ~/opt/contactprediction/contact_prediction/run/full_likelihood_optimization/run_cd_lindecayrate.sh 5
+#bash ~/opt/contactprediction/contact_prediction/run/full_likelihood_optimization/run_cd_expdecayrate.sh 5
 
 
 #-------------------------------------------------------------------------------
@@ -55,7 +55,7 @@ init_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/
 # values to optimize
 #------------------------------------------------------------------------------
 
-decayrates_set="1e-3 1e-2 1e-1 1"
+decayrates_set="5e-4 1e-3 5e-3"
 alpha0=0
 
 
@@ -112,7 +112,7 @@ do
             settings=$settings" --center-v --fix-v "
             settings=$settings" --ofn-cd  --cd-gibbs_steps 1 --cd-sample_size 10"
             settings=$settings" --alg-gd --alpha0 $alpha0"
-            settings=$settings" --decay --decay-start 1e-1 --decay-rate $decay_rate --decay-type lin"
+            settings=$settings" --decay --decay-start 1e-1 --decay-rate $decay_rate --decay-type exp"
             settings=$settings" --early-stopping --epsilon 1e-8"
             #settings=$settings" -i "$braw_init_file
             settings=$settings" "$psicov_file" "$matfile
@@ -128,7 +128,7 @@ do
             echo "--------------------------------------------------"
             echo " "
 
-            jobname=ccmpredpy_cd.alpha0$alpha0.lindecayrate$decay_rate.$name
+            jobname=ccmpredpy_cd.alpha0$alpha0.expdecayrate$decay_rate.$name
             bsub -W 48:00 -q mpi -m "mpi mpi2 mpi3_all hh sa" -n $OMP_NUM_THREADS -R span[hosts=1] -a openmp  -J $jobname -o job-$jobname-%J.out ccmpred.py $settings
         fi
 

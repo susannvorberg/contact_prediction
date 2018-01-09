@@ -13,7 +13,7 @@
 #    - initial learning rate alpha0
 #   - stopping criteria: decrease in gradient norm < 1e-8
 #
-#   and optimize sigmoidal decay rate
+#   and optimize exp decay rate
 #
 ###################################################################################################################
 
@@ -22,7 +22,7 @@
 # example call
 #-------------------------------------------------------------------------------
 
-#bash ~/opt/contactprediction/contact_prediction/run/full_likelihood_optimization/run_cd_adam_alpha0_sig_decayrate.sh 5
+#bash ~/opt/contactprediction/contact_prediction/run/full_likelihood_optimization/run_cd_adam_alpha0_exp_decayrate.sh 5
 
 
 #-------------------------------------------------------------------------------
@@ -47,7 +47,7 @@ echo "using " $OMP_NUM_THREADS "threads for omp parallelization"
 data_subset=$1
 
 psicov_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/psicov/"
-mat_dir="/usr/users/svorber/work/data/benchmark_contrastive_divergence/phd/adam/alpha0_sig_decayrate/"
+mat_dir="/usr/users/svorber/work/data/benchmark_contrastive_divergence/phd/adam/alpha0_exp_decayrate/"
 init_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/ccmpred-pll-centerv/braw/"
 
 echo " "
@@ -65,7 +65,7 @@ echo " "
 # values to optimize
 #------------------------------------------------------------------------------
 
-decay_rates="1e-6 1e-5 1e-4"
+decay_rates="5e-4 1e-3 5e-3"
 
 
 #------------------------------------------------------------------------------
@@ -108,7 +108,7 @@ do
             settings=$settings" --center-v --fix-v"
             settings=$settings" --ofn-cd  --cd-gibbs_steps 1 --cd-sample_size 10"
             settings=$settings" --alg-ad --ad-beta1 0.9 --ad-beta2 0.999 --ad-beta3 0 --alpha0 0"
-            settings=$settings" --decay --decay-start 1e-1 --decay-rate $decay_rate --decay-type sig"
+            settings=$settings" --decay --decay-start 1e-1 --decay-rate $decay_rate --decay-type exp"
             settings=$settings" --early-stopping --epsilon 1e-8"
             #settings=$settings" -i "$braw_init_file
             settings=$settings" "$psicov_file" "$matfile
@@ -119,13 +119,13 @@ do
             echo "parameters for ccmpred run for protein $name:"
             echo "--------------------------------------------------"
             echo "alpha: 0"
-            echo "sig deacy rate: $decay_rate"
+            echo "exp deacy rate: $decay_rate"
             echo "log file: "$logfile
             echo $settings
             echo "--------------------------------------------------"
             echo " "
 
-            jobname=ccmpredpy_cd.adam.alpha0.sig_decayrate$decay_rate.$name
+            jobname=ccmpredpy_cd.adam.alpha0.exp_decayrate$decay_rate.$name
             bsub -W 48:00 -q mpi -m "mpi mpi2 mpi3_all hh sa" -n $OMP_NUM_THREADS -R span[hosts=1] -a openmp  -J $jobname -o job-$jobname-%J.out ccmpred.py $settings
         fi
 

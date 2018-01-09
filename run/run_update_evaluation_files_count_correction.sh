@@ -27,226 +27,288 @@ echo "using " $OMP_NUM_THREADS "threads for omp parallelization"
 #-------------------------------------------------------------------------------
 
 
-#bash ~/opt/contactprediction/contact_prediction/run/run_update_evaluation_files_bayesian_models.sh
+#bash ~/opt/contactprediction/contact_prediction/run/run_update_evaluation_files_count_correction.sh
 
-
-#-------------------------------------------------------------------------------
-# fixed parameters
-#-------------------------------------------------------------------------------
-
-contact_prior_model_file="/usr/users/svorber/work/data/bayesian_framework/contact_prior/random_forest/new_pipeline_5folds/random_forest/classweightNone_noncontactthr8/100000contacts_500000noncontacts_5window_8noncontactthreshold_maxfeatures030/random_forest_nestimators1000_maxfeatures0.3_maxdepth100_minsamplesleaf10_75features.pkl"
-evaluate_likelihood=" "
-evaluate_bayes_factor=" "
 
 #-------------------------------------------------------------------------------
 # function with actual call
 #-------------------------------------------------------------------------------
-
 function run_update_script  {
 
-    maxent_method=$1
-    method_name=$2
-    coupling_prior_parameters_file=$3
-    contact_prior_model_file=$4
-    script_path=$5
-    evaluate_likelihood=$6
-    evaluate_bayes_factor=$7
+    method_name=$1
+    mat_dir=$2
+    script_path=$3
 
 
-    echo "add $method_name ..."
-    settings="/usr/users/svorber/work/data/benchmarkset_cathV4.1/dataset/dataset_properties/"
-    settings=$settings" /usr/users/svorber/work/data/benchmarkset_cathV4.1/psicov/"
-    settings=$settings" /usr/users/svorber/work/data/benchmarkset_cathV4.1/psipred/hhfilter_results_n5e01/"
-    settings=$settings" /usr/users/svorber/work/data/benchmarkset_cathV4.1/netsurfp/"
-    settings=$settings" /usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/local_methods/mi_pc/"
-    settings=$settings" /usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/local_methods/omes_fodoraldrich/"
-    settings=$settings" /usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/$maxent_method/braw/"
-    settings=$settings" /usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/$maxent_method/qij/"
-    settings=$settings" /usr/users/svorber/work/data/benchmarkset_cathV4.1/evaluation/"
+    echo "add $method_name... from "$mat_dir
 
-    settings=$settings" $contact_prior_model_file"
-    settings=$settings" $coupling_prior_parameters_file"
-    settings=$settings" $method_name"
-
-    settings=$settings" --n_proteins 500"
-    settings=$settings" --n_threads $OMP_NUM_THREADS"
-    settings=$settings" --sequence_separation 8"
-    settings=$settings" --contact_threshold 8"
-    settings=$settings" "$evaluate_likelihood
-    settings=$settings" "$evaluate_bayes_factor
+    settings=$"/usr/users/svorber/work/data/benchmarkset_cathV4.1/evaluation/"
+    settings=$settings" "$mat_dir
+    settings=$settings" "$method_name
+    settings=$settings" --mat_file "#--no_update
 
     echo "Settings: "$settings
-    jobname=update_eval_files_bayesian_model.$method_name
-    bsub -W 24:00 -q mpi -m "mpi mpi2 mpi3_all hh sa" -n $OMP_NUM_THREADS -R span[hosts=1] -a openmp  -J $jobname -o job-$jobname-%J.out $script_path/bayesian_model/update_evaluation_files.py $settings
-
+    jobname=update_eval_files.$method_name
+    bsub -W 24:00 -q mpi -m "mpi mpi2 mpi3_all hh sa"  -J $jobname -o job-$jobname-%J.out $script_path/benchmark/append_to_evaluation_file.py $settings
 
 }
 
 
-#-------------------------------------------------------------------------------
-# pLL
-#-------------------------------------------------------------------------------
-#
-method="pLL"
-maxent_method="ccmpred-pll-centerv"
-noncontact_thr=25
-#
-##component=3
-##method_name=$method"_"$component"comp_reg100prec01mu_100k_ncthr"$noncontact_thr
-##coupling_prior_parameters_file="/usr/users/svorber/work/data/bayesian_framework/mle_for_couplingPrior_cath4.1/"$maxent_method"/"$component"/reg_prec100_mu01/diagonal_100000_nrcomponents"$component"_noncontactthr$noncontact_thr/parameters"
-##run_update_script $maxent_method $method_name $coupling_prior_parameters_file $contact_prior_model_file $CONTACT_PREDICTION_PATH " "  " "
-##
-#method_name=$method"_"$component"comp_reg100prec01mu_300k_ncthr"$noncontact_thr
-#coupling_prior_parameters_file="/usr/users/svorber/work/data/bayesian_framework/mle_for_couplingPrior_cath4.1/"$maxent_method"/"$component"/reg_prec100_mu01/diagonal_300000_nrcomponents"$component"_noncontactthr$noncontact_thr/parameters"
-#run_update_script $maxent_method $method_name $coupling_prior_parameters_file $contact_prior_model_file $CONTACT_PREDICTION_PATH "--evaluate_likelihood" "--evaluate_bayes_factor"
-##
-##method_name=$method"_"$component"comp_reg100prec01mu_500k_ncthr"$noncontact_thr
-##coupling_prior_parameters_file="/usr/users/svorber/work/data/bayesian_framework/mle_for_couplingPrior_cath4.1/"$maxent_method"/"$component"/reg_prec100_mu01/diagonal_500000_nrcomponents"$component"_noncontactthr$noncontact_thr/parameters"
-##run_update_script $maxent_method $method_name $coupling_prior_parameters_file $contact_prior_model_file $CONTACT_PREDICTION_PATH " "  " "
+##### uses degapped freq, eta=1 and Nij
+
+#method_name="frobenius-csc_lambdaw"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_csc_1lambdaw/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
 #
 #
-#
-component=5
-method_name=$method"_"$component"comp_reg100prec01mu_100k_ncthr"$noncontact_thr
-coupling_prior_parameters_file="/usr/users/svorber/work/data/bayesian_framework/mle_for_couplingPrior_cath4.1/"$maxent_method"/"$component"/reg_prec100_mu01/diagonal_100000_nrcomponents"$component"_noncontactthr$noncontact_thr/parameters"
-run_update_script $maxent_method $method_name $coupling_prior_parameters_file $contact_prior_model_file $CONTACT_PREDICTION_PATH " "  " "
+#method_name="squared-frobenius-csc_lambdaw"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/squared_frobenius_csc_1lambdaw/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
 
-method_name=$method"_"$component"comp_reg100prec01mu_300k_ncthr"$noncontact_thr
-coupling_prior_parameters_file="/usr/users/svorber/work/data/bayesian_framework/mle_for_couplingPrior_cath4.1/"$maxent_method"/"$component"/reg_prec100_mu01/diagonal_300000_nrcomponents"$component"_noncontactthr$noncontact_thr/parameters"
-run_update_script $maxent_method $method_name $coupling_prior_parameters_file $contact_prior_model_file $CONTACT_PREDICTION_PATH " " " "
-
-method_name=$method"_"$component"comp_reg100prec01mu_300k_ncthr"$noncontact_thr"_mu0free"
-coupling_prior_parameters_file="/usr/users/svorber/work/data/bayesian_framework/mle_for_couplingPrior_cath4.1/"$maxent_method"/"$component"/reg_prec100_mu01/diagonal_300000_nrcomponents"$component"_noncontactthr"$noncontact_thr"_mu0free/parameters"
-run_update_script $maxent_method $method_name $coupling_prior_parameters_file $contact_prior_model_file $CONTACT_PREDICTION_PATH " "  " "
-
-component=10
-
-method_name=$method"_"$component"comp_reg100prec01mu_100k_ncthr"$noncontact_thr
-coupling_prior_parameters_file="/usr/users/svorber/work/data/bayesian_framework/mle_for_couplingPrior_cath4.1/"$maxent_method"/"$component"/reg_prec100_mu01/diagonal_100000_nrcomponents"$component"_noncontactthr$noncontact_thr/parameters"
-run_update_script $maxent_method $method_name $coupling_prior_parameters_file $contact_prior_model_file $CONTACT_PREDICTION_PATH " "  " "
-
-method_name=$method"_"$component"comp_reg100prec01mu_300k_ncthr"$noncontact_thr
-coupling_prior_parameters_file="/usr/users/svorber/work/data/bayesian_framework/mle_for_couplingPrior_cath4.1/"$maxent_method"/"$component"/reg_prec100_mu01/diagonal_300000_nrcomponents"$component"_noncontactthr$noncontact_thr/parameters"
-run_update_script $maxent_method $method_name $coupling_prior_parameters_file $contact_prior_model_file $CONTACT_PREDICTION_PATH " " " "
-
-
-noncontact_thr=8
-
-#component=3
-#
-##method_name=$method"_"$component"comp_reg100prec01mu_100k_ncthr"$noncontact_thr
-##coupling_prior_parameters_file="/usr/users/svorber/work/data/bayesian_framework/mle_for_couplingPrior_cath4.1/"$maxent_method"/"$component"/reg_prec100_mu01/diagonal_100000_nrcomponents"$component"_noncontactthr$noncontact_thr/parameters"
-##run_update_script $maxent_method $method_name $coupling_prior_parameters_file $contact_prior_model_file $CONTACT_PREDICTION_PATH " "  " "
-##
-#method_name=$method"_"$component"comp_reg100prec01mu_300k_ncthr"$noncontact_thr
-#coupling_prior_parameters_file="/usr/users/svorber/work/data/bayesian_framework/mle_for_couplingPrior_cath4.1/"$maxent_method"/"$component"/reg_prec100_mu01/diagonal_300000_nrcomponents"$component"_noncontactthr$noncontact_thr/parameters"
-#run_update_script $maxent_method $method_name $coupling_prior_parameters_file $contact_prior_model_file $CONTACT_PREDICTION_PATH "--evaluate_likelihood" "--evaluate_bayes_factor"
-##
-##method_name=$method"_"$component"comp_reg100prec01mu_500k_ncthr"$noncontact_thr
-##coupling_prior_parameters_file="/usr/users/svorber/work/data/bayesian_framework/mle_for_couplingPrior_cath4.1/"$maxent_method"/"$component"/reg_prec100_mu01/diagonal_500000_nrcomponents"$component"_noncontactthr$noncontact_thr/parameters"
-##run_update_script $maxent_method $method_name $coupling_prior_parameters_file $contact_prior_model_file $CONTACT_PREDICTION_PATH " "  " "
+#echo "add method frobenius-csc_2lambdaw"
+#method_name="frobenius-csc_2lambdaw"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_csc_2lambdaw/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
 #
 #
-component=5
+#echo "add method squared-frobenius-csc_2lambdaw"
+#method_name="squared-frobenius-csc_2lambdaw"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/squared_frobenius_csc_2lambdaw/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
 
-method_name=$method"_"$component"comp_reg100prec01mu_300k_ncthr"$noncontact_thr
-coupling_prior_parameters_file="/usr/users/svorber/work/data/bayesian_framework/mle_for_couplingPrior_cath4.1/"$maxent_method"/"$component"/reg_prec100_mu01/diagonal_300000_nrcomponents"$component"_noncontactthr$noncontact_thr/parameters"
-run_update_script $maxent_method $method_name $coupling_prior_parameters_file $contact_prior_model_file $CONTACT_PREDICTION_PATH " "  " "
 
-##
-###-------------------------------------------------------------------------------
-### CD
-###-------------------------------------------------------------------------------
-##
-method="CD"
-maxent_method="ccmpredpy_cd_gd"
-noncontact_thr=25
+#echo "add method frobenius-csc_5lambdaw"
+#method_name="frobenius-csc_5lambdaw"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_csc_5lambdaw/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
 #
-##component=3
-##method_name=$method"_"$component"comp_reg100prec01mu_100k_ncthr"$noncontact_thr
-##coupling_prior_parameters_file="/usr/users/svorber/work/data/bayesian_framework/mle_for_couplingPrior_cath4.1/"$maxent_method"/"$component"/reg_prec100_mu01/diagonal_100000_nrcomponents"$component"_noncontactthr$noncontact_thr/parameters"
-##run_update_script $maxent_method $method_name $coupling_prior_parameters_file $contact_prior_model_file $CONTACT_PREDICTION_PATH " "  " "
-##
-##method_name=$method"_"$component"comp_reg100prec01mu_300k_ncthr"$noncontact_thr
-##coupling_prior_parameters_file="/usr/users/svorber/work/data/bayesian_framework/mle_for_couplingPrior_cath4.1/"$maxent_method"/"$component"/reg_prec100_mu01/diagonal_300000_nrcomponents"$component"_noncontactthr$noncontact_thr/parameters"
-##run_update_script $maxent_method $method_name $coupling_prior_parameters_file $contact_prior_model_file $CONTACT_PREDICTION_PATH " " " "
+#echo "add method squared-frobenius-csc_5lambdaw"
+#method_name="squared-frobenius-csc_5lambdaw"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/squared_frobenius_csc_5lambdaw/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+
+
+#echo "add method frobenius-csc_lambdaw_lfactor3"
+#method_name="frobenius-csc_lambdaw_lfactor3"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_csc_1lambdaw_lfactor3/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
 #
-#
-component=5
-
-method_name=$method"_"$component"comp_reg100prec01mu_100k_ncthr"$noncontact_thr
-coupling_prior_parameters_file="/usr/users/svorber/work/data/bayesian_framework/mle_for_couplingPrior_cath4.1/"$maxent_method"/"$component"/reg_prec100_mu01/diagonal_100000_nrcomponents"$component"_noncontactthr$noncontact_thr/parameters"
-run_update_script $maxent_method $method_name $coupling_prior_parameters_file $contact_prior_model_file $CONTACT_PREDICTION_PATH " "  " "
-
-method_name=$method"_"$component"comp_reg100prec01mu_300k_ncthr"$noncontact_thr
-coupling_prior_parameters_file="/usr/users/svorber/work/data/bayesian_framework/mle_for_couplingPrior_cath4.1/"$maxent_method"/"$component"/reg_prec100_mu01/diagonal_300000_nrcomponents"$component"_noncontactthr$noncontact_thr/parameters"
-run_update_script $maxent_method $method_name $coupling_prior_parameters_file $contact_prior_model_file $CONTACT_PREDICTION_PATH " "  " "
-
-method_name=$method"_"$component"comp_reg100prec01mu_300k_ncthr"$noncontact_thr"_mu0free"
-coupling_prior_parameters_file="/usr/users/svorber/work/data/bayesian_framework/mle_for_couplingPrior_cath4.1/"$maxent_method"/"$component"/reg_prec100_mu01/diagonal_300000_nrcomponents"$component"_noncontactthr"$noncontact_thr"_mu0free/parameters"
-run_update_script $maxent_method $method_name $coupling_prior_parameters_file $contact_prior_model_file $CONTACT_PREDICTION_PATH " "  " "
-
-component=10
-
-method_name=$method"_"$component"comp_reg100prec01mu_100k_ncthr"$noncontact_thr
-coupling_prior_parameters_file="/usr/users/svorber/work/data/bayesian_framework/mle_for_couplingPrior_cath4.1/"$maxent_method"/"$component"/reg_prec100_mu01/diagonal_100000_nrcomponents"$component"_noncontactthr$noncontact_thr/parameters"
-run_update_script $maxent_method $method_name $coupling_prior_parameters_file $contact_prior_model_file $CONTACT_PREDICTION_PATH " "  " "
-
-method_name=$method"_"$component"comp_reg100prec01mu_300k_ncthr"$noncontact_thr
-coupling_prior_parameters_file="/usr/users/svorber/work/data/bayesian_framework/mle_for_couplingPrior_cath4.1/"$maxent_method"/"$component"/reg_prec100_mu01/diagonal_300000_nrcomponents"$component"_noncontactthr$noncontact_thr/parameters"
-run_update_script $maxent_method $method_name $coupling_prior_parameters_file $contact_prior_model_file $CONTACT_PREDICTION_PATH " "  " "
+#echo "add method squared-frobenius-csc_lambdaw_lfactor3"
+#method_name="squared-frobenius-csc_lambdaw_lfactor3"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/squared_frobenius_csc_1lambdaw_lfactor3/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
 
 
 
 
-noncontact_thr=8
 
-##component="3"
-##method_name=$method"_"$component"comp_reg100prec01mu_100k_ncthr"$noncontact_thr
-##coupling_prior_parameters_file="/usr/users/svorber/work/data/bayesian_framework/mle_for_couplingPrior_cath4.1/"$maxent_method"/"$component"/reg_prec100_mu01/diagonal_100000_nrcomponents"$component"_noncontactthr$noncontact_thr/parameters"
-##run_update_script $maxent_method $method_name $coupling_prior_parameters_file $contact_prior_model_file $CONTACT_PREDICTION_PATH " "  " "
-##
-##method_name=$method"_"$component"comp_reg100prec01mu_300k_ncthr"$noncontact_thr
-##coupling_prior_parameters_file="/usr/users/svorber/work/data/bayesian_framework/mle_for_couplingPrior_cath4.1/"$maxent_method"/"$component"/reg_prec100_mu01/diagonal_300000_nrcomponents"$component"_noncontactthr$noncontact_thr/parameters"
-##run_update_script $maxent_method $method_name $coupling_prior_parameters_file $contact_prior_model_file $CONTACT_PREDICTION_PATH " "  " "
+
+##### uses degapped freq, eta=1 and Neff/sqrt(Neff-1)
+
+#method_name="frobenius-csc_neff_lambdaw"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_csc_neff_1lambdaw/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
 #
 #
-component=5
-
-method_name=$method"_"$component"comp_reg100prec01mu_300k_ncthr"$noncontact_thr
-coupling_prior_parameters_file="/usr/users/svorber/work/data/bayesian_framework/mle_for_couplingPrior_cath4.1/"$maxent_method"/"$component"/reg_prec100_mu01/diagonal_300000_nrcomponents"$component"_noncontactthr$noncontact_thr/parameters"
-run_update_script $maxent_method $method_name $coupling_prior_parameters_file $contact_prior_model_file $CONTACT_PREDICTION_PATH " "  " "
-
-
-
-#-------------------------------------------------------------------------------
-# pLL - lfactor3
-#-------------------------------------------------------------------------------
-
-#method="pLL3"
-#maxent_method="ccmpred-pll-centerv-lfactor3"
-#noncontact_thr=25
+#method_name="squared-frobenius-csc_neff_lambdaw"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/squared_frobenius_csc_neff_1lambdaw/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
 #
-#component=3
-#method_name=$method"_"$component"comp_reg100prec01mu_100k_ncthr"$noncontact_thr
-#coupling_prior_parameters_file="/usr/users/svorber/work/data/bayesian_framework/mle_for_couplingPrior_cath4.1/"$maxent_method"/"$component"/reg_prec100_mu01/diagonal_100000_nrcomponents"$component"/parameters"
-#run_update_script $maxent_method $method_name $coupling_prior_parameters_file $contact_prior_model_file $CONTACT_PREDICTION_PATH " "  " "
+#method_name="frobenius-csc_neff_2lambdaw"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_csc_neff_2lambdaw/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
 #
-#method_name=$method"_"$component"comp_reg100prec01mu_300k_ncthr"$noncontact_thr
-#coupling_prior_parameters_file="/usr/users/svorber/work/data/bayesian_framework/mle_for_couplingPrior_cath4.1/"$maxent_method"/"$component"/reg_prec100_mu01/diagonal_300000_nrcomponents"$component"/parameters"
-#run_update_script $maxent_method $method_name $coupling_prior_parameters_file $contact_prior_model_file $CONTACT_PREDICTION_PATH " "  " "
+#
+#method_name="squared-frobenius-csc_neff_2lambdaw"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/squared_frobenius_csc_neff_2lambdaw/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+#
+#
+#method_name="frobenius-csc_neff_5lambdaw"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_csc_neff_5lambdaw/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+#
+#
+#method_name="squared-frobenius-csc_neff_5lambdaw"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/squared_frobenius_csc_neff_5lambdaw/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
 
 
-#-------------------------------------------------------------------------------
-# CD - lfactor3.1
-#-------------------------------------------------------------------------------
 
-method="CD31"
-maxent_method="ccmpredpy_cd_gd-lfactor3.1"
-noncontact_thr=25
 
-component=3
-method_name=$method"_"$component"comp_reg100prec01mu_100k_ncthr"$noncontact_thr
-coupling_prior_parameters_file="/usr/users/svorber/work/data/bayesian_framework/mle_for_couplingPrior_cath4.1/"$maxent_method"/"$component"/reg_prec100_mu01/diagonal_100000_nrcomponents"$component"/parameters"
-run_update_script $maxent_method $method_name $coupling_prior_parameters_file $contact_prior_model_file $CONTACT_PREDICTION_PATH " "  " "
+
+
+
+##### uses gapped freq, eta and Neff
+
+#method_name="frobenius-csc_eta"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_csc_eta/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+#
+#method_name="squared-frobenius-csc_eta"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/squared_frobenius_csc_eta/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+
+#method_name="frobenius-csc_eta_fix1"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_csc_eta_fix_1/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+#
+#method_name="squared-frobenius-csc_eta_fix1"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/squared_frobenius_csc_eta_fix_1/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+
+#method_name="frobenius-csc_eta_fix1_neff"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_csc_eta_fix_1_neff/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+#
+#method_name="squared-frobenius-csc_eta_fix1_neff"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/squared_frobenius_csc_eta_fix_1_neff/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+
+#method_name="frobenius-csc_eta_fix1_neff_degap"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_csc_eta_fix_1_neff_degap/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+#
+#method_name="squared-frobenius-csc_eta_fix1_neff_degap"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/squared_frobenius_csc_eta_fix_1_neff_degap/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+
+#method_name="frobenius-csc_eta_neff_degap"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_csc_eta_neff_degap/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+#
+#method_name="squared-frobenius-csc_eta_neff_degap"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/squared_frobenius_csc_eta_neff_degap/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+
+#method_name="frobenius-csc_eta_fix4_degap"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_csc_eta_fix4_degap/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+#
+#method_name="squared-frobenius-csc_eta_fix4_degap"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/squared_frobenius_csc_eta_fix4_degap/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+#
+#
+#method_name="frobenius-csc_eta_fix4"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_csc_eta_fix4/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+#
+#method_name="squared-frobenius-csc_eta_fix4"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/squared_frobenius_csc_eta_fix4/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+
+#method_name="frobenius-csc_eta_ij_degap"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_csc_eta_ij_degap/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+#
+#method_name="squared-frobenius-csc_eta_ij_degap"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/squared_frobenius_csc_eta_ij_degap/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+
+
+
+#method_name="frobenius-csc_eta_degap"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_csc_eta_degap/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+#
+#method_name="squared-frobenius-csc_eta_degap"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/squared_frobenius_csc_eta_degap/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+#
+#
+#method_name="frobenius-csc_eta_21"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_csc_eta_21/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+#
+#method_name="squared-frobenius-csc_eta_21"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/squared_frobenius_csc_eta_21/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+#
+#
+#method_name="frobenius-csc_eta_2lambdaw"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_csc_eta_2lambdaw/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+#
+#method_name="squared-frobenius-csc_eta_2lambdaw"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/squared_frobenius_csc_eta_2lambdaw/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+
+#method_name="frobenius-csc_2lambdaw_degap"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_csc_2lambdaw_degap/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+#
+#method_name="squared-frobenius-csc_2lambdaw_degap"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/squared_frobenius_csc_2lambdaw_degap/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+
+
+
+####using entropy correction
+#method_name="frobenius-ec_eta"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_ec_eta/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+#
+method_name="frobenius-ec_eta_stefan"
+echo "add method $method_name"
+mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_ec_eta_stefansversion/"
+run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+#
+#method_name="squared-frobenius-ec_eta"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/squared_frobenius_ec_eta/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+
+#method_name="ec_pair_weight_20000_balance5_regcoeff10"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/ec_pair_weight_20000_balance5_regcoeff10/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+#
+#method_name="ec_pair_weight_20000_balance5_regcoeff1"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/ec_pair_weight_20000_balance5_regcoeff1/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+
+method_name="ec_pair_weight_10000_balance1_regcoeff1"
+echo "add method $method_name"
+mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/ec_pair_weight_10000_balance1_regcoeff1/"
+run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+
+#method_name="ec_pair_weight_logreg_20000_balance5_regcoeff10"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/ec_pair_weight_logreg_20000_balance5_regcoeff10/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
 

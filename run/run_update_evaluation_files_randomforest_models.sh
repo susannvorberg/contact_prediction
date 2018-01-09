@@ -29,7 +29,7 @@ echo "using " $OMP_NUM_THREADS "threads for omp parallelization"
 #-------------------------------------------------------------------------------
 
 
-#bash ~/opt/contactprediction/contact_prediction/run/run_update_randomforest_models.sh
+#bash ~/opt/contactprediction/contact_prediction/run/run_update_evaluation_files_randomforest_models.sh
 
 #-------------------------------------------------------------------------------
 # function with actual call
@@ -41,8 +41,9 @@ function run_update_script  {
     parameter_path=$2
     braw_pll_path=$3
     braw_cd_path=$4
-    braw_pcd_path=$5
-    script_path=$6
+    mat_baypost_path=$5
+    mat_logbayfac_path=$6
+    script_path=$7
 
 
     echo "---------"
@@ -65,22 +66,28 @@ function run_update_script  {
     settings=$settings" --sequence_separation 12"
     settings=$settings" --contact_threshold 8"
 
-    if [ ! -z "$braw_pll_path" ];
+    if [ "$braw_pll_path" != false ];
     then
         echo -e "braw_pll_path:\t $braw_pll_path"
         settings=$settings" --pll_braw "$braw_pll_path
     fi
 
-    if [ ! -z "$braw_cd_path" ];
+    if [ "$braw_cd_path" != false ];
     then
         echo -e "braw_cd_path:\t $braw_cd_path"
         settings=$settings" --cd_braw "$braw_cd_path
     fi
 
-    if [ ! -z "$braw_pcd_path" ];
+    if [ "$mat_baypost_path" != false ];
     then
-        echo -e "braw_pcd_path:\t $braw_pcd_path"
-        settings=$settings" --pcd_braw "$braw_pcd_path
+        echo -e "mat_baypost_path:\t $mat_baypost_path"
+        settings=$settings" --bayposterior_mat "$mat_baypost_path
+    fi
+
+    if [ "$mat_logbayfac_path" != false ];
+    then
+        echo -e "mat_logbayfac_path:\t $mat_logbayfac_path"
+        settings=$settings" --bayesfactor_mat "$mat_logbayfac_path
     fi
 
 
@@ -97,30 +104,98 @@ function run_update_script  {
 #-------------------------------------------------------------------------------
 
 #method_name="rf_contact_prior"
-#parameter_path="/usr/users/svorber/work/data/bayesian_framework/contact_prior/random_forest/new_pipeline_5folds/random_forest/classweight_10_noncontactthr8/100000contacts_500000noncontacts_5window_8noncontactthreshold/random_forest_nestimators1000_classweight0_10.5_1_0.525_criterionentropy_maxdepth100_minsamplesleaf100_75features.pkl"
-#braw_pll_path=""
-#braw_cd_path=""
-#braw_pcd_path=""
-#run_update_script $method_name $parameter_path $braw_pll_path $braw_cd_path $braw_pcd_path $CONTACT_PREDICTION_PATH
+#parameter_path="/usr/users/svorber/work/data/bayesian_framework/contact_prior/random_forest/new_pipeline_5folds/random_forest/classweightNone_noncontactthr8/100000contacts_500000noncontacts_5window_8noncontactthreshold_maxfeatures030/random_forest_nestimators1000_maxfeatures0.3_maxdepth100_minsamplesleaf10_75features.pkl"
+#braw_pll_path="false"
+#braw_cd_path="false"
+#mat_baypost_path=" false "
+#mat_logbayfac_path=" false "
+#run_update_script $method_name $parameter_path $braw_pll_path $braw_cd_path $mat_baypost_path $mat_logbayfac_path $CONTACT_PREDICTION_PATH
 
 #-------------------------------------------------------------------------------
 # RF + pLL
 #-------------------------------------------------------------------------------
 
 #method_name="pLL-L2normapc-RF"
-#parameter_path="/usr/users/svorber/work/data/bayesian_framework/contact_prior/random_forest/new_pipeline_5folds/random_forest/classweightNone_noncontactthr9_l2normapc/500000contacts_1000000noncontacts_5window_8noncontactthreshold/random_forest_nestimators1000_classweightNone_criterionentropy_maxdepth100_minsamplesleaf100_26features.pkl"
-#braw_pll_path=" --pll_braw /usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/ccmpred-pll-centerv/braw/ "
-#braw_cd_path=""
-#braw_pcd_path=""
-#run_update_script $method_name $parameter_path $braw_pll_path $braw_cd_path $braw_pcd_path $CONTACT_PREDICTION_PATH
+#parameter_path="/usr/users/svorber/work/data/bayesian_framework/contact_prior/random_forest/new_pipeline_5folds/random_forest/classweightNone_noncontactthr8_l2normapc/200000contacts_1000000noncontacts_5window_8noncontactthreshold_maxfeatures030/random_forest_nestimators1000_maxfeatures0.3_maxdepth100_minsamplesleaf10_126features.pkl"
+#braw_pll_path=" /usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/ccmpred-pll-centerv/braw/ "
+#braw_cd_path="false"
+#mat_baypost_path=" false "
+#mat_logbayfac_path=" false "
+#run_update_script $method_name $parameter_path $braw_pll_path $braw_cd_path $mat_baypost_path  $mat_logbayfac_path $CONTACT_PREDICTION_PATH
 
 #-------------------------------------------------------------------------------
-# RF + pLL + CD + PCD
+# RF + CD
 #-------------------------------------------------------------------------------
 
-method_name="pLL-cd-pcd-RF"
-parameter_path="/usr/users/svorber/work/data/bayesian_framework/contact_prior/random_forest/new_pipeline_5folds/random_forest/classweightNone_noncontactthr8_l2normapc_cd_pcd_nr2/50000contacts_250000noncontacts_5window_8noncontactthreshold/random_forest_nestimators1000_classweightNone_criterionentropy_maxdepth100_minsamplesleaf100_26features.pkl"
+#method_name="cd-RF"
+#parameter_path="/usr/users/svorber/work/data/bayesian_framework/contact_prior/random_forest/new_pipeline_5folds/random_forest/classweightNone_noncontactthr8_cd/100000contacts_500000noncontacts_5window_8noncontactthreshold_maxfeatures030/random_forest_nestimators1000_maxfeatures0.3_maxdepth100_minsamplesleaf10_126features.pkl"
+#braw_pll_path="false"
+#braw_cd_path=" /usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/ccmpredpy_cd_gd/braw/ "
+#mat_baypost_path=" false "
+#mat_logbayfac_path=" false "
+#run_update_script $method_name $parameter_path $braw_pll_path $braw_cd_path $mat_baypost_path $mat_logbayfac_path $CONTACT_PREDICTION_PATH
+
+
+
+#-------------------------------------------------------------------------------
+# RF + Bayesian posterior
+#-------------------------------------------------------------------------------
+
+method_name="bayPost-RF"
+parameter_path="/usr/users/svorber/work/data/bayesian_framework/contact_prior/random_forest/new_pipeline_5folds/random_forest/classweightNone_noncontactthr8_baypost/100000contacts_500000noncontacts_5window_8noncontactthreshold_maxfeatures030/random_forest_nestimators1000_maxfeatures0.3_maxdepth100_minsamplesleaf10_126features.pkl"
+braw_pll_path="false"
+braw_cd_path=" false "
+mat_baypost_path=" /usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/bayesian_3comp_pLL/posterior/ "
+mat_logbayfac_path=" false "
+run_update_script $method_name $parameter_path $braw_pll_path $braw_cd_path $mat_baypost_path $mat_logbayfac_path $CONTACT_PREDICTION_PATH
+
+#-------------------------------------------------------------------------------
+# RF + Bayesian likelihood (log BF)
+#-------------------------------------------------------------------------------
+
+method_name="logBF-RF"
+parameter_path="/usr/users/svorber/work/data/bayesian_framework/contact_prior/random_forest/new_pipeline_5folds/random_forest/classweightNone_noncontactthr8_baylogbf/100000contacts_500000noncontacts_5window_8noncontactthreshold_maxfeatures030/random_forest_nestimators1000_maxfeatures0.3_maxdepth100_minsamplesleaf10_126features.pkl"
+braw_pll_path="false"
+braw_cd_path=" false "
+mat_baypost_path=" false "
+mat_logbayfac_path=" /usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/bayesian_3comp_pLL/logbf/ "
+run_update_script $method_name $parameter_path $braw_pll_path $braw_cd_path $mat_baypost_path $mat_logbayfac_path $CONTACT_PREDICTION_PATH
+
+
+
+#-------------------------------------------------------------------------------
+# RF + pLL + CD
+#-------------------------------------------------------------------------------
+
+#method_name="pLL-cd-RF"
+#parameter_path="/usr/users/svorber/work/data/bayesian_framework/contact_prior/random_forest/new_pipeline_5folds/random_forest/classweightNone_noncontactthr8_l2normapc_cd/100000contacts_500000noncontacts_5window_8noncontactthreshold_maxfeatures030/random_forest_nestimators1000_maxfeatures0.3_maxdepth100_minsamplesleaf10_126features.pkl"
+#braw_pll_path=" /usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/ccmpred-pll-centerv/braw/ "
+#braw_cd_path=" /usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/ccmpredpy_cd_gd/braw/ "
+#mat_baypost_path=" false "
+#mat_logbayfac_path=" false "
+#run_update_script $method_name $parameter_path $braw_pll_path $braw_cd_path $mat_baypost_path $mat_logbayfac_path $CONTACT_PREDICTION_PATH
+
+
+#-------------------------------------------------------------------------------
+# RF + pLL + CD + Bayesian Posterior
+#-------------------------------------------------------------------------------
+
+method_name="pLL-cd-bayPost-RF"
+parameter_path="/usr/users/svorber/work/data/bayesian_framework/contact_prior/random_forest/new_pipeline_5folds/random_forest/classweightNone_noncontactthr8_l2normapc_cd_baypost/100000contacts_500000noncontacts_5window_8noncontactthreshold_maxfeatures030/random_forest_nestimators1000_maxfeatures0.3_maxdepth100_minsamplesleaf10_177features.pkl"
 braw_pll_path=" /usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/ccmpred-pll-centerv/braw/ "
 braw_cd_path=" /usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/ccmpredpy_cd_gd/braw/ "
-braw_pcd_path=" /usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/ccmpredpy_pcd_gd/braw/ "
-run_update_script $method_name $parameter_path $braw_pll_path $braw_cd_path $braw_pcd_path $CONTACT_PREDICTION_PATH
+mat_baypost_path=" /usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/bayesian_3comp_pLL/posterior/"
+mat_logbayfac_path=" false "
+run_update_script $method_name $parameter_path $braw_pll_path $braw_cd_path $mat_baypost_path $mat_logbayfac_path $CONTACT_PREDICTION_PATH
+
+#-------------------------------------------------------------------------------
+# RF + pLL + CD + Bayesian likelihood (log BF)
+#-------------------------------------------------------------------------------
+
+method_name="pLL-cd-logBF-RF"
+parameter_path="/usr/users/svorber/work/data/bayesian_framework/contact_prior/random_forest/new_pipeline_5folds/random_forest/classweightNone_noncontactthr8_l2normapc_cd_baylogbf/100000contacts_500000noncontacts_5window_8noncontactthreshold_maxfeatures030/random_forest_nestimators1000_maxfeatures0.3_maxdepth100_minsamplesleaf10_127features.pkl"
+braw_pll_path=" /usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/ccmpred-pll-centerv/braw/ "
+braw_cd_path=" /usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/ccmpredpy_cd_gd/braw/ "
+mat_baypost_path=" false "
+mat_logbayfac_path="  /usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/bayesian_3comp_pLL/logbf/"
+run_update_script $method_name $parameter_path $braw_pll_path $braw_cd_path $mat_baypost_path $mat_logbayfac_path $CONTACT_PREDICTION_PATH

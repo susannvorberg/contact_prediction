@@ -22,7 +22,7 @@
 # example call
 #-------------------------------------------------------------------------------
 
-#bash ~/opt/contactprediction/contact_prediction/run/full_likelihood_optimization/run_cd_adam_gibbs.sh 5
+#bash ~/opt/contactprediction/contact_prediction/run/full_likelihood_optimization/run_cd_adam_pcd.sh 5
 
 
 #-------------------------------------------------------------------------------
@@ -47,7 +47,7 @@ echo "using " $OMP_NUM_THREADS "threads for omp parallelization"
 data_subset=$1
 
 psicov_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/psicov/"
-mat_dir="/usr/users/svorber/work/data/benchmark_contrastive_divergence/phd/adam/gibbs/"
+mat_dir="/usr/users/svorber/work/data/benchmark_contrastive_divergence/phd/adam/pcd/"
 init_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/ccmpred-pll-centerv/braw/"
 
 echo " "
@@ -65,7 +65,7 @@ echo " "
 # values to optimize
 #------------------------------------------------------------------------------
 
-alpha_set="1 10"
+alpha_set="1e-3 1e-5 1e-8"
 
 
 #------------------------------------------------------------------------------
@@ -105,11 +105,11 @@ do
             settings=" -A -t 4 --wt-simple --max_gap_ratio 100 --maxit 5000"
             settings=$settings" --reg-l2-lambda-single 10 --reg-l2-lambda-pair-factor 0.1 --reg-l2-scale_by_L"
             settings=$settings" --pc-uniform --pc-count 1 --pc-pair-count 1"
-            settings=$settings" --center-v --fix-v"
+            settings=$settings" --center-v --fix-v --cd-persistent"
             settings=$settings" --ofn-cd  --cd-gibbs_steps 1 --cd-sample_size 0.3 --cd-sample_ref Neff"
-            settings=$settings" --alg-ad --ad-beta1 0.9 --ad-beta2 0.999 --ad-beta3 0 --alpha0 $alpha"
+            settings=$settings" --alg-ad --ad-beta1 0.9 --ad-beta2 0.999 --ad-beta3 0 --alpha0 0"
             settings=$settings" --decay --decay-start 1e-1 --decay-rate 5e-6 --decay-type sig"
-            settings=$settings" --early-stopping --epsilon 1e-8"
+            settings=$settings" --early-stopping --epsilon $alpha"
             #settings=$settings" -i "$braw_init_file
             settings=$settings" "$psicov_file" "$matfile
             settings=$settings" > "$logfile
@@ -124,7 +124,7 @@ do
             echo "--------------------------------------------------"
             echo " "
 
-            jobname=ccmpredpy_cd.adam.gibbssteps$alpha.$name
+            jobname=ccmpredpy_cd.adam.pcd$alpha.$name
             bsub -W 48:00 -q mpi -m "mpi mpi2 mpi3_all hh sa" -n $OMP_NUM_THREADS -R span[hosts=1] -a openmp  -J $jobname -o job-$jobname-%J.out ccmpred.py $settings
         fi
 

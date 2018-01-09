@@ -47,7 +47,7 @@ echo "using " $OMP_NUM_THREADS "threads for omp parallelization"
 data_subset=$1
 
 psicov_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/psicov/"
-mat_dir="/usr/users/svorber/work/data/benchmark_contrastive_divergence/phd/alpha_opt/"
+mat_dir="/usr/users/svorber/work/data/benchmark_contrastive_divergence/phd/alpha_opt_initzero/"
 init_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/ccmpred-pll-centerv/braw/"
 
 echo " "
@@ -65,7 +65,7 @@ echo " "
 # values to optimize
 #------------------------------------------------------------------------------
 
-alpha_set="1e-4 5e-4 1e-3 5e-3"
+alpha_set="0 1e-4 5e-4 1e-3 5e-3"
 
 
 #------------------------------------------------------------------------------
@@ -105,12 +105,12 @@ do
             settings=" -A -t 4 --wt-simple --max_gap_ratio 100 --maxit 5000"
             settings=$settings" --reg-l2-lambda-single 10 --reg-l2-lambda-pair-factor 0.2 --reg-l2-scale_by_L"
             settings=$settings" --pc-uniform --pc-count 1 --pc-pair-count 1"
-            settings=$settings" --center-v"
+            settings=$settings" --center-v --fix-v"
             settings=$settings" --ofn-cd  --cd-gibbs_steps 1 --cd-sample_size 10"
             settings=$settings" --alg-gd --alpha0 "$alpha
-            settings=$settings" --decay --decay-start 1e-1 --decay-rate 0.1 --decay-type lin"
+            settings=$settings" --decay --decay-start 1e-1 --decay-rate 0.01 --decay-type lin"
             settings=$settings" --early-stopping --epsilon 1e-8"
-            settings=$settings" -i "$braw_init_file
+            #settings=$settings" -i "$braw_init_file
             settings=$settings" "$psicov_file" "$matfile
             settings=$settings" > "$logfile
 
@@ -125,7 +125,7 @@ do
             echo " "
 
             jobname=ccmpredpy_cd.alpha$alpha.$name
-            bsub -W 12:00 -q mpi -m "mpi mpi2 mpi3_all hh sa" -n $OMP_NUM_THREADS -R span[hosts=1] -a openmp  -J $jobname -o job-$jobname-%J.out ccmpred.py $settings
+            bsub -W 48:00 -q mpi -m "mpi mpi2 mpi3_all hh sa" -n $OMP_NUM_THREADS -R span[hosts=1] -a openmp  -J $jobname -o job-$jobname-%J.out ccmpred.py $settings
         fi
 
     done
