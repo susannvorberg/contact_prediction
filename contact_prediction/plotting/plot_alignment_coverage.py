@@ -9,13 +9,10 @@
 #===============================================================================
 import argparse
 import os
-
 import plotly.graph_objs as go
 from plotly.offline import plot as plotly_plot
 from ..utils import io_utils as io
 from ..utils import alignment_utils as ali_ut
-
-
 
 
 def plot_percentage_gaps_per_position(alignment, plot_file=None):
@@ -59,8 +56,6 @@ def plot_percentage_gaps_per_position(alignment, plot_file=None):
         return plot
     else:
         plotly_plot(plot, filename=plot_file, auto_open=False)
-
-
 
 
 def main():

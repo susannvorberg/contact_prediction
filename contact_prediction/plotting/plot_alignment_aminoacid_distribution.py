@@ -13,21 +13,18 @@ import plotly.graph_objs as go
 from plotly.offline import plot as plotly_plot
 from ..utils import io_utils as io
 from ..utils import alignment_utils as au
+import numpy as np
 
-def plot_amino_acid_distribution_per_position(alignment, title, plot_file=None, freq=True):
+def plot_amino_acid_distribution_per_position(aa_counts_single, title, plot_file=None, freq=True):
 
-
-    N = float(len(alignment))
-    L = len(alignment[0])
-
+    Neff = np.sum(aa_counts_single[0,:])
+    L = len(aa_counts_single.shape[0])
 
     #create plot
     data = []
 
-    aa_counts_single, aa_counts_pair = au.compute_counts(alignment, compute_weights=False)
-
     if freq:
-        aa_counts_single /= N
+        aa_counts_single /= Neff
 
     #add bar for each amino acid for each position
     for aa in range(20):
@@ -85,8 +82,12 @@ def main():
     title="Distribution of Amino Acids per position in alignment of " + str(protein) + \
           "<br> N="+str(N) + ", L="+str(L)
 
-    plot_amino_acid_distribution_per_position(alignment, title, plot_file, freq=True)
-    plot_amino_acid_distribution_per_position(alignment, title, plot_file, freq=False)
+    #compute amino acid counts only once
+    aa_counts_single, aa_counts_pair = au.compute_counts(alignment, compute_weights=False)
+
+
+    plot_amino_acid_distribution_per_position(aa_counts_single, title, plot_file, freq=True)
+    plot_amino_acid_distribution_per_position(aa_counts_single, title, plot_file, freq=False)
 
 
 
