@@ -17,10 +17,11 @@ from scipy.stats import entropy
 # ===============================================================================
 # == libraries
 # ===============================================================================
+
 import argparse
 import os
 from collections import Counter
-
+import numpy as np
 import plotly.graph_objs as go
 from plotly.offline import plot as plotly_plot
 from scipy.stats import entropy
