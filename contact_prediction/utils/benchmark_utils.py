@@ -265,17 +265,17 @@ def compute_apc_corrected_matrix(cmat):
     apc_term = mean[:, np.newaxis] * mean[np.newaxis, :] / np.mean(cmat)
     return cmat - apc_term
 
-def compute_l2norm_from_braw(braw, apc=False):
+def compute_l2norm_from_braw(braw_x_pair, apc=False):
     '''
     Compute the l2norm of all residue pairs
 
-    :param braw: raw coupling values
+    :param braw_x_pair: raw coupling values for pairs
     :param apc: compute apc corrected l2norm
     :return: l2norm (-apc) score matrix
     '''
 
     #compute l2norm without gap state
-    mat = np.sqrt(np.sum(braw.x_pair[:,:,:20,:20] * braw.x_pair[:,:,:20,:20], axis=(2, 3)))
+    mat = np.sqrt(np.sum(braw_x_pair[:,:,:20,:20] * braw_x_pair[:,:,:20,:20], axis=(2, 3)))
 
     #apply apc)
     if(apc):
@@ -299,17 +299,17 @@ def compute_l2norm_from_brawfile(braw_file, apc=False):
 
     return compute_l2norm_from_braw(braw, apc)
 
-def compute_sum_from_braw(braw):
+def compute_sum_from_braw(braw_x_pair):
     '''
     Compute the l2norm of all residue pairs
 
-    :param braw: raw coupling values
+    :param braw_x_pair: raw coupling values for pairs
     :param apc: compute apc corrected l2norm
     :return: l2norm (-apc) score matrix
     '''
 
     #compute l2norm without gap state
-    mat = np.sum(braw.x_pair[:,:,:20,:20], axis=(2, 3))
+    mat = np.sum(braw_x_pair[:,:,:20,:20], axis=(2, 3))
 
     return mat
 
