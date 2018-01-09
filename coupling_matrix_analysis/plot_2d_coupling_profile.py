@@ -23,7 +23,6 @@ import utils.pdb_utils as pdb
 import utils.io_utils as io
 import raw
 from contact_prior.AlignmentFeatures import AlignmentFeatures
-
 import utils.plot_utils as plots
 
 def collect_data(braw_dir, alignment_dir, pdb_dir, ab, cd, cb_lower, cb_upper):
@@ -36,8 +35,9 @@ def collect_data(braw_dir, alignment_dir, pdb_dir, ab, cd, cb_lower, cb_upper):
 
     max_nr_couplings_per_protein = 500
     sequence_separation=10
-    evidence_threshold = 50
-    max_nr_couplings = 100
+    evidence_threshold = 80
+    max_nr_couplings = 5000
+    diversity_thr = 0.3
     a = ab[0]
     b = ab[2]
     c = cd[0]
@@ -67,7 +67,7 @@ def collect_data(braw_dir, alignment_dir, pdb_dir, ab, cd, cb_lower, cb_upper):
         AF = AlignmentFeatures(alignment_file, sequence_separation, 8, 8)
 
         diversity = np.sqrt(AF.N) / AF.L
-        if diversity < 0.3:
+        if diversity < diversity_thr:
             print("Diversity = {0}. Skip this protein.".format(diversity))
             continue
 
@@ -84,7 +84,7 @@ def collect_data(braw_dir, alignment_dir, pdb_dir, ab, cd, cb_lower, cb_upper):
         # iterate over pairs for bins
         residue_i, residue_j = np.where((distance_map > cb_lower) & (distance_map < cb_upper))
 
-        Nij = AF.Nij[residue_i, residue_i]
+        Nij = AF.Nij[residue_i, residue_j]
         q_i_a = AF.single_frequencies[residue_i, io.AMINO_INDICES[a]]
         q_j_b = AF.single_frequencies[residue_j, io.AMINO_INDICES[b]]
         q_i_c = AF.single_frequencies[residue_i, io.AMINO_INDICES[c]]
@@ -150,23 +150,38 @@ def main():
 
 
     ####debugging
-    # braw_dir    = "/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/ccmpred-pll-centerv/braw/"
-    # pdb_dir         = "/home/vorberg/work/data/benchmarkset_cathV4.1/pdb_renum_combs/"
-    # alignment_dir   = "/home/vorberg/work/data/benchmarkset_cathV4.1/psicov/"
-    # ab              = 'R-E' # 'all' 'E-E'
-    # cd              = 'E-R'
-    # plot_dir        ='/home/vorberg/work/plots/bayesian_framework/coupling_matrices_analysis/2d_coupling_profiles/'
-    # lower_cb_distance = 0
-    # upper_cb_distance = 8
+    braw_dir        = "/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/ccmpred-pll-centerv/braw/"
+    pdb_dir         = "/home/vorberg/work/data/benchmarkset_cathV4.1/pdb_renum_combs/"
+    alignment_dir   = "/home/vorberg/work/data/benchmarkset_cathV4.1/psicov/"
+    ab              = 'R-E' # 'all' 'E-E'
+    cd              = 'E-E'
+    plot_dir        ='/home/vorberg/work/plots/bayesian_framework/coupling_matrices_analysis/2d_coupling_profiles/'
+    lower_cb_distance = 0
+    upper_cb_distance = 8
 
+    abs=[
+        ['R-E', 'E-R'],
+        ['R-E', 'E-E'],
+        ['V-I', 'I-L'],
+        ['F-F', 'Y-F'],
+        ['A-F', 'G-F']
+    ]
 
-    couplings = collect_data(braw_dir, alignment_dir, pdb_dir, ab, cd, lower_cb_distance, upper_cb_distance)
+    dist = [[0,5], [0,8], [5,10], [8,12]]
 
-    plot_file = plot_dir + "/pairwise_couplings_" + ab + "_"+ cd  + "_Cbdistance_" + str(lower_cb_distance) +"_" + str(upper_cb_distance) + ".html"
-    title="Couplings {0} vs  {1} <br>  {2} <= Cb_ij <= {3}".format(ab, cd, lower_cb_distance, upper_cb_distance)
-    plots.plot_pairwise_couplings_density(couplings, title, plot_out=plot_file)
+    for lower_cb_distance, upper_cb_distance in dist:
+        for ab,cd in abs:
+            print lower_cb_distance, upper_cb_distance, ab, cd
 
+            couplings = collect_data(braw_dir, alignment_dir, pdb_dir, ab, cd, lower_cb_distance, upper_cb_distance)
 
+            plot_file = plot_dir + "/pairwise_couplings_" + ab + "_"+ cd  + "_Cbdistance_" + str(lower_cb_distance) +"_" + str(upper_cb_distance) + ".html"
+            title="Couplings {0} vs  {1} <br>  {2} <= Cb_ij <= {3}".format(ab, cd, lower_cb_distance, upper_cb_distance)
+            plots.plot_pairwise_couplings_density(couplings, title, histograms=False, plot_out=plot_file)
+
+            plot_file = plot_dir + "/pairwise_couplings_" + ab + "_"+ cd  + "_Cbdistance_" + str(lower_cb_distance) +"_" + str(upper_cb_distance) + "_notitle.html"
+            title=""
+            plots.plot_pairwise_couplings_density(couplings, title, histograms=False, plot_out=plot_file)
 
 
 if __name__ == '__main__':

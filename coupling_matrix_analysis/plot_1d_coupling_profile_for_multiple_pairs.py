@@ -36,7 +36,7 @@ def collect_data(braw_dir, alignment_dir, pdb_dir, pairs, lower_cb_distance, upp
 
 
     max_nr_couplings_per_protein = 500
-    sequence_separation=10
+    sequence_separation=8
     evidence_threshold = 100
     max_couplings_per_bin = 1000
 
@@ -86,14 +86,18 @@ def collect_data(braw_dir, alignment_dir, pdb_dir, pairs, lower_cb_distance, upp
 
             residue_i, residue_j = np.where((distance_map > lower_cb_distance) & (distance_map < upper_cb_distance))
 
+            if len(residue_i) == 0:
+                continue
+
             a = pair[0]
             b = pair[2]
 
             Nij = AF.Nij[residue_i, residue_i]
             q_i_a = AF.single_frequencies[residue_i, io.AMINO_INDICES[a]]
             q_j_b = AF.single_frequencies[residue_j, io.AMINO_INDICES[b]]
+            q_ij_ab = AF.pairwise_frequencies[residue_i, residue_j, io.AMINO_INDICES[a], io.AMINO_INDICES[b]]
 
-            evidence = Nij * q_i_a  * q_j_b
+            evidence = np.max([Nij * q_i_a  * q_j_b, Nij * q_ij_ab])
 
             residue_i = residue_i[evidence > evidence_threshold]
             residue_j = residue_j[evidence > evidence_threshold]
@@ -181,14 +185,14 @@ def main():
     # braw_dir    = "/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/ccmpred-pll-centerv/braw/"
     # pdb_dir         = "/home/vorberg/work/data/benchmarkset_cathV4.1/pdb_renum_combs/"
     # alignment_dir   = "/home/vorberg/work/data/benchmarkset_cathV4.1/psicov/"
-    # pairs           = ['R-E', 'E-E', 'C-C', 'I-L', 'W-F', 'K-Y', 'A-G']
+    # pairs           = ['R-E', 'E-E', 'C-C', 'I-L', 'W-W']
     # plot_dir        ='/home/vorberg/work/plots/bayesian_framework/coupling_matrices_analysis/1d_coupling_profiles/'
-    # lower_cb_distance = 0
-    # upper_cb_distance = 8
+    # lower_cb_distance = 8
+    # upper_cb_distance = 12
 
     couplings_per_pair = collect_data(braw_dir, alignment_dir, pdb_dir, pairs, lower_cb_distance, upper_cb_distance )
 
-    plot_file = plot_dir + "/1d_coupling_profile_"+ str(lower_cb_distance) + "_" + str(upper_cb_distance)+ ".html"
+    plot_file = plot_dir + "/1d_coupling_profile_"+ str(lower_cb_distance) + "_" + str(upper_cb_distance)+ "_v2.html"
     plot_1d_coupling_profile(couplings_per_pair, lower_cb_distance, upper_cb_distance,  plot_file)
 
 if __name__ == '__main__':
