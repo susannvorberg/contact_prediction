@@ -18,7 +18,7 @@ from ..utils import alignment_utils as au
 def plot_aa_frequencies(single_counts, pairwise_counts, protein_name, residue_i, residue_j, plot_frequencies=True, plot_type="heatmap", plot_out=None):
 
 
-    L = len(single_counts.shape[0])
+    L = single_counts.shape[0]
     neff = np.sum(single_counts[0,:])
 
     #gap  = 20
