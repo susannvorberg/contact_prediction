@@ -1,5 +1,4 @@
 import argparse
-import pandas as pd
 import glob
 import os
 
@@ -13,6 +12,7 @@ from scipy.stats import norm
 from plotly.offline import plot as plotly_plot
 from scipy.optimize import curve_fit
 import plotly.graph_objs as go
+from  sklearn.neighbors import KernelDensity
 
 
 def plot_convergence_trace_plotly(negll_trace_df, name, plot_title, plot_out=None):
@@ -38,7 +38,11 @@ def plot_convergence_trace_plotly(negll_trace_df, name, plot_title, plot_out=Non
                     mode='lines',
                     name=trace + ' pass ' + str(iteration),
                     connectgaps=True,
-                    showlegend=False
+                    showlegend=True,
+                    line=dict(
+                        width=4
+                    )
+
                 )
             )
 
@@ -49,7 +53,7 @@ def plot_convergence_trace_plotly(negll_trace_df, name, plot_title, plot_out=Non
             xaxis1 = dict(title="step",
                           exponentformat="e",
                           showexponent='All'),
-            yaxis1 = dict(title="neg LL",
+            yaxis1 = dict(title="negative log likelihood",
                           exponentformat="e",
                           showexponent='All'
                           ),
@@ -61,7 +65,6 @@ def plot_convergence_trace_plotly(negll_trace_df, name, plot_title, plot_out=Non
         plotly_plot(plot, filename=plot_out, auto_open=False)
     else:
         return plot
-
 
 def plot_exponentialFit_negLL(negll_trace_df, plot_title='exponential Fit neg LL', plot_out=None):
     # define exponential function
@@ -136,7 +139,6 @@ def plot_exponentialFit_negLL(negll_trace_df, plot_title='exponential Fit neg LL
     else:
         return plot
 
-
 def plot_gradient_ab_trace(gradient_df, ab_list, colors, plot_out=None):
 
     plot = {'data': [],
@@ -192,14 +194,11 @@ def plot_gradient_ab_trace(gradient_df, ab_list, colors, plot_out=None):
     else:
         return plot
 
-
-
 def get_coordinates_for_1d_gaussian(min, max, mean, sd):
     x_coord = np.arange(min, max, 0.01)
     y_coord = [np.round(norm.pdf(x, mean, sd), decimals=3) for x in x_coord]
 
     return x_coord, y_coord
-
 
 def get_coordinates_for_1d_gaussian_mixture(min, max, weights, means, sd):
     x_coord = np.arange(min, max, 0.01)
@@ -212,13 +211,100 @@ def get_densities_for_2d_gaussian_mixture(min_range, max_range, weights, means_a
     x = np.arange(min_range, max_range, 0.05)
     y = np.arange(min_range, max_range, 0.05)
 
-    z_densities = [[gaussian_mixture_density_2d(grid_points_x[j][i], grid_points_y[j][i], weights, means_ab, means_cd,
+    z_densities = [[coupling_prior.utils_coupling_prior.gaussian_mixture_density_2d(grid_points_x[j][i], grid_points_y[j][i], weights, means_ab, means_cd,
                                                 covMats, log) for j in range(len(grid_points_x))] for i in
                    range(len(grid_points_x))]
 
     return x, y, z_densities
 
-def plot_parameter_visualisation_1d(parameters_dict, evaluation_set, settings, ab_list, colors, prec_wrt_L=False, plot_out=None):
+def plot_parameter_visualisation_1d_a_b(parameters_dict, nr_components, ab, colors, prec_wrt_L=False, plot_out=None):
+    """
+    Plot density estimate for test data
+    Plot gaussian density according to parameters for each component and the mixture
+    Either plot it or return dictionary
+    """
+
+
+    plot = {'data': [], 'layout': {}}
+
+
+    # component weights
+    weights_bg = [ v[0] for k,v in sorted(parameters_dict.iteritems()) if 'weight_bg_' in k]
+    weights_contact = [ v[0] for k,v in sorted(parameters_dict.iteritems()) if 'weight_contact_' in k]
+
+    #component mu
+    means = [v[ab] for k,v in sorted(parameters_dict.iteritems()) if 'mu_' in k]
+
+    #component sd
+    sd = []
+    for component in range(nr_components):
+        try:
+            if prec_wrt_L:
+                sd.append(np.sqrt(1.0/(parameters_dict['prec_'+str(component)][ab] * 142) )) #in case precision is spec depending on L=142
+            else:
+                sd.append(np.sqrt(1.0/parameters_dict['prec_'+str(component)][ab]))
+        except ZeroDivisionError as e:
+            print(e)
+            sd.append(0) #in case prec is zero bc optimizer tries strange values
+
+
+    ### add components
+    for component in range(nr_components):
+        gaussian_component_density = get_coordinates_for_1d_gaussian(-1, 1, means[component], sd[component])
+        plot['data'].append(
+            go.Scatter(x=gaussian_component_density[0],
+                       y=gaussian_component_density[1],
+                       mode='lines',
+                       name='component ' + str(component) + ' for  ' + AB[ab],
+                       line=dict(dash='dot',
+                                 color=colors[component]),
+                       showlegend=False
+                       )
+        )
+
+    ### add mixture if there are more than one component
+    if (nr_components > 1):
+        gaussian_mixture_x_contact, gaussian_mixture_y_contact =get_coordinates_for_1d_gaussian_mixture(-1, 1,
+                                                                                                 weights_contact,
+                                                                                                 means,
+                                                                                                 sd)
+        plot['data'].append(go.Scatter(x=gaussian_mixture_x_contact,
+                                       y=gaussian_mixture_y_contact,
+                                       mode='lines',
+                                       name='mixture (contact) for  ' + AB[ab],
+                                       line=dict(color='rgb(50,205,50)',
+                                                 width = 3),
+                                       showlegend=False
+                                       )
+                            )
+
+    if (nr_components > 1):
+        gaussian_mixture_x_bg, gaussian_mixture_y_bg = get_coordinates_for_1d_gaussian_mixture(-1, 1,
+                                                                                               weights_bg,
+                                                                                               means,
+                                                                                               sd)
+        plot['data'].append(go.Scatter(x=gaussian_mixture_x_bg,
+                                       y=gaussian_mixture_y_bg,
+                                       mode='lines',
+                                       name='mixture (bg) for  ' + AB[ab],
+                                       line=dict(color='rgb(50,50,205 )',
+                                                 width = 3),
+                                       showlegend=False
+                                       )
+                            )
+
+
+    plot['layout'].update({'title': 'Coupling prior as a gaussian mixture'})
+    plot['layout'].update({'xaxis1': {'title': "coupling values"}})
+    plot['layout'].update({'yaxis1': {'title': "density"}})
+    plot['layout']['font'] = {'size': 18}
+
+    if plot_out is not None:
+        plotly_plot(plot, filename=plot_out, auto_open=False)
+    else:
+        return plot
+
+def plot_parameter_visualisation_1d(parameters_dict, evaluation_set_kde, settings, colors, prec_wrt_L=False, plot_out=None):
     """
     Plot density estimate for test data
     Plot gaussian density according to parameters for each component and the mixture
@@ -230,9 +316,9 @@ def plot_parameter_visualisation_1d(parameters_dict, evaluation_set, settings, a
 
     #set up drop down menu
     plot['layout']['updatemenus']=[{'xanchor':'left',
-                                    'yanchor':'bottom',
+                                    'yanchor':'top',
                                     'x':1.02,
-                                    'y':0,
+                                    'y':0.6,
                                     'buttons':[],
                                     'active': 0,
                                     }]
@@ -245,32 +331,43 @@ def plot_parameter_visualisation_1d(parameters_dict, evaluation_set, settings, a
         weights_contact.append(parameters_dict['weight_contact_'+str(component)][0])
 
 
+    min_coupling_xaxis = -1
+    max_coupling_xaxis = +1
+
+
+    ab_list = evaluation_set_kde['contact'].keys()
     for ab in ab_list:
 
-        ### add example data points
-        plot['data'].append(go.Scatter(x=evaluation_set['contact'][ab].tolist(),
-                                       y=[-1] * len(evaluation_set['contact'][ab].tolist()),
-                                       mode='markers',
-                                       name='training data contact',
-                                       marker=dict(color='rgb(50,205,50)',
-                                                   symbol='line-ns-open'),
-                                       showlegend=False,
-                                       hoverinfo=None,
-                                       type='scatter',
-                                       visible=False
-                                       ))
+        plot['data'].append(
+            go.Scatter(
+                x=evaluation_set_kde['x_grid'],
+                y=evaluation_set_kde['bg'][ab],
+                mode='none',
+                fill='tozeroy',
+                fillcolor='rgb(50,50,205)',
+                opacity=0.2,
+                name='training data bg',
+                showlegend=True,
+                hoverinfo=None,
+                visible=False
+            )
+        )
 
-        plot['data'].append(go.Scatter(x=evaluation_set['bg'][ab].tolist(),
-                                       y=[-3] * len(evaluation_set['bg'][ab].tolist()),
-                                       mode='markers',
-                                       name='training data non-contact',
-                                       marker=dict(color='rgb(50,50,205)',
-                                                   symbol='line-ns-open'),
-                                       showlegend=False,
-                                       hoverinfo=None,
-                                       type='scatter',
-                                       visible=False
-                                       ))
+        plot['data'].append(
+            go.Scatter(
+                x=evaluation_set_kde['x_grid'],
+                y=evaluation_set_kde['contact'][ab],
+                fill='tonexty',
+                fillcolor='rgb(50,205,50)',
+                opacity=0.2,
+                mode='none',
+                name='training data contact',
+                showlegend=True,
+                hoverinfo=None,
+                visible=False
+            )
+        )
+
 
         means = []
         sd = []
@@ -287,7 +384,13 @@ def plot_parameter_visualisation_1d(parameters_dict, evaluation_set, settings, a
 
         ### add components
         for component in range(nr_components):
-            gaussian_component_density = get_coordinates_for_1d_gaussian(-1, 1, means[component], sd[component])
+            gaussian_component_density = get_coordinates_for_1d_gaussian(
+                min_coupling_xaxis,
+                max_coupling_xaxis,
+                means[component],
+                sd[component]
+            )
+
             plot['data'].append(go.Scatter(x=gaussian_component_density[0],
                                            y=gaussian_component_density[1],
                                            mode='lines',
@@ -301,10 +404,13 @@ def plot_parameter_visualisation_1d(parameters_dict, evaluation_set, settings, a
 
         ### add mixture if there are more than one component
         if (nr_components > 1):
-            gaussian_mixture_x_contact, gaussian_mixture_y_contact =get_coordinates_for_1d_gaussian_mixture(-1, 1,
-                                                                                                     weights_contact,
-                                                                                                     means,
-                                                                                                     sd)
+            gaussian_mixture_x_contact, gaussian_mixture_y_contact = get_coordinates_for_1d_gaussian_mixture(
+                min_coupling_xaxis, max_coupling_xaxis,
+                weights_contact,
+                means,
+                sd
+            )
+
             plot['data'].append(go.Scatter(x=gaussian_mixture_x_contact,
                                            y=gaussian_mixture_y_contact,
                                            mode='lines',
@@ -341,17 +447,35 @@ def plot_parameter_visualisation_1d(parameters_dict, evaluation_set, settings, a
             {
                 'args':['visible',  [False] * (nr_plots_per_ab) * ab_list.index(ab) +
                                     [True] * (nr_plots_per_ab) +
-                                    [False] * (nr_plots_per_ab) * (len(ab_list) - ab_list.index(ab) - 1) ] ,
+                                    [False] * (nr_plots_per_ab) * (len(ab_list) - ab_list.index(ab) - 1)+
+                                    [True]] ,
                 'label': AB[ab],
                 'method':'restyle'
         })
 
 
 
+    if "regularizer" in evaluation_set_kde.keys():
+        plot['data'].append(
+            go.Scatter(
+                x=evaluation_set_kde['x_grid'],
+                y=evaluation_set_kde['regularizer'],
+                mode='lines',
+                name='regularization prior',
+                line=dict(color='black',
+                          width=3),
+                showlegend=True,
+                hoverinfo=None,
+                visible=False
+            )
+        )
+
+
     plot['layout'].update({'title': 'Coupling prior as a gaussian mixture'})
     plot['layout'].update({'xaxis1': {'title': "coupling values"}})
     plot['layout'].update({'yaxis1': {'title': "density"}})
     plot['layout']['updatemenus'][0]['active']=0
+    plot['layout']['yaxis1']['range']=[0,15]
     plot['layout']['font'] = {'size': 18}
 
     if plot_out is not None:
@@ -359,8 +483,8 @@ def plot_parameter_visualisation_1d(parameters_dict, evaluation_set, settings, a
     else:
         return plot
 
-
 def contour_plot_2d_for_GaussianMixture(parameters_dict, ab, cd, evaluation_set, plot_out=None):
+
     # select parameters for this coupling ab
     weights_bg = [parameters_dict[parameter_name][0] for parameter_name in sorted(parameters_dict.keys()) if
                   "weight_bg" in parameter_name]
@@ -371,15 +495,14 @@ def contour_plot_2d_for_GaussianMixture(parameters_dict, ab, cd, evaluation_set,
     means_cd = [parameters_dict[parameter_name][cd] for parameter_name in sorted(parameters_dict.keys()) if
                 "mu" in parameter_name]
 
-    var_parameter_names = [parameter_name for parameter_name in sorted(parameters_dict.keys()) if
+    prec_parameter_names = [parameter_name for parameter_name in sorted(parameters_dict.keys()) if
                            "prec" in parameter_name]
-    covMats = [0] * len(var_parameter_names)
-    for var_ind in range(len(var_parameter_names)):
-        CovMat = np.zeros((400, 400))
-        CovMat[np.tril_indices(400)] = parameters_dict[var_parameter_names[var_ind]]
-        CovMat[np.triu_indices(400)] = np.transpose(CovMat)[np.triu_indices(400)]
-        covMats[var_ind] = [[CovMat[ab, ab], CovMat[ab, cd]],
-                            [CovMat[ab, cd], CovMat[cd, cd]]]
+    covMats = [0] * len(prec_parameter_names)
+    for prec_ind in range(len(prec_parameter_names)):
+
+        prec = parameters_dict[prec_parameter_names[prec_ind]]
+        covMats[prec_ind] = [[1/prec[ab], 0],
+                            [0, 1/prec[cd]]]
 
     min_xy = np.min(evaluation_set['contact'][ab].tolist() + evaluation_set['contact'][cd].tolist())
     max_xy = np.max(evaluation_set['contact'][ab].tolist() + evaluation_set['contact'][cd].tolist())
@@ -391,41 +514,143 @@ def contour_plot_2d_for_GaussianMixture(parameters_dict, ab, cd, evaluation_set,
 
     plot = {'data': [], 'layout': {}}
 
-    plot['data'].append(go.Scatter(
-        x=evaluation_set['contact'][ab].tolist(),
-        y=evaluation_set['contact'][cd].tolist(),
-        mode='markers',
-        marker=dict(
-            color='rgb(50,205,50)',
-            opacity=0.4,
-            size=3
-        ),
-        name='couplings w_ij(' + AB[ab] + ') vs w_ij(' + AB[cd] + ')'
-    )
-    )
+    # plot['data'].append(
+    #     go.Scatter(
+    #         x=evaluation_set['contact'][ab].tolist(),
+    #         y=evaluation_set['contact'][cd].tolist(),
+    #         mode='markers',
+    #         marker=dict(
+    #             color='rgb(50,205,50)',
+    #             opacity=0.4,
+    #             size=3
+    #         ),
+    #         name='couplings w_ij(' + AB[ab] + ') vs w_ij(' + AB[cd] + ')'
+    #     )
+    # )
 
-    plot['data'].append(go.Contour(
-        z=gaussian_mixture_z_contact,
-        x=gaussian_mixture_x_contact,
-        y=gaussian_mixture_y_contact,
-        showscale=False,
-        ncontours=50,
-        contours=dict(coloring='heatmap')
-        # line=dict(width=3)
-    ))
+    plot['data'].append(
+        go.Contour(
+            z=gaussian_mixture_z_contact,
+            x=gaussian_mixture_x_contact,
+            y=gaussian_mixture_y_contact,
+            showscale=False,
+            ncontours=150,
+            contours=dict(
+                start = np.percentile(gaussian_mixture_z_contact, 90),
+                end = np.percentile(gaussian_mixture_z_contact, 100),
+                size=1,
+                coloring='lines'
+            ),
+            #contours=dict(coloring='heatmap')
+            line=dict(width=3)
+        )
+    )
 
     plot['layout']['title'] = "Couplings and fitted Gaussian mixture (only contacts)"
     plot['layout']['xaxis1'] = dict(
-        title="w_ij(" + AB[ab] + ")"
+        title="w_ij(" + AB[ab] + ")",
+        scaleanchor = "y",
+        scaleratio = 1
     )
     plot['layout']['yaxis1'] = dict(
-        title="w_ij(" + AB[cd] + ")"
+        title="w_ij(" + AB[cd] + ")",
+        scaleanchor="x",
+        scaleratio=1
     )
+
 
     if plot_out is not None:
         plotly_plot(plot, filename=plot_out, auto_open=False)
     else:
         return plot
+
+def plot_parameter_visualisation_2d_samples(parameters_dict, ab, cd, colors=None, weights="contact", plot_out=None):
+
+
+
+
+    # select parameters for this coupling ab
+    weights_bg = [parameters_dict[parameter_name][0] for parameter_name in sorted(parameters_dict.keys()) if
+                  "weight_bg" in parameter_name]
+    weights_contact = [parameters_dict[parameter_name][0] for parameter_name in sorted(parameters_dict.keys()) if
+                       "weight_contact" in parameter_name]
+    means_ab = [parameters_dict[parameter_name][ab] for parameter_name in sorted(parameters_dict.keys()) if
+                "mu" in parameter_name]
+    means_cd = [parameters_dict[parameter_name][cd] for parameter_name in sorted(parameters_dict.keys()) if
+                "mu" in parameter_name]
+
+    prec_parameter_names = [parameter_name for parameter_name in sorted(parameters_dict.keys()) if
+                           "prec" in parameter_name]
+    covMats = [0] * len(prec_parameter_names)
+    for prec_ind in range(len(prec_parameter_names)):
+
+        prec = parameters_dict[prec_parameter_names[prec_ind]]
+        covMats[prec_ind] = [[1/prec[ab], 0],
+                            [0, 1/prec[cd]]]
+
+    if colors is None:
+        colors = np.array(cl.scales[str(len(weights_bg))]['qual']['Paired'])
+
+
+
+    N = 50000
+    nr_components = len(weights_bg)
+    if weights == "contact":
+        components_vector = np.random.choice(range(nr_components), size=N, replace=True, p=weights_contact).tolist()
+    else:
+        components_vector = np.random.choice(range(nr_components), size=N, replace=True, p=weights_bg).tolist()
+    data = []
+    for component in range(nr_components)[::-1]:
+        nr_samples_from_component = components_vector.count(component)
+
+        mean_ab = means_ab[component]
+        mean_cd = means_cd[component]
+        covMat = covMats[component]
+
+        sample_comp = np.random.multivariate_normal(mean=[mean_ab,mean_cd], cov=covMat, size = nr_samples_from_component)
+
+        data.append(
+            go.Scattergl(
+                x= sample_comp[:, 0],
+                y= sample_comp[:, 1],
+                opacity=0.3,
+                mode = 'markers',
+                marker=dict(
+                    color=colors[component]
+                ),
+                name="component " + str(component),
+                showlegend=True
+            )
+        )
+
+
+    layout = go.Layout(
+        xaxis=dict(
+            title=AB[ab],
+            scaleanchor="y",
+            scaleratio=1
+        ),
+        yaxis=dict(
+            title=AB[cd],
+            scaleanchor = "x",
+            scaleratio = 1
+        ,
+        ),
+        font=dict(size=18)
+    )
+
+    fig = go.Figure(
+        data=data,
+        layout=layout
+    )
+
+    if plot_out is not None:
+        plot_file = plot_out + "/" + "2dvis_" + AB[ab] + "_" + AB[cd] + "_" + weights +".html"
+        plotly_plot(fig, filename=plot_file, auto_open=False)
+    else:
+        return fig
+
+
 
 
 def plot_settings_table(settings, table_nr=1, plot_out=None):
@@ -509,36 +734,16 @@ def plot_settings_table(settings, table_nr=1, plot_out=None):
     else:
         return plot
 
-def plot_evaluation(parameters_dict, log_df, settings, evaluation_set, prec_wrt_L, plotname):
+def plot_evaluation(parameters_dict, log_df, settings, evaluation_set_kde, plotname):
     """
     Interactive Plotly Figure within HTML with Evaluations
     """
 
-    # ------------------------------------------------------------------------------
-    #### Prepare
-    # ------------------------------------------------------------------------------
 
     plots = []
 
-    #order and rename components according to strength of weights_contact
-    # weights_contact_df = pd.DataFrame.from_dict(dict((k, parameters_dict[k]) for k in sorted(parameters_dict.keys()) if
-    #                                  'weight_contact' in k))
-    # sorted_components = np.argsort(weights_contact_df.values[0].tolist())[::-1]
-    # parameters_dict_ordered = {}
-    # for component in range(settings['nr_components']):
-    #     parameters_dict_ordered['weight_contact_'+str(component)] = parameters_dict['weight_contact_'+str(
-    #         sorted_components[component])]
-    #     parameters_dict_ordered['weight_bg_'+str(component)] = parameters_dict['weight_bg_'+str(
-    #         sorted_components[component])]
-    #     parameters_dict_ordered['var_'+str(component)] = parameters_dict['var_'+str(
-    #         sorted_components[component])]
-    #     parameters_dict_ordered['mu_'+str(component)] = parameters_dict['mu_'+str(
-    #         sorted_components[component])]
-    # parameters_dict = parameters_dict_ordered
 
-
-
-    #setup the colors for each component
+    ### setup the colors for each component
     if int(settings['nr_components']) < 3:
         colors = ['rgb(228,26,28)', 'rgb(55,126,184)']
     elif int(settings['nr_components']) < 13:
@@ -546,33 +751,22 @@ def plot_evaluation(parameters_dict, log_df, settings, evaluation_set, prec_wrt_
     else:
         colors = cl.interp(cl.scales['10']['qual']['Paired'], 20)
 
-    #list of ab pairs in dropdown menu
-    ab_list = [
-        AB_INDICES['A-A'],
-        AB_INDICES['C-C'],
-        AB_INDICES['E-R'],
-        AB_INDICES['R-E'],
-        AB_INDICES['E-E'],
-        AB_INDICES['V-I'],
-        AB_INDICES['I-L'],
-        AB_INDICES['K-E'],
-        AB_INDICES['S-T'],
-        AB_INDICES['K-P'],
-        AB_INDICES['N-N'],
-        AB_INDICES['K-K'],
-        AB_INDICES['K-R'],
-        AB_INDICES['S-S'],
-        AB_INDICES['G-F']
-    ]
+
+    ### set up ab list
+    ab_list = evaluation_set_kde['contact'].keys()
+
+
+
 
     ####################### plotting of settings
     print_to_table = {}
     for key in sorted(settings.keys()):
         if key not in ['fold_id_dir','plot_name', 'fixed_parameters', 'threads_proteins', 'qijab_dir',
                        'debug_mode', 'parameter_file', 'settings_file', 'optimization_log_file', 'braw_dir', 'pdb_dir', 'paramdir',
-                       'mask_sse', 'lambda_w_fix', 'lfactor', 'plotdir', 'psicov_dir', 'contact']:
+                       'mask_sse', 'lambda_w_fix', 'lfactor', 'plotdir', 'psicov_dir', 'contact', 'hessian_pseudocount']:
             print_to_table[key] = settings[key]
 
+    print("Generate settings table...")
     table_settings_1 = plot_settings_table(print_to_table, 1)
     table_settings_2 = plot_settings_table(print_to_table, 2)
     table_settings_3 = plot_settings_table(print_to_table, 3)
@@ -620,6 +814,7 @@ def plot_evaluation(parameters_dict, log_df, settings, evaluation_set, prec_wrt_
 
 
     ####################### plotting of parameters
+    print("Generate distribution of parameters...")
 
     #weights
     weights_dict = {}
@@ -632,8 +827,9 @@ def plot_evaluation(parameters_dict, log_df, settings, evaluation_set, prec_wrt_
         weights_dict,
        'Distribution of weights',
        'component weights',
-       type='stack',
+       type='group',
        colors=colors
+       #,plot_out="/home/vorberg/weights.html"
     )
 
     #mu
@@ -643,13 +839,14 @@ def plot_evaluation(parameters_dict, log_df, settings, evaluation_set, prec_wrt_
         'Distribution of Means',
         "values of mean parameters",
         colors=colors
+        #,plot_out="/home/vorberg/mus.html"
     )
 
     #std deviation
     prec_df = pd.DataFrame.from_dict(dict((k, parameters_dict[k]) for k in sorted(parameters_dict.keys()) if 'prec' in k))
     try:
         std_dev = prec_df.apply(lambda p: np.sqrt(1.0/p))
-        if prec_wrt_L:
+        if settings['prec_wrt_L']:
             std_dev = prec_df.apply(lambda p: np.sqrt(1.0/(p*142))) #in case precision is specified depending on L=142
     except ZeroDivisionError as e:
         print(e)
@@ -661,6 +858,7 @@ def plot_evaluation(parameters_dict, log_df, settings, evaluation_set, prec_wrt_
         'Distribution of std deviations',
         "values of std deviation parameters",
         colors=colors
+        #,plot_out="/home/vorberg/std.html"
     )
 
 
@@ -669,12 +867,13 @@ def plot_evaluation(parameters_dict, log_df, settings, evaluation_set, prec_wrt_
     plots.append(plot_stddev)
 
     ####################### Scatterplot mu vs std dev
+    print("Generate scatter plot mu vs std...")
     scatter_dict = {}
     for component in range(settings['nr_components']):
         scatter_dict['mu_'+str(component)] = [
             mu_df['mu_'+str(component)].tolist(),
             std_dev['std_'+str(component)].tolist(),
-            AB
+            AB.values()
         ]
     plot_mu_vs_stddev = plot_scatter(scatter_dict,
                                      'Mean vs std deviation',
@@ -682,12 +881,15 @@ def plot_evaluation(parameters_dict, log_df, settings, evaluation_set, prec_wrt_
                                      "std deviation",
                                      False,
                                      colors
+                                     #,plot_out="/home/vorberg/mu_vs_std.html"
                                      )
 
     plots.append(plot_mu_vs_stddev)
 
 
     ############################################## plotting of gradient norms
+    print("Generate gradient norms plot...")
+
     #gradients for mu
     mu_grad_dict = {}
     annotations_dict = {}
@@ -724,6 +926,7 @@ def plot_evaluation(parameters_dict, log_df, settings, evaluation_set, prec_wrt_
     plots.append(plot_gradient_precMat_stats)
 
     ##################################### plotting of gradient trace of a specific ab pair for all components
+    print("Generate gradient trace plot...")
 
     gradient_df = log_df.filter(regex=("mu_[0-9]*"))
     plot_gradient_mu_ab_trace = plot_gradient_ab_trace(gradient_df,
@@ -742,22 +945,12 @@ def plot_evaluation(parameters_dict, log_df, settings, evaluation_set, prec_wrt_
 
 
     ##################################### plotting of univariate mixtures
-    if len(evaluation_set['contact']) == 0 or len(evaluation_set['bg']) == 0:
+    if len(evaluation_set_kde['contact']) == 0 or len(evaluation_set_kde['bg']) == 0:
         print "Evaluation set is empty. Cannot plot Mixture Visualization."
     else:
-        plots.append(plot_parameter_visualisation_1d(parameters_dict, evaluation_set, settings, ab_list, colors, prec_wrt_L))
-
-    ######################################### plotting of bivariate mixtures
-    if settings['sigma'] == 'full':
-        ab_cd_list = [
-            [AB_INDICES['E-R'], AB_INDICES['R-E']],
-            [AB_INDICES['E-E'], AB_INDICES['R-E']],
-            [AB_INDICES['V-I'], AB_INDICES['I-L']],
-        ]
-        for abcd in ab_cd_list:
-            plots.append(contour_plot_2d_for_GaussianMixture(parameters_dict, abcd[0], abcd[1], evaluation_set))
-
-
+        print("Generate parameter visualization 1d plots...")
+        plots.append(plot_parameter_visualisation_1d(parameters_dict, evaluation_set_kde, settings, colors, settings['prec_wrt_L']))
+    # plot_parameter_visualisation_1d(parameters_dict, evaluation_set_kde, settings, colors, settings['prec_wrt_L'], plot_out="/home/vorberg/1d_vis.html")
 
     # ------------------------------------------------------------------------------
     ### define merged plot
@@ -829,8 +1022,8 @@ def plot_evaluation(parameters_dict, log_df, settings, evaluation_set, prec_wrt_
         fig['layout']['updatemenus'][0]['buttons'][ab]['args'][1] = trace_visibility_ab[ab]
 
 
-    fig['layout']['legend']['yanchor'] = 'top'
-    fig['layout']['legend']['y'] = 0.5
+    fig['layout']['legend']['yanchor'] = 'bottom'
+    fig['layout']['legend']['y'] = 0
     fig['layout']['height'] = rows * 250
     fig['layout']['font'] = {'size': 18}  # set global font size
 
@@ -906,27 +1099,139 @@ def main():
     pdb_dir                 = args.pdb_dir
     size                    = args.size
 
-    #teating
-    # optimization_log_file = "/home/vorberg/parameters.log"
-    # parameter_file = "/home/vorberg/parameters"
+    #testing
+    optimization_log_file = "/home/vorberg/work/data//bayesian_framework/mle_for_couplingPrior_cath4.1/ccmpred-pll-centerv/3/reg_prec100_mu01/diagonal_300000_nrcomponents3_noncontactthr25/parameters.log"
+    parameter_file = "/home/vorberg/work/data//bayesian_framework/mle_for_couplingPrior_cath4.1/ccmpred-pll-centerv/3/reg_prec100_mu01/diagonal_300000_nrcomponents3_noncontactthr25/parameters"
+    optimization_log_file = "/home/vorberg/work/data//bayesian_framework/mle_for_couplingPrior_cath4.1/ccmpredpy_cd_gd/10/reg_prec100_mu01/diagonal_300000_nrcomponents10_noncontactthr25/parameters.log"
+    parameter_file = "/home/vorberg/work/data//bayesian_framework/mle_for_couplingPrior_cath4.1/ccmpredpy_cd_gd/10/reg_prec100_mu01/diagonal_300000_nrcomponents10_noncontactthr25/parameters"
     # plot_file = "/home/vorberg/test.html"
-    # braw_dir = "/home/vorberg/work/data/benchmarkset_cathV4.1/ccmpred/ccmpredpy_cd/braw/"
+    # braw_dir = "/home/vorberg/work/data//benchmarkset_cathV4.1/contact_prediction/ccmpred-pll-centerv/braw/"
     # pdb_dir= "/home/vorberg/work/data/benchmarkset_cathV4.1/pdb_renum_combs/"
-    # size=100
+    # size=5000
 
 
-    log_df      = coupling_prior.utils_coupling_prior.read_optimization_log_file(optimization_log_file)
-    parameters  = coupling_prior.utils_coupling_prior.read_parameter_file(parameter_file)
-    settings    = coupling_prior.utils_coupling_prior.read_settings_file(parameter_file + ".settings")
-
-    evaluation_set = generate_coupling_decoy_set(size, braw_dir, pdb_dir )
-    #evaluation_set = {'contact':[], 'bg':[]}
-
-    plot_evaluation(parameters, log_df, settings, evaluation_set, plot_file)
+    log_df           = coupling_prior.utils_coupling_prior.read_optimization_log_file(optimization_log_file)
+    parameters_dict  = coupling_prior.utils_coupling_prior.read_parameter_file(parameter_file)
+    settings         = coupling_prior.utils_coupling_prior.read_settings_file(parameter_file + ".settings")
 
 
+    #settings for plot
+    ab_list = [
+        AB_INDICES['A-A'],
+        AB_INDICES['C-C'],
+        AB_INDICES['E-R'],
+        AB_INDICES['K-E'],
+        AB_INDICES['E-E'],
+        AB_INDICES['K-R'],
+        AB_INDICES['V-I'],
+        AB_INDICES['I-L'],
+        AB_INDICES['S-T'],
+        AB_INDICES['S-S'],
+        AB_INDICES['K-P'],
+        AB_INDICES['N-N'],
+        AB_INDICES['W-W'],
+        AB_INDICES['F-W'],
+    ]
 
 
+    #generate test data and kernel density estimate of test data
+    evaluation_set = generate_coupling_decoy_set(size, braw_dir, pdb_dir)
+
+
+    # Function to be fitted
+    bandwidth = 0.01
+    evaluation_set_kde = {}
+    evaluation_set_kde['x_grid'] = np.linspace(-1, 1, 5000)
+    evaluation_set_kde['contact'] = {}
+    evaluation_set_kde['bg'] = {}
+
+    # kernel density estimate for couplings wijab
+    for ab in ab_list:
+
+        kde_contact = KernelDensity(kernel='gaussian', bandwidth=bandwidth).fit(evaluation_set['contact'][ab].reshape(-1, 1))
+        kde_bg = KernelDensity(kernel='gaussian', bandwidth=bandwidth).fit(evaluation_set['bg'][ab].reshape(-1, 1))
+
+        ### add empirical distribution for example data points
+        evaluation_set_kde['contact'][ab] = np.exp(kde_contact.score_samples(evaluation_set_kde['x_grid'].reshape(-1, 1)))
+        evaluation_set_kde['bg'][ab] = np.exp(kde_bg.score_samples(evaluation_set_kde['x_grid'].reshape(-1, 1)))
+
+
+    #sample points according to regularizer
+    lambda_w = 0.2 * 150
+    sigma = np.sqrt(1.0/lambda_w)
+    regularizer = np.random.normal(scale=sigma, size=10000)
+    kde_reg = KernelDensity(kernel='gaussian', bandwidth=0.1).fit(regularizer.reshape(-1, 1))
+    evaluation_set_kde['regularizer'] = np.exp(kde_reg.score_samples(evaluation_set_kde['x_grid'].reshape(-1, 1)))
+
+
+    #finally plot
+    plot_evaluation(parameters_dict, log_df, settings, evaluation_set_kde, plot_file)
+
+
+
+
+
+####aingle plots
+
+    #colors = np.array(cl.scales[str(settings['nr_components'])]['qual']['Paired'])
+    log_df['negLL'] = log_df['negLL'] / (settings['nr_pairs_noncontact'] + settings['nr_pairs_contact'])
+    log_df['negLL_crossval'] = log_df['negLL_crossval'] / (settings['nr_pairs_noncontact_cross_val'] + settings['nr_pairs_contact_cross_val'])
+    plot_convergence_trace_plotly(log_df,
+                                  name=['negLL', 'negLL_crossval'],
+                                  plot_title='neg LL trace for training and cross-val set',
+                                  plot_out="/home/vorberg/negLL.html")
+
+
+
+    weights_dict = {}
+    for component in range(settings['nr_components']):
+        weights_dict['component ' + str(component)] = {
+                            'weights (contact)':    parameters_dict["weight_contact_" + str(component)][0],
+                            'weights (bg)':         parameters_dict["weight_bg_" + str(component)][0]
+        }
+    plot_barplot(
+        weights_dict,
+       'Distribution of weights',
+       'component weights',
+       type='group',
+       colors=colors,
+       plot_out="/home/vorberg/weights.html"
+    )
+
+    #mu
+    mu_df = pd.DataFrame.from_dict(dict((k, parameters_dict[k]) for k in sorted(parameters_dict.keys()) if 'mu' in k))
+    plot_boxplot(
+        mu_df,
+        'Distribution of Means',
+        "values of mean parameters",
+        colors=colors
+        ,plot_out="/home/vorberg/mus.html"
+    )
+
+    #std deviation
+    prec_df = pd.DataFrame.from_dict(dict((k, parameters_dict[k]) for k in sorted(parameters_dict.keys()) if 'prec' in k))
+    std_dev = prec_df.apply(lambda p: np.sqrt(1.0/p))
+    std_dev.columns = [column_name.replace("prec", "std") for column_name in std_dev.columns]
+    plot_boxplot(
+        std_dev,
+        'Distribution of std deviations',
+        "values of std deviation parameters",
+        colors=colors
+        ,plot_out="/home/vorberg/std.html"
+    )
+
+
+
+
+
+
+    #ab=AB_INDICES['I-L']
+    #cd=AB_INDICES['V-I']
+    plot_parameter_visualisation_1d(parameters_dict, evaluation_set_kde, settings, colors, prec_wrt_L=False, plot_out="/home/vorberg/vis_1d.html")
+    #plot_parameter_visualisation_1d_a_b(parameters_dict, nr_components, ab, colors, prec_wrt_L=False, plot_out="/home/vorberg/vis_1d_v2.html")
+    contour_plot_2d_for_GaussianMixture(parameters_dict, ab, cd, evaluation_set, plot_out="/home/vorberg/vis_2d_contour.html")
+    plot_parameter_visualisation_2d_samples(parameters_dict, ab, cd, colors, weights="contact", plot_out="/home/vorberg/")
+    plot_parameter_visualisation_2d_samples(parameters_dict, ab, cd, colors, weights="bg", plot_out="/home/vorberg/")
 
 if __name__ == '__main__':
     main()

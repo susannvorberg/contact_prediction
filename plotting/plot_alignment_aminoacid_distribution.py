@@ -9,14 +9,12 @@
 #===============================================================================
 import argparse
 import os
-import numpy as np
-from collections import Counter
 import plotly.graph_objs as go
 from plotly.offline import plot as plotly_plot
 import utils.io_utils as io
+import utils.alignment_utils as au
 
-
-def plot_amino_acid_distribution_per_position(alignment_file, plot_file):
+def plot_amino_acid_distribution_per_position(alignment_file, plot_file=None, freq=True):
 
     # read alignment
     protein = os.path.basename(alignment_file).split(".")[0]
@@ -24,28 +22,25 @@ def plot_amino_acid_distribution_per_position(alignment_file, plot_file):
     N = float(len(alignment))
     L = len(alignment[0])
 
-    # compute percentage of gaps per position
-    alignment = alignment.transpose()
-
 
     #create plot
     data = []
 
-    aa_freq_per_pos = np.zeros((21, L))
-    for position in range(L):
-        aa_counts = Counter(alignment[position])
-        for aa, counts in aa_counts.iteritems():
-            freq = counts/N
-            aa_freq_per_pos[aa,position] = freq
+    aa_counts_single, aa_counts_pair = au.compute_counts(alignment, compute_weights=False)
+
+    if freq:
+        aa_counts_single /= N
 
     #add bar for each amino acid for each position
-    for aa in range(1,21):
-        data.append(go.Bar(
-                      x=range(1,L+1),
-                      y=aa_freq_per_pos[aa],
-                      showlegend=True,
-                      name=io.AMINO_ACIDS[aa]
-              ))
+    for aa in range(20):
+        data.append(
+            go.Bar(
+                x= list(range(1,L+1)),
+                y=aa_counts_single[:, aa].tolist(),
+                showlegend=True,
+                name=io.AMINO_ACIDS[aa]
+              )
+        )
 
 
     layout = go.Layout(
@@ -60,7 +55,11 @@ def plot_amino_acid_distribution_per_position(alignment_file, plot_file):
     )
 
     plot = {'data': data, 'layout': layout}
-    plotly_plot(plot, filename=plot_file, auto_open=False)
+
+    if plot_file is None:
+        return plot
+    else:
+        plotly_plot(plot, filename=plot_file, auto_open=False)
 
 
 def main():
@@ -74,12 +73,13 @@ def main():
 
     alignment_file              = str(args.alignment_file)
     plot_file                   = str(args.plot_file)
-    #protein='2fuv_A_04'
-    #alignment_file = "/home/vorberg/work/data/benchmarkset_cathV4/benchmarkset_cathV4_combs/psc_eval01/"+protein+".psc"
+
+    #protein='1fjrA02'
+    #alignment_file="/home/vorberg/work/data/benchmarkset_cathV4.1/psicov/" + protein + ".filt.psc"
     #plot_file = "/home/vorberg/alignment_"+protein+".html"
 
-    plot_amino_acid_distribution_per_position(alignment_file, plot_file)
-
+    plot_amino_acid_distribution_per_position(alignment_file, plot_file, freq=True)
+    plot_amino_acid_distribution_per_position(alignment_file, plot_file, freq=False)
 
 
 

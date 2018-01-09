@@ -34,7 +34,8 @@ def plot_percentage_gaps_per_position(alignment, plot_file=None):
             x=[x for x in range(1,L+1)],
             y=gaps,
             name = "percentage of gaps",
-            mode="Lines"
+            mode="Lines",
+            line=dict(width=3)
         )
     )
 
@@ -43,7 +44,8 @@ def plot_percentage_gaps_per_position(alignment, plot_file=None):
             x=[x for x in range(1,L+1)],
             y=entropy_per_position,
             name = "relative Entropy",
-            mode="Lines"
+            mode="Lines",
+            line=dict(width=3)
         )
     )
 

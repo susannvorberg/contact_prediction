@@ -9,32 +9,19 @@
 
 import argparse
 import os
-import sys
 import numpy as np
 import pandas as pd
 
 
-sys.path.append('/home/vorberg/Documents/contact_prediction')
 import utils.io_utils as io
 import utils.plot_utils as plot
 import utils.pdb_utils as pdb
 import utils.benchmark_utils as bu
+import utils.alignment_utils as au
+import utils.utils as u
 import plotting.plot_alignment_coverage as aligncov
 import raw
 
-def find_dict_key(key, dictionary):
-    for k, v in dictionary.items():
-        if k == key:
-            return v;
-        if isinstance(v, dict):
-            res = find_dict_key(key, v)
-            if res is not None:
-                return res
-        if isinstance(v, list):
-            for d in v:
-                res = find_dict_key(key, d)
-                if res is not None:
-                    return res
 
 def plot_contact_map(mat, seqsep, contact_threshold, plot_file, title, alignment_file=None, pdb_file=None):
 
@@ -43,7 +30,6 @@ def plot_contact_map(mat, seqsep, contact_threshold, plot_file, title, alignment
 
     ### if alignment file is specified, compute Ni
     if (alignment_file):
-        alignment_file = alignment_file
         alignment = io.read_alignment(alignment_file)
         gaps_percentage_plot = aligncov.plot_percentage_gaps_per_position(alignment, plot_file=None)
     else:
@@ -88,6 +74,7 @@ def main():
     parser.add_argument("--pdb_file",           type=str,   help="path to pdb file [optional] -  plotting true contacs")
     parser.add_argument("--alignment_file",     type=str,   help="path to alignment file [optional] - plotting coverage")
     parser.add_argument("--apc",                action="store_true", default=False,   help="Apply average product correction")
+    parser.add_argument("--entropy_correction", action="store_true", default=False, help="Apply entropy correction")
 
 
     args = parser.parse_args()
@@ -99,41 +86,58 @@ def main():
     seqsep              = args.seqsep
     contact_threshold   = args.contact_threshold
     apc                 = args.apc
+    entropy_correction  = args.entropy_correction
+
+    alignment_file      = args.alignment_file
+    pdb_file            = args.pdb_file
 
     #debugging
-    # name="1a6q_A_02"
+    protein="1a0iA01"
+    alignment_file="/home/vorberg/work/data/benchmarkset_cathV4.1/psicov/" + protein + ".filt.psc"
+    braw_file = "/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/ccmpred-pll-centerv/braw/" + protein + ".filt.braw.gz"
+    braw_file = "/home/vorberg/" + protein + ".gx.gz"
+    braw_file = "/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/braw_ec_correction/" + protein + ".braw.ec.gz"
+    braw_file = "/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/braw/" + protein + ".filt.braw.gz"
 
-    # braw_file = "/home/vorberg/work/data/benchmarkset_cathV4/benchmarkset_cathV4_combs/ccmpred_dev_center_v/l_02/braw/"+name+".braw.gz"
-    #braw_file = "/home/vorberg/work/data/benchmarkset_cathV4/benchmarkset_cathV4_combs/ccmpred_dev_center_v/l_1772/braw_debug/1i1g_A_02.braw.gz"
-    #braw_file = "/home/vorberg/work/data/benchmarkset_cathV4/benchmarkset_cathV4_combs/ccmpred_dev_center_v/l_1772/braw_ccmpredpython_pcratio01_eps1e_7/1i1g_A_02.braw.gz"
-    #braw_file = "/home/vorberg/work/data/benchmarkset_cathV4/benchmarkset_cathV4_combs/ccmpred_dev_center_v/l_1772/braw_ccmpredpython_pseudocounts100/1h4x_A_00.braw.gz"
-    #braw_file = "/home/vorberg/work/data/benchmarkset_cathV4/benchmarkset_cathV4_combs/ccmpred_dev_center_v/l_1772/braw_ccmpredpython_pcratio01/2dn8_A_01.braw.gz"
-    #braw_file = "/home/vorberg/work/data/benchmarkset_cathV4/benchmarkset_cathV4_combs/ccmpred_dev_center_v/l_1772/braw_debug_64bit/2eiy_B_01.braw.gz"
-    #braw_file = "/home/vorberg/1i1g_A_02.braw.gz"
+    mat_file = "/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/mat/" + protein + ".filt.frobenius.ec.mat"
+    mat_file="/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_ec_eta/"+protein+".filt.frobenius.ec.mat"
+    mat_file="/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/squared_frobenius_ec_eta/"+protein+".filt.squared-frobenius.ec.mat"
 
-    # benchmark_dir="maxit500_numpc1_samplingsteps1_adamdefault_nsample10000/"
-    # benchmark_dir="maxit500_numpc1_samplingsteps1_adam_--ad-mom1_0.9_--ad-mom2_0.999_--ad-learning_rate_1e-3/"
-    # mat_file = "/home/vorberg/work/data/benchmark_contrastive_divergence/"+benchmark_dir+"/"+name+".mat"
-    #mat_file = "/home/vorberg/programs/CCMpred-Dev-64bit/CCMpred-Dev/example/1atzA.mat"
-    #mat_file = "/home/vorberg/programs/ccmpred-new/example/1atzA.mat"
-    #mat_file = "/home/vorberg/work/data/benchmarkset_cathV4/benchmarkset_cathV4_combs/benchmark_hhfilter_cov/cov_0/mat/2xyk_B_00.mat.gz"
-
-    # pdb_file = "/home/vorberg/work/data/benchmarkset_cathV4/dompdb_CATHv4_renum_seqtom/"+name.replace("_", "")+"_ren.pdb"
-    # alignment_file = "/home/vorberg/work/data/benchmarkset_cathV4/benchmarkset_cathV4_combs/psc_eval01/"+name+".psc"
-    # seqsep     = 4
-    # contact_threshold = 8
-    # plot_out    = "/home/vorberg/work/plots/benchmark_cd_on_cathv4_combs_200_dataset/contact_maps/"
-    # apc=True
-    # alignment_format = "psicov"
+    mat_file="/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/ec_pair_weight_20000_balance5_regcoeff10/"+protein+".ec.pairweights.mat"
+    mat_file="/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/ec_pair_weight_logreg_20000_balance5_regcoeff10/"+protein+".logreg.ec.pairweights.mat"
+    mat_file="/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_csc_lambdaw_lfactor3/"+protein+".filt.frobenius.csc_lambdaw_lfactor3.mat"
+    mat_file="/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_csc_5lambdaw/"+protein+".filt.frobenius.csc_5lambdaw.mat"
+    mat_file="/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_csc/"+protein+".filt.frobenius.csc.mat"
+    mat_file="/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/squared_frobenius_csc/"+protein+".filt.squared_frobenius.csc.mat"
+    pdb_file="/home/vorberg/work/data/benchmarkset_cathV4.1/pdb_renum_combs/" + protein + ".pdb"
+    # pdb_file=None
+    seqsep = 4
+    # seqsep = 1
+    contact_threshold = 8
+    plot_out    = "/home/vorberg/"
+    #apc=True
+    apc=False
+    entropy_correction=True
+    alignment_format = "psicov"
   
 
     ### Compute l2norm score from braw
     if args.braw_file is not None:
         braw_file=args.braw_file
+        protein_name = '.'.join(os.path.basename(braw_file).split('.')[:-1])
         braw = raw.parse_msgpack(braw_file)
         meta_info = braw.meta
-        mat = bu.compute_l2norm_from_brawfile(braw_file, apc)
-        protein = '.'.join(os.path.basename(braw_file).split('.')[:-1])
+
+        if entropy_correction:
+            alignment = io.read_alignment(alignment_file)
+            single_freq, pair_freq = au.calculate_frequencies(alignment, au.uniform_pseudocounts)
+            mat = bu.compute_entropy_corrected_mat(braw, single_freq, squared=False)
+        else:
+            mat = bu.compute_l2norm_from_braw(braw, apc)
+
+
+
+
 
     ### Read score from mat
     if args.mat_file is not None:
@@ -142,16 +146,16 @@ def main():
         if(apc):
             mat = bu.compute_apc_corrected_matrix(mat)
         meta_info = io.read_json_from_mat(mat_file)
-        protein = '.'.join(os.path.basename(mat_file).split('.')[:-1])
+        protein_name = os.path.basename(mat_file).split('.')[0]
 
 
+    plot_file = plot_out + protein_name + "_seqsep"+str(seqsep)+ "_contacthr"+str(contact_threshold)+"_apc"+str(apc)+".html"
+    neff = np.round(u.find_dict_key("neff", meta_info), decimals=3)
+    N = u.find_dict_key("nrow", meta_info)
+    L = u.find_dict_key("ncol", meta_info)
+    title = protein_name + "<br>L: " + str(L) + " N: " + str(N) + " Neff: " + str(neff) + " diversity: " + str(np.round(np.sqrt(N)/L, decimals=3))
+    plot_contact_map(mat, seqsep, contact_threshold, plot_file, title, alignment_file=alignment_file, pdb_file=pdb_file)
 
-    plot_file = plot_out + protein + "_seqsep"+str(seqsep)+ "_contacthr"+str(contact_threshold)+".html"
-    neff = find_dict_key("neff", meta_info)
-    N = find_dict_key("nrow", meta_info)
-    L = find_dict_key("ncol", meta_info)
-    title = protein + "<br>L: " + str(L) + " N: " + str(N) + " Neff: " + str(neff)
-    plot_contact_map(mat, seqsep, contact_threshold, plot_file, title, alignment_file=args.alignment_file, pdb_file=args.pdb_file)
 
 
 

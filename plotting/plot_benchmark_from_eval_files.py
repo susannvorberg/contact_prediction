@@ -19,6 +19,7 @@ def parse_args():
     parser.add_argument("--plot_dir",       type=str, help="path to print plot files")
     parser.add_argument("--seqsep",         type=int, default=12, help="sequence separation")
     parser.add_argument("--contact_thr",    type=int, default = 8, help="contact threshold (contact: d(Cb-Cb) < thr)")
+    parser.add_argument("--noncontact_thr", type=int, default = 8, help="ignore residue pairs with contact threshold < d(Cb-Cb) < NONCONTACTTHR ")
     parser.add_argument("--methods",        type=str, help="comma separated method names")
     parser.add_argument("--print_methods",  action="store_true", default=False, help="Print methods in benchmark suite")
 
@@ -64,7 +65,10 @@ def main():
     plot_dir        = args.plot_dir
     seqsep          = args.seqsep
     contact_thr     = args.contact_thr
+    noncontact_thr  = args.noncontact_thr
 
+    if noncontact_thr < contact_thr:
+        noncontact_thr = contact_thr
 
     #debugging
     # eval_dir="/home/vorberg/work/data/benchmarkset_cathV4.1/evaluation/"
@@ -86,12 +90,14 @@ def main():
     print ("plot_dir: " + plot_dir)
     print ("seqsep: " + str(seqsep))
     print ("contact_thr: " + str(contact_thr))
+    print ("noncontact_thr: " + str(noncontact_thr))
 
     # if scores have been specified on command line
     methods = []
     if args.methods:
         print ("methods: " + args.methods)
-        methods = set(args.methods.strip().split(","))
+        methods = args.methods.strip().split(",")
+    print methods
 
     plot_type=[]
     if args.precision_vs_rank:
@@ -129,14 +135,9 @@ def main():
         plot_type.append('meanprecision_by_div')
     print ("--------------------------------------------------------")
 
+
     ##Create benchmark object ===============================================================================
     b = Benchmark(eval_dir)
-    #b.print_evaluation_file_stats()
-
-    # print available methods
-    if (args.print_methods):
-        for method in sorted(b.methods):
-            print(method)
 
 
     ##Create benchmark object ============
@@ -148,7 +149,7 @@ def main():
         b.add_filter(filter_optcode_0)
 
         #Compute statistics =============================================================================================
-        b.compute_evaluation_statistics(seqsep, contact_thr)
+        b.compute_evaluation_statistics(seqsep, contact_thr, noncontact_thr)
 
         #Plot ============================================================================================================
         b.plot(plot_dir, plot_type=plot_type)
