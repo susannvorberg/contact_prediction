@@ -265,7 +265,7 @@ def compute_apc_corrected_matrix(cmat):
     apc_term = mean[:, np.newaxis] * mean[np.newaxis, :] / np.mean(cmat)
     return cmat - apc_term
 
-def compute_l2norm_from_braw(braw_x_pair, apc=False):
+def compute_l2norm_from_braw(braw_x_pair, apc=False, squared=False):
     '''
     Compute the l2norm of all residue pairs
 
@@ -275,7 +275,10 @@ def compute_l2norm_from_braw(braw_x_pair, apc=False):
     '''
 
     #compute l2norm without gap state
-    mat = np.sqrt(np.sum(braw_x_pair[:,:,:20,:20] * braw_x_pair[:,:,:20,:20], axis=(2, 3)))
+    if squared:
+        mat = np.sum(braw_x_pair[:,:,:20,:20] * braw_x_pair[:,:,:20,:20], axis=(2, 3))
+    else:
+        mat = np.sqrt(np.sum(braw_x_pair[:,:,:20,:20] * braw_x_pair[:,:,:20,:20], axis=(2, 3)))
 
     #apply apc)
     if(apc):
@@ -283,7 +286,7 @@ def compute_l2norm_from_braw(braw_x_pair, apc=False):
 
     return mat
 
-def compute_l2norm_from_brawfile(braw_file, apc=False):
+def compute_l2norm_from_brawfile(braw_file, apc=False, squared=False):
     '''
         Compute the l2norm of all residue pairs
     :param braw_file: binary raw coupling file
@@ -297,30 +300,14 @@ def compute_l2norm_from_brawfile(braw_file, apc=False):
     # read binary raw file
     braw = raw.parse_msgpack(braw_file)
 
-    return compute_l2norm_from_braw(braw, apc)
+    return compute_l2norm_from_braw(braw, apc, squared=squared)
 
-def compute_sum_from_braw(braw_x_pair):
-    '''
-    Compute the l2norm of all residue pairs
+def compute_entropy_corrected_mat(braw_x_pair, single_freq, neff, lambda_w, squared=True):
 
-    :param braw_x_pair: raw coupling values for pairs
-    :param apc: compute apc corrected l2norm
-    :return: l2norm (-apc) score matrix
-    '''
 
-    #compute l2norm without gap state
-    mat = np.sum(braw_x_pair[:,:,:20,:20], axis=(2, 3))
+    uij, scaling_factor_eta = compute_correction(single_freq, neff, lambda_w, braw_x_pair, entropy=True, squared=squared)
 
-    return mat
-
-def compute_entropy_corrected_mat(braw, single_freq, squared=True):
-
-    neff = u.find_dict_key('neff', braw.meta['workflow'][0])
-    lambda_w = u.find_dict_key('lambda_pair', braw.meta['workflow'][0])
-
-    uij, scaling_factor_eta = compute_correction(single_freq, neff, lambda_w, braw.x_pair, entropy=True, squared=squared)
-
-    mat_braw = np.sum(braw.x_pair[:,:,:20,:20] * braw.x_pair[:,:,:20,:20], axis=(3, 2))
+    mat_braw = np.sum(braw_x_pair[:,:,:20,:20] * braw_x_pair[:,:,:20,:20], axis=(3, 2))
 
     if not squared:
         corrected_mat = np.sqrt(mat_braw) - scaling_factor_eta * np.sqrt(np.sum(uij, axis=(3, 2)))
@@ -420,8 +407,8 @@ def compute_correction_ij(single_freq, neff, lambda_w, x_pair, residue_i, residu
 
     ### compute correction
     correction = scaling_factor_eta * np.sum(uij, axis=(3,2))
-    print "sqrt correction for i={0} and j={1}: {2}".format(residue_i, residue_j, np.sqrt(correction[residue_i-1, residue_j-1]))
-    print "correction for i={0} and j={1}: {2}".format(residue_i, residue_j, correction[residue_i-1, residue_j-1])
+    print("sqrt correction for i={0} and j={1}: {2}".format(residue_i, residue_j, np.sqrt(correction[residue_i-1, residue_j-1])))
+    print("correction for i={0} and j={1}: {2}".format(residue_i, residue_j, correction[residue_i-1, residue_j-1]))
 
     ##return correction components separately
     entropy_correction_ij = uij[residue_i-1, residue_j-1, :, :]
