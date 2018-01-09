@@ -15,14 +15,11 @@ from ..utils import io_utils as io
 from ..utils import plot_utils as plots
 from ..utils import alignment_utils as au
 
-def plot_aa_frequencies(alignment, protein_name, residue_i, residue_j, plot_frequencies=True, plot_type="heatmap", plot_out=None):
+def plot_aa_frequencies(single_counts, pairwise_counts, protein_name, residue_i, residue_j, plot_frequencies=True, plot_type="heatmap", plot_out=None):
 
 
-    N = float(len(alignment))
-    L = len(alignment[0])
-
-    single_counts, pairwise_counts = au.compute_counts(alignment, compute_weights=True)
-    neff = au.compute_neff(alignment)
+    L = len(single_counts.shape[0])
+    neff = np.sum(single_counts[0,:])
 
     #gap  = 20
     single_counts_res_i = single_counts[residue_i-1, :]
@@ -51,12 +48,12 @@ def plot_aa_frequencies(alignment, protein_name, residue_i, residue_j, plot_freq
         if plot_frequencies:
             title = "Amino acid frequencies for protein " + protein_name + ", residues i: " + str(
                 residue_i) + " and j: " + str(residue_j) + \
-                    "<br>with L=" + str(L) + " and N=" + str(N) + " and Nij=" + str(Nij)
+                    "<br>with L=" + str(L) + " and Neff=" + str(neff) + " and Nij=" + str(Nij)
             plot_file = plot_out + "/amino_acid_freq_" + protein_name + "_" + str(residue_i) + "_" + str(residue_j) + "_" + plot_type + ".html"
         else:
             title = "Amino acid counts for protein " + protein_name + ", residues i: " + str(
                 residue_i) + " and j: " + str(residue_j) + \
-                    "<br>with L=" + str(L) + " and N=" + str(N) + " and Nij=" + str(Nij)
+                    "<br>with L=" + str(L) + " and Neff=" + str(neff) + " and Nij=" + str(Nij)
             plot_file = plot_out + "/amino_acid_counts_" + protein_name + "_" + str(residue_i) + "_" + str(residue_j) + "_" + plot_type + ".html"
 
         plots.plot_coupling_matrix(
@@ -96,7 +93,10 @@ def main():
     alignment = io.read_alignment(alignment_file)
     protein_name = os.path.basename(alignment_file).split(".")[0]
 
-    plot_aa_frequencies(alignment, protein_name, plot_out, residue_i, residue_j, plot_freq)
+    #compute amino acid counts only once
+    single_counts, pairwise_counts = au.compute_counts(alignment, compute_weights=True)
+
+    plot_aa_frequencies(single_counts, pairwise_counts, protein_name, plot_out, residue_i, residue_j, plot_freq)
 
 
 
