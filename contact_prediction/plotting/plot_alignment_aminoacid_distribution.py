@@ -18,7 +18,7 @@ import numpy as np
 def plot_amino_acid_distribution_per_position(aa_counts_single, title, plot_file=None, freq=True):
 
     Neff = np.sum(aa_counts_single[0,:])
-    L = len(aa_counts_single.shape[0])
+    L = aa_counts_single.shape[0]
 
     #create plot
     data = []
