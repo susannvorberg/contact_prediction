@@ -34,7 +34,7 @@ def parse_arguments():
 
     return args
 
-def plot_precision_vs_rank(dict_scores, distance_matrix, seqsep, contact_thr, title, plot_out= None):
+def plot_precision_vs_rank(dict_scores, distance_matrix, seqsep, contact_thr, title, legend_order= None, plot_out= None):
 
     # get residue pairs that are resolved and (j-i) > seqsep
     indices_pairs_resolved = zip(*np.where(~np.isnan(distance_matrix)))
@@ -63,17 +63,22 @@ def plot_precision_vs_rank(dict_scores, distance_matrix, seqsep, contact_thr, ti
 
     eval_dict = {'rank': ranks}
 
-    for name, mat in dict_scores.iteritems():
-        print name
-        eval_df[name] = mat[list(zip(*ij_indices)[0]), list(zip(*ij_indices)[1])]
+    if legend_order is None:
+        legend_order = dict_scores.keys()
+
+    for method in legend_order:
+        mat = dict_scores[method]
+        print(method)
+
+        eval_df[method] = mat[list(zip(*ij_indices)[0]), list(zip(*ij_indices)[1])]
 
         # compute precision at ranks
-        precision, recall, threshold = bu.compute_precision_recall(eval_df['class'], eval_df[name])
+        precision, recall, threshold = bu.compute_precision_recall(eval_df['class'], eval_df[method])
         precision_rank = [np.nan] * len(ranks)
         for rank_id, rank in enumerate(ranks_L):
             precision_rank[rank_id] = np.array(precision)[rank]
 
-        eval_dict[name] = {
+        eval_dict[method] = {
                 'mean': precision_rank,
                 'size': 1
         }
