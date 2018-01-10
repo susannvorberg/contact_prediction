@@ -302,10 +302,12 @@ def compute_l2norm_from_brawfile(braw_file, apc=False, squared=False):
 
     return compute_l2norm_from_braw(braw, apc, squared=squared)
 
-def compute_entropy_corrected_mat(braw_x_pair, single_freq, neff, lambda_w, squared=True):
+def compute_corrected_mat(braw_x_pair, single_freq, neff, lambda_w, entropy=True, squared=True):
 
 
-    uij, scaling_factor_eta = compute_correction(single_freq, neff, lambda_w, braw_x_pair, entropy=True, squared=squared)
+    uij, scaling_factor_eta = compute_correction(
+        single_freq, neff, lambda_w, braw_x_pair, entropy=entropy, squared=squared
+    )
 
     mat_braw = np.sum(braw_x_pair[:,:,:20,:20] * braw_x_pair[:,:,:20,:20], axis=(3, 2))
 
