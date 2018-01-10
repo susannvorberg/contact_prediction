@@ -63,11 +63,8 @@ def plot_precision_vs_rank(dict_scores, distance_matrix, seqsep, contact_thr, ti
 
     eval_dict = {'rank': ranks}
 
-    if legend_order is None:
-        legend_order = dict_scores.keys()
+    for method, mat in dict_scores.iteritems():
 
-    for method in legend_order:
-        mat = dict_scores[method]
         print(method)
 
         eval_df[method] = mat[list(zip(*ij_indices)[0]), list(zip(*ij_indices)[1])]
@@ -89,9 +86,9 @@ def plot_precision_vs_rank(dict_scores, distance_matrix, seqsep, contact_thr, ti
     # plot
     yaxistitle = 'Precision'
     if plot_out is None:
-        return pu.plot_evaluationmeasure_vs_rank_plotly(eval_dict, title, yaxistitle, plot_out=None)
+        return pu.plot_evaluationmeasure_vs_rank_plotly(eval_dict, title, yaxistitle, legend_order, nr_proteins=False, plot_out=None)
     else:
-        pu.plot_evaluationmeasure_vs_rank_plotly(eval_dict, title, yaxistitle, plot_out=plot_out)
+        pu.plot_evaluationmeasure_vs_rank_plotly(eval_dict, title, yaxistitle, legend_order, nr_proteins=False, plot_out=plot_out)
 
 def main():
 

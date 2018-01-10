@@ -555,7 +555,7 @@ def plot_evaluationmeasure_vs_rank_plotly_cv(evaluation_dict, title, yaxistitle,
     else:
         return plot
 
-def plot_evaluationmeasure_vs_rank_plotly(evaluation_dict, title, yaxistitle, legend_order=None, plot_out=None):
+def plot_evaluationmeasure_vs_rank_plotly(evaluation_dict, title, yaxistitle, legend_order=None, nr_proteins=True, plot_out=None):
     """
     Plot average precision over proteins
     vs rank of predictions dependent on protein length L
@@ -598,10 +598,13 @@ def plot_evaluationmeasure_vs_rank_plotly(evaluation_dict, title, yaxistitle, le
 
     for nr, method in enumerate(methods):
         max_value = np.max([max_value, np.max(evaluation_dict[method]['mean'])])
+        legend_name = method
+        if nr_proteins:
+            legend_name += "("+str(evaluation_dict[method]['size'],)+" proteins)",
         method_trace = go.Scatter(
             x=[str(rank) for rank in np.round(evaluation_dict['rank'], decimals=2)],
             y=evaluation_dict[method]['mean'],
-            name=method + "("+str(evaluation_dict[method]['size'],)+" proteins)",
+            name=legend_name,
             mode='lines',
             line=dict(
                 width=4,
