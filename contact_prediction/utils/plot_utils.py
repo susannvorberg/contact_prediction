@@ -1573,19 +1573,19 @@ def plot_heatmap(couplings, x_title, y_title, colorbar_title, title, plot_out=No
 
 
     fig['layout']['xaxis']['tickmode']="array"
-    fig['layout']['xaxis']['tickvals']=range(nr_states)
+    fig['layout']['xaxis']['tickvals']=list(range(nr_states))
     fig['layout']['xaxis']['ticktext']=list(coupling_df.columns)
     fig['layout']['xaxis']['type']="category"
     fig['layout']['xaxis']['categoryorder']="array"
-    fig['layout']['xaxis']['categoryarray']=range(nr_states)
+    fig['layout']['xaxis']['categoryarray']=list(range(nr_states))
 
 
     fig['layout']['yaxis']['tickmode']="array"
-    fig['layout']['yaxis']['tickvals']=range(nr_states)
+    fig['layout']['yaxis']['tickvals']=list(range(nr_states))
     fig['layout']['yaxis']['ticktext']=list(coupling_df.columns)
     fig['layout']['yaxis']['type']="category"
     fig['layout']['yaxis']['categoryorder']="array"
-    fig['layout']['yaxis']['categoryarray']=range(nr_states)
+    fig['layout']['yaxis']['categoryarray']=list(range(nr_states))
 
 
     if title == "":
