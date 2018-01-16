@@ -833,8 +833,8 @@ def plot_contact_map_someScore_plotly(plot_matrix, title, seqsep, gaps_percentag
     if 'contact' in plot_matrix and 'distance' in plot_matrix:
 
         #define true and false positives among the L/5 highest scores
-        sub_L5_true  = plot_matrix.query('distance > 0').head(int(L/5)).query('contact > 0')
-        sub_L5_false = plot_matrix.query('distance > 0').head(int(L/5)).query('contact < 1')
+        sub_L5_true  = plot_matrix.query('distance > 0').head(int(L/2)).query('contact > 0')
+        sub_L5_false = plot_matrix.query('distance > 0').head(int(L/2)).query('contact < 1')
 
         if len(sub_L5_true) > 0:
             #Mark TP and FP in the plot with little crosses
@@ -848,7 +848,7 @@ def plot_contact_map_someScore_plotly(plot_matrix, title, seqsep, gaps_percentag
                     line=dict(width=2),
                     size=12
                 ),#size_tp, sizeref=np.max([size_tp + size_fp])/15, sizemode = 'diameter'),
-                name="TP (L/5)",
+                name="TP (L/2)",
                 hoverinfo="none"
             )
 
@@ -856,7 +856,7 @@ def plot_contact_map_someScore_plotly(plot_matrix, title, seqsep, gaps_percentag
         green_yello_red = ['rgb(254,196,79)', 'rgb(222,45,38)']
         max_tp = 8
         max_fp = np.max(plot_matrix[plot_matrix.contact < 1]['distance'])
-        fp_distance_range =   int(np.ceil((max_fp - max_tp)/10.0)*10)
+        fp_distance_range = int(np.ceil((max_fp - max_tp)/10.0)*10)
         green_yello_red_interpolated = cl.interp(green_yello_red, fp_distance_range)
         data_color = [green_yello_red_interpolated[int(x-max_tp)] for x in sub_L5_false['distance']]
 
@@ -873,7 +873,7 @@ def plot_contact_map_someScore_plotly(plot_matrix, title, seqsep, gaps_percentag
                     line=dict(width=2),
                     size=12
                 ),#size_fp, sizeref=np.max([size_tp + size_fp])/15, sizemode = 'diameter'),
-                name="FP (L/5)",
+                name="FP (L/2)",
                 hoverinfo="none"
             )
 
