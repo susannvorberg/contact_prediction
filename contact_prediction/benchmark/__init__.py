@@ -9,7 +9,7 @@ from json import JSONEncoder
 
 import numpy as np
 import pandas as pd
-import raw
+import utils.ccmraw as raw
 import utils.alignment_utils as ali_ut
 import utils.benchmark_utils as bu
 import utils.io_utils as io
