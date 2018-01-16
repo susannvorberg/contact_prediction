@@ -9,12 +9,12 @@ from json import JSONEncoder
 
 import numpy as np
 import pandas as pd
-import utils.ccmraw as raw
-import utils.alignment_utils as ali_ut
+from ..utils import alignment_utils as ali_ut
 import utils.benchmark_utils as bu
 import utils.io_utils as io
 import utils.pdb_utils as pdb
 import utils.utils as u
+import utils.ccmraw as raw
 
 import contact_prediction.utils.plot_utils as pu
 
