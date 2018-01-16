@@ -20,7 +20,7 @@ module load contactprediction/contact_prediction
 
 
 #call
-#bash ~/opt/contactprediction/contact_prediction/run/run_create_benchmark_plots_count_correction.sh
+#bash ~/opt/contactprediction/contact_prediction/contact_prediction/run/run_create_benchmark_plots_count_correction.sh
 
 
 #-------------------------------------------------------------------------------
@@ -178,5 +178,6 @@ methods=$methods",squared-frobenius-ec_eta"
 methods=$methods",ec_pair_weight_20000_balance5_regcoeff10"
 methods=$methods",ec_pair_weight_20000_balance5_regcoeff1"
 methods=$methods",ec_pair_weight_10000_balance1_regcoeff1"
+methods=$methods",ec_pair_weight_50000_balance2_regcoeff10"
 #methods=$methods",ec_pair_weight_logreg_20000_balance5_regcoeff10"
 run_plot_script $methods "ec_pairweights" $CONTACT_PREDICTION_PATH 8

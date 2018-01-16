@@ -27,7 +27,7 @@ echo "using " $OMP_NUM_THREADS "threads for omp parallelization"
 #-------------------------------------------------------------------------------
 
 
-#bash ~/opt/contactprediction/contact_prediction/run/run_update_evaluation_files_count_correction.sh
+#bash ~/opt/contactprediction/contact_prediction/contact_prediction/run/run_update_evaluation_files_count_correction.sh
 
 
 #-------------------------------------------------------------------------------
@@ -282,10 +282,10 @@ function run_update_script  {
 #mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_ec_eta/"
 #run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
 #
-method_name="frobenius-ec_eta_stefan"
-echo "add method $method_name"
-mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_ec_eta_stefansversion/"
-run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+#method_name="frobenius-ec_eta_stefan"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_ec_eta_stefansversion/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
 #
 #method_name="squared-frobenius-ec_eta"
 #echo "add method $method_name"
@@ -305,6 +305,11 @@ run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
 method_name="ec_pair_weight_10000_balance1_regcoeff1"
 echo "add method $method_name"
 mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/ec_pair_weight_10000_balance1_regcoeff1/"
+run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+
+method_name="ec_pair_weight_50000_balance2_regcoeff10"
+echo "add method $method_name"
+mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/ec_pair_weight_50000_balance2_regcoeff10/"
 run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
 
 #method_name="ec_pair_weight_logreg_20000_balance5_regcoeff10"
