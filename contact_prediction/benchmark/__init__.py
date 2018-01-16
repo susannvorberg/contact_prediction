@@ -10,11 +10,11 @@ from json import JSONEncoder
 import numpy as np
 import pandas as pd
 from ..utils import alignment_utils as ali_ut
-import utils.benchmark_utils as bu
-import utils.io_utils as io
-import utils.pdb_utils as pdb
-import utils.utils as u
-import utils.ccmraw as raw
+from ..utils import benchmark_utils as bu
+from ..utils import io_utils as io
+from ..utils import pdb_utils as pdb
+from ..utils import utils as u
+from ..utils import ccmraw as raw
 
 import contact_prediction.utils.plot_utils as pu
 
