@@ -600,7 +600,7 @@ def plot_evaluationmeasure_vs_rank_plotly(evaluation_dict, title, yaxistitle, le
         max_value = np.max([max_value, np.max(evaluation_dict[method]['mean'])])
         legend_name = method
         if nr_proteins:
-            legend_name += "("+str(evaluation_dict[method]['size'])+" proteins)",
+            legend_name += "("+str(evaluation_dict[method]['size'])+" proteins)"
         method_trace = go.Scatter(
             x=[str(rank) for rank in np.round(evaluation_dict['rank'], decimals=2)],
             y=evaluation_dict[method]['mean'],
