@@ -102,3 +102,22 @@ def calculate_frequencies(alignment, pseudocount_function):
 
 
     return(single_freq_pc, pair_freq_pc)
+
+
+def degap(freq, keep_dims=False):
+    if len(freq.shape) == 2 :
+        out = freq[:, :20] / (1 - freq[:, 20])[:, np.newaxis]
+    else:
+        freq_sum = freq[:,:,:20, :20].sum(3).sum(2)[:, :,  np.newaxis, np.newaxis]
+        out = freq[:, :, :20, :20] / (freq_sum + 1e-10)
+
+    if keep_dims:
+        if len(freq.shape) == 2 :
+            out2 = np.zeros((freq.shape[0], 21))
+            out2[:, :20] = out
+        else:
+            out2 = np.zeros((freq.shape[0], freq.shape[1], 21, 21))
+            out2[:, :, :20, :20] = out
+        out = out2
+
+    return out
