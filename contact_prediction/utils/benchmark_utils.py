@@ -306,7 +306,7 @@ def compute_corrected_mat_sergey_style(pair_freq, braw_x_pair):
 
     nr_states = 20
 
-    joint_entropy = np.sum(
+    joint_entropy = - np.sum(
         pair_freq[:, :, :nr_states, :nr_states] * np.log2(pair_freq[:, :, :nr_states, :nr_states]),
         axis=(3, 2)
     )
@@ -348,7 +348,7 @@ def compute_corrected_mat_joint_entropy(pair_freq, neff, lambda_w, braw_x_pair):
     nr_states = 20
 
     N_factor = neff / (lambda_w * lambda_w)
-    joint_entropy = np.sum(
+    joint_entropy = - np.sum(
         pair_freq[:, :, :nr_states, :nr_states] * np.log2(pair_freq[:, :, :nr_states, :nr_states]),
         axis=(3, 2)
     )
@@ -475,7 +475,7 @@ def compute_joint_entropy_correction(pair_freq, neff, lambda_w, braw_x_pair):
     nr_states = 20
 
     N_factor = neff / (lambda_w*lambda_w)
-    joint_entropy = np.sum(
+    joint_entropy = - np.sum(
         pair_freq[:, :, :nr_states, :nr_states] * np.log2(pair_freq[:, :, :nr_states, :nr_states]),
         axis=(3,2)
     )
@@ -484,7 +484,7 @@ def compute_joint_entropy_correction(pair_freq, neff, lambda_w, braw_x_pair):
 
 
     ### compute scaling factor eta
-    scaling_factor = np.sum(c_ij * uij) /  np.sum(joint_entropy*joint_entropy)
+    scaling_factor = np.sum(c_ij * uij) / np.sum(joint_entropy*joint_entropy)
 
     return(uij, scaling_factor)
 
