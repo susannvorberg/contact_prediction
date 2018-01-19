@@ -310,8 +310,9 @@ def compute_corrected_mat_sergey_style(pair_freq, braw_x_pair):
         pair_freq[:, :, :nr_states, :nr_states] * np.log2(pair_freq[:, :, :nr_states, :nr_states]),
         axis=(3, 2)
     )
+    correction  = joint_entropy + np.exp(-joint_entropy)
 
-    corrected_braw = braw_x_pair / (joint_entropy + np.exp(-joint_entropy))
+    corrected_braw = braw_x_pair[:, :, :nr_states, :nr_states] / correction[:,:, np.newaxis, np.newaxis]
 
     mat = compute_l2norm_from_braw(corrected_braw, apc=False, squared=False)
 
