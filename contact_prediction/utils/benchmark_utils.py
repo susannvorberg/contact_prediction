@@ -302,7 +302,33 @@ def compute_l2norm_from_brawfile(braw_file, apc=False, squared=False):
 
     return compute_l2norm_from_braw(braw, apc, squared=squared)
 
-def compute_corrected_mat(braw_x_pair, single_freq, neff, lambda_w, entropy=True, squared=True):
+def compute_corrected_mat_sergey_style(pair_freq, braw_x_pair):
+
+    nr_states = 20
+
+    joint_entropy = np.sum(
+        pair_freq[:, :, :nr_states, :nr_states] * np.log2(pair_freq[:, :, :nr_states, :nr_states]),
+        axis=(3, 2)
+    )
+
+    c_ij = compute_l2norm_from_braw(braw_x_pair, apc=False, squared=False)
+
+    mat = c_ij / (joint_entropy + np.exp(-joint_entropy))
+
+    return(mat)
+
+def compute_corrected_mat_entropy(braw_x_pair, single_freq, neff, lambda_w, entropy=True, squared=True):
+    """
+
+    Compute a contact map
+
+    :param braw_x_pair:     pairwise couplings
+    :param single_freq:     single amino acid frequencies
+    :param neff:            number of effective sequences
+    :param lambda_w:        regularization coefficient
+
+    :return:
+    """
 
 
     uij, scaling_factor_eta = compute_correction(
@@ -318,10 +344,26 @@ def compute_corrected_mat(braw_x_pair, single_freq, neff, lambda_w, entropy=True
 
     return corrected_mat
 
+def compute_corrected_mat_joint_entropy(pair_freq, neff, lambda_w, braw_x_pair):
+    nr_states = 20
+
+    N_factor = neff / (lambda_w * lambda_w)
+    joint_entropy = np.sum(
+        pair_freq[:, :, :nr_states, :nr_states] * np.log2(pair_freq[:, :, :nr_states, :nr_states]),
+        axis=(3, 2)
+    )
+    uij = N_factor * joint_entropy
+    c_ij = compute_l2norm_from_braw(braw_x_pair, apc=False, squared=False)
+
+    ### compute scaling factor eta
+    scaling_factor = np.sum(c_ij * uij) / np.sum(joint_entropy * joint_entropy)
+
+    corrected_mat = c_ij - scaling_factor * uij
+
+    return (corrected_mat)
 
 
 def compute_scaling_factor_eta(x_pair, ui, uij, nr_states, squared=True):
-    scaling_factor_eta=1
 
     if squared:
         # compute scaling factor in matrix form
@@ -370,7 +412,7 @@ def compute_scaling_factor_eta(x_pair, ui, uij, nr_states, squared=True):
 
     return scaling_factor_eta
 
-def compute_correction(single_freq, neff, lambda_w, x_pair, entropy=True, squared=True):
+def compute_entropy_correction(single_freq, neff, lambda_w, x_pair, entropy=True, squared=True):
     nr_states = 20
 
     # debugging
@@ -389,7 +431,19 @@ def compute_correction(single_freq, neff, lambda_w, x_pair, entropy=True, square
 
     return(uij, scaling_factor_eta)
 
-def compute_correction_ij(single_freq, neff, lambda_w, x_pair, residue_i, residue_j, entropy=True, squared=True):
+def compute_entropy_correction_ij(single_freq, neff, lambda_w, braw_x_pair, residue_i, residue_j, entropy=True, squared=True):
+    """
+
+    :param freq: single frequencies
+    :param neff:
+    :param lambda_w:
+    :param x_pair:
+    :param residue_i:
+    :param residue_j:
+    :param entropy:
+    :param squared:
+    :return:
+    """
 
     nr_states = 20
 
@@ -405,7 +459,7 @@ def compute_correction_ij(single_freq, neff, lambda_w, x_pair, residue_i, residu
     uij = np.transpose(np.multiply.outer(ui, ui), (0,2,1,3))
 
     ### compute scaling factor eta
-    scaling_factor_eta = compute_scaling_factor_eta(x_pair, ui, uij, nr_states, squared=squared)
+    scaling_factor_eta = compute_scaling_factor_eta(braw_x_pair, ui, uij, nr_states, squared=squared)
 
     ### compute correction
     correction = scaling_factor_eta * np.sum(uij, axis=(3,2))
@@ -415,3 +469,23 @@ def compute_correction_ij(single_freq, neff, lambda_w, x_pair, residue_i, residu
     ##return correction components separately
     entropy_correction_ij = uij[residue_i-1, residue_j-1, :, :]
     return(ui, entropy_correction_ij, scaling_factor_eta)
+
+def compute_joint_entropy_correction(pair_freq, neff, lambda_w, braw_x_pair):
+
+    nr_states = 20
+
+    N_factor = neff / (lambda_w*lambda_w)
+    joint_entropy = np.sum(
+        pair_freq[:, :, :nr_states, :nr_states] * np.log2(pair_freq[:, :, :nr_states, :nr_states]),
+        axis=(3,2)
+    )
+    uij = N_factor * joint_entropy
+    c_ij = compute_l2norm_from_braw(braw_x_pair, apc=False, squared=False)
+
+
+    ### compute scaling factor eta
+    scaling_factor = np.sum(c_ij * uij) /  np.sum(joint_entropy*joint_entropy)
+
+    return(uij, scaling_factor)
+
+
