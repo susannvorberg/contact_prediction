@@ -15,6 +15,8 @@ from ..utils import ccmraw as raw
 import numpy as np
 
 
+
+
 def parse_args():
 
     parser = argparse.ArgumentParser(description="Infer parameters for coupling prior", add_help=False)
@@ -44,15 +46,13 @@ def main():
 
 
     #debugging
-    data_dir = os.environ['DATA']
-    braw_dir                = data_dir + "/benchmarkset_cathV4.1/contact_prediction/count_correction/braw_ec_correction/"
-    out_dir                 = data_dir + "/benchmarkset_cathV4.1/contact_prediction/count_correction/ec_pair_weight_10000_balance1_regcoeff1/"
-    pair_weight_file        = data_dir + "/count_statistic_correction/pair_weights/pair_weights_10000_balance1_contactthr8_noncontactthr20_diversitythr0.3_regcoeff1.txt"
+    braw_dir                =  "/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/braw_ec_correction/"
+    out_dir                 =  "/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/ec_pair_weight_50000_balance2_regcoeff10/"
+    pair_weight_file        =  "/home/vorberg/work/data/count_statistic_correction/pair_weights/pair_weights_50000_balance2_contactthr8_noncontactthr20_diversitythr0.3_regcoeff10.txt"
 
 
 
     beta = np.loadtxt(pair_weight_file)
-
 
 
     braw_files = glob.glob(braw_dir +"/*braw.ec.gz")
@@ -60,7 +60,7 @@ def main():
     for braw_file in braw_files:
         #braw_file = braw_files[0]
         protein = os.path.basename(braw_file).split(".")[0]
-        print protein
+        print(protein)
 
         mat_file = out_dir + "/" + protein + ".ec.pairweights.mat"
 

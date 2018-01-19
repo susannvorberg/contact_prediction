@@ -14,6 +14,9 @@ from ..utils import pdb_utils as pdb
 from ..utils import ccmraw as raw
 from ..utils import utils as u
 from ..utils import plot_utils as p
+from ..utils import alignment_utils as au
+from ..utils import io_utils as io
+from ..utils import benchmark_utils as bu
 import random
 import pandas as pd
 import numpy as np
@@ -49,6 +52,156 @@ def parse_args():
 
     return args
 
+
+def compute_scaling_factor_eta(x_pair, uij, nr_states):
+    # prod = x_pair[:, :, :nr_states, :nr_states] * np.sqrt(uij)
+    # scaling_factor_eta = np.sum(prod)
+    #
+    # denominator = np.sum(uij)
+    # scaling_factor_eta /= denominator
+
+    x_square = x_pair[:, :, :nr_states, :nr_states] * x_pair[:, :, :nr_states, :nr_states]
+    prod = x_square * uij
+    scaling_factor_eta = np.sum(prod)
+
+    denominator = np.sum(uij * uij)
+
+    scaling_factor_eta /= denominator
+
+    return scaling_factor_eta
+
+def compute_correction(single_freq, neff, lambda_w, x_pair):
+    nr_states = 20
+
+    # debugging
+    # N_factor = neff / np.sqrt(neff-1)
+    N_factor = np.sqrt(neff) * (1.0 / lambda_w)
+
+    # it doesn't matter whether x*log(x) or x * (-log(x)) --> when computing ui * ui the minus vanishes
+    ui = N_factor * single_freq[:, :nr_states] * (-np.log2(single_freq[:, :nr_states]))
+    uij = np.transpose(np.multiply.outer(ui, ui), (0, 2, 1, 3))
+
+    ### compute scaling factor eta
+    scaling_factor_eta = compute_scaling_factor_eta(x_pair, uij, nr_states)
+
+    return (uij, scaling_factor_eta)
+
+
+def generate_training_data_recompute(braw_dir, pdb_dir, alignment_dir,
+                           nr_training_pairs, balance, seed,
+                           maxcontacts_per_protein, maxnoncontacts_per_protein,
+                           sequence_separation, contact_thr, non_contact_thr, diversity_thr):
+
+
+    braw_files = glob.glob(braw_dir +"/*braw.gz")
+
+    max_nr_contacts = nr_training_pairs
+    nr_contacts = 0
+    max_nr_non_contacts = balance * nr_training_pairs
+    nr_non_contacts = 0
+
+    contact_class = []
+    dataset = pd.DataFrame()
+
+    for braw_file in braw_files:
+        #braw_file = braw_files[0]
+
+        if nr_contacts >= max_nr_contacts or nr_non_contacts >= max_nr_non_contacts:
+            break
+
+        protein = os.path.basename(braw_file).split(".")[0]
+        pdb_file = pdb_dir + "/" + protein + ".pdb"
+        alignment_file = alignment_dir+ "/" + protein + ".filt.psc"
+
+        print(protein)
+
+        if not os.path.isfile(pdb_file):
+            print("PDB file {0} for protein {1} could not be found!".format(pdb_file, protein))
+            continue
+
+        if not os.path.exists(alignment_file):
+            print("Alignment file {0} for protein {1} could not be found!".format(alignment_file, protein))
+            continue
+
+        #upper triangle indices 1 < i < j < L
+        indices_contact, indices_non_contact = pdb.determine_residue_pair_indices(
+            pdb_file, sequence_separation, non_contact_thr, contact_thr)
+
+        # if no data: skip protein
+        if len(indices_contact[0]) == 0 and len(indices_non_contact[0]) == 0:
+            print("No contacts / non-contacts for protein {0}!".format(protein))
+            continue
+
+        # shuffle indices, so to not introduce any bias when choosing only the first X pairs from each protein
+        random.seed(seed)
+        random.shuffle(indices_contact[0], lambda: 0.1)
+        random.shuffle(indices_contact[1], lambda: 0.1)
+        random.shuffle(indices_non_contact[0], lambda: 0.1)
+        random.shuffle(indices_non_contact[1], lambda: 0.1)
+
+
+        #read data
+        try:
+            braw = raw.parse_msgpack(braw_file)
+        except Exception as e:
+            print("There were problems reading braw file {0}:\n{1}!\nSkip this protein.\n".format(braw_file, e))
+            continue
+
+        N = u.find_dict_key('nrow', braw.meta['workflow'][0])
+        L = u.find_dict_key('ncol', braw.meta['workflow'][0])
+        neff = u.find_dict_key('neff', braw.meta['workflow'][0])
+        lambda_w = u.find_dict_key('lambda_pair', braw.meta['workflow'][0])
+
+        diversity = np.sqrt(N) / L
+
+        # skip proteins with low diversities
+        if diversity < diversity_thr:
+            print("Diversity < threshold {0}!".format(diversity_thr))
+            continue
+
+        alignment = io.read_alignment(alignment_file)
+        if len(alignment) == 0: ###because of file system issue
+            continue
+        single_freq, pair_freq = au.calculate_frequencies(alignment, au.uniform_pseudocounts)
+
+        #optimize eta for (wijab^2 - eta * uia * ujb)^2
+        uij, eta = compute_correction(single_freq, neff, lambda_w, braw.x_pair)
+        braw_sq = braw.x_pair[:, :, :20, :20] * braw.x_pair[:, :, :20, :20]
+        braw_corrected =  braw_sq - eta * uij
+
+
+        if len(indices_contact[0]) > 0 and (nr_contacts < max_nr_contacts):
+
+            indices_i = indices_contact[0][:maxcontacts_per_protein]
+            indices_j = indices_contact[1][:maxcontacts_per_protein]
+
+            contact_class.extend([1] * len(indices_i))
+
+            corrected_couplings = braw_corrected[indices_i, indices_j, :20, :20]
+            dataset = dataset.append(pd.DataFrame(corrected_couplings.reshape(len(indices_i), 400)))
+
+            nr_contacts += len(indices_i)
+
+        if len(indices_non_contact[0]) > 0 and nr_non_contacts < max_nr_non_contacts:
+
+
+            indices_i = indices_non_contact[0][:maxnoncontacts_per_protein]
+            indices_j = indices_non_contact[1][:maxnoncontacts_per_protein]
+
+            contact_class.extend([0] * len(indices_i))
+
+            corrected_couplings = braw_corrected[indices_i, indices_j, :20, :20]
+            dataset = dataset.append(pd.DataFrame(corrected_couplings.reshape(len(indices_i), 400)))
+
+            nr_non_contacts += len(indices_i)
+
+        print("{0}, #pairs in training set: contact={1} bg={2}".format(
+            protein, nr_contacts, nr_non_contacts))
+
+
+    return contact_class, dataset
+
+
 def generate_training_data(braw_dir, pdb_dir,
                            nr_training_pairs, balance, seed,
                            maxcontacts_per_protein, maxnoncontacts_per_protein,
@@ -74,7 +227,7 @@ def generate_training_data(braw_dir, pdb_dir,
         protein = os.path.basename(braw_file).split(".")[0]
         pdb_file = pdb_dir + "/" + protein + ".pdb"
 
-        print protein
+        print(protein)
 
         if not os.path.isfile(pdb_file):
             print("PDB file {0} for protein {1} could not be found!".format(pdb_file, protein))
@@ -97,7 +250,12 @@ def generate_training_data(braw_dir, pdb_dir,
 
 
         #read data
-        braw_corrected = raw.parse_msgpack(braw_file)
+        try:
+            braw_corrected = raw.parse_msgpack(braw_file)
+        except Exception as e:
+            print("There were problems reading braw file {0}:\n{1}!\nSkip this protein.\n".format(braw_file, e))
+            continue
+
         N = u.find_dict_key('nrow', braw_corrected.meta['workflow'][0])
         L = u.find_dict_key('ncol', braw_corrected.meta['workflow'][0])
 
@@ -182,15 +340,15 @@ def main():
 
 
     #debugging
-    data_dir = os.environ['DATA']
-    plot_base_dir = os.environ['PLOTS']
-    braw_dir                = data_dir + "/benchmarkset_cathV4.1/contact_prediction/count_correction/braw_ec_correction/"
-    pdb_dir                 = data_dir + "/benchmarkset_cathV4.1/pdb_renum_combs/"
-    plot_dir                = plot_base_dir + "/count_statistic_correction/pair_weights/"
-    parameter_dir           = data_dir + "/count_statistic_correction/pair_weights/"
+    # braw_dir                = "/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/braw_ec_correction/"
+    braw_dir                = "/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/ccmpred-pll-centerv/braw/"
+    pdb_dir                 = "/home/vorberg/work/data/benchmarkset_cathV4.1/pdb_renum_combs/"
+    alignment_dir           = "/home/vorberg/work/data/benchmarkset_cathV4.1/psicov/"
+    plot_dir                = "/home/vorberg/work/plots/count_statistic_correction/pair_weights_unsquared/"
+    parameter_dir           = "/home/vorberg/work/data/count_statistic_correction/pair_weights_unsquared/"
 
-    nr_training_pairs = 20000
-    balance = 5
+    nr_training_pairs = 50000
+    balance = 2
     maxcontacts_per_protein = 100
     maxnoncontacts_per_protein = maxcontacts_per_protein * balance
 
@@ -203,18 +361,23 @@ def main():
 
 
     #get data
-    contact_class, dataset = generate_training_data(
-        braw_dir, pdb_dir,
+    # contact_class, dataset = generate_training_data(
+    #     braw_dir, pdb_dir,
+    #     nr_training_pairs, balance, seed,
+    #     maxcontacts_per_protein, maxnoncontacts_per_protein,
+    #     sequence_separation, contact_thr, non_contact_thr, diversity_thr)
+
+
+    #get data - recompute
+    contact_class, dataset = generate_training_data_recompute(
+        braw_dir, pdb_dir,alignment_dir,
         nr_training_pairs, balance, seed,
         maxcontacts_per_protein, maxnoncontacts_per_protein,
         sequence_separation, contact_thr, non_contact_thr, diversity_thr)
 
 
-
-
-
     #logistic regression
-    reg_coeff = 10
+    reg_coeff = 1
     beta = optimize_pair_weights(contact_class, dataset, seed, reg_coeff)
 
 
