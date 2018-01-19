@@ -331,7 +331,7 @@ def compute_corrected_mat_entropy(braw_x_pair, single_freq, neff, lambda_w, entr
     """
 
 
-    uij, scaling_factor_eta = compute_correction(
+    uij, scaling_factor_eta = compute_entropy_correction(
         single_freq, neff, lambda_w, braw_x_pair, entropy=entropy, squared=squared
     )
 
