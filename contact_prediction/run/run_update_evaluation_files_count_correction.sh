@@ -302,18 +302,41 @@ function run_update_script  {
 #mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/ec_pair_weight_20000_balance5_regcoeff1/"
 #run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
 
-method_name="ec_pair_weight_10000_balance1_regcoeff1"
-echo "add method $method_name"
-mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/ec_pair_weight_10000_balance1_regcoeff1/"
-run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
-
-method_name="ec_pair_weight_50000_balance2_regcoeff10"
-echo "add method $method_name"
-mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/ec_pair_weight_50000_balance2_regcoeff10/"
-run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+#method_name="ec_pair_weight_10000_balance1_regcoeff1"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/ec_pair_weight_10000_balance1_regcoeff1/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+#
+#method_name="ec_pair_weight_50000_balance2_regcoeff10"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/ec_pair_weight_50000_balance2_regcoeff10/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
 
 #method_name="ec_pair_weight_logreg_20000_balance5_regcoeff10"
 #echo "add method $method_name"
 #mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/ec_pair_weight_logreg_20000_balance5_regcoeff10/"
 #run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+
+method_name="sec-21"
+echo "add method $method_name"
+mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/sergeys_correction/"
+run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+
+method_name="sec-21"
+echo "add method $method_name"
+mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/sergeys_correction/"
+run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+
+method_name="sec-21"
+echo "add method $method_name"
+mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/sergeys_correction/"
+run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+
+method_name="sec-21"
+echo "add method $method_name"
+mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/sergeys_correction/"
+run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+
+
+
 

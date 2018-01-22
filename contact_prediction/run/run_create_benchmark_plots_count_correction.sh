@@ -181,3 +181,14 @@ methods=$methods",ec_pair_weight_10000_balance1_regcoeff1"
 methods=$methods",ec_pair_weight_50000_balance2_regcoeff10"
 #methods=$methods",ec_pair_weight_logreg_20000_balance5_regcoeff10"
 run_plot_script $methods "ec_pairweights" $CONTACT_PREDICTION_PATH 8
+
+
+methods="ccmpred-pll-centerv+apc"
+methods=$methods",frobenius-ec_eta"
+methods=$methods",frobenius-ec_eta-21"
+methods=$methods",sec-21"
+methods=$methods",jec-21"
+methods=$methods",sec-20"
+methods=$methods",jec-20"
+#methods=$methods",ec_pair_weight_logreg_20000_balance5_regcoeff10"
+run_plot_script $methods "20_vs_21_states" $CONTACT_PREDICTION_PATH 8
