@@ -99,7 +99,7 @@ def main():
     if args.methods:
         print ("methods: " + args.methods)
         methods = args.methods.strip().split(",")
-    print methods
+    print(methods)
 
     plot_type=[]
     if args.precision_vs_rank:
