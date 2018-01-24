@@ -573,8 +573,16 @@ class Benchmark():
             title += title_description
             yaxistitle = 'Mean Precision over Proteins'
 
-            pu.plot_evaluationmeasure_vs_rank_plotly(precision_rank, title, yaxistitle, self.benchmark_methods, plot_out_dir + "/precision_vs_rank.html")
-            pu.plot_evaluationmeasure_vs_rank_plotly(precision_rank, "", yaxistitle, self.benchmark_methods, plot_out_dir + "/precision_vs_rank_notitle.html")
+            pu.plot_evaluationmeasure_vs_rank_plotly(
+                precision_rank, title, yaxistitle,
+                legend_order=self.benchmark_methods,
+                nr_proteins=True,
+                plot_out=plot_out_dir + "/precision_vs_rank.html")
+            pu.plot_evaluationmeasure_vs_rank_plotly(
+                precision_rank, "", yaxistitle,
+                legend_order=self.benchmark_methods,
+                nr_proteins=True,
+                plot_out=plot_out_dir + "/precision_vs_rank_notitle.html")
 
         if 'meanerror_rank' in plot_type:
 
