@@ -18,7 +18,7 @@ from ..utils import pdb_utils as pdb
 from ..utils import benchmark_utils as bu
 from ..utils import alignment_utils as au
 from ..utils import utils as u
-import plot_alignment_coverage as aligncov
+from . import plot_alignment_coverage as aligncov
 from ..utils import ccmraw as raw
 
 
