@@ -47,8 +47,8 @@ def main():
     #debugging
     braw_dir                =  "/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/ccmpred-pll-centerv/braw/"
     alignment_dir           =  "/home/vorberg/work/data/benchmarkset_cathV4.1/psicov/"
-    out_dir                 =  "/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/sergeys_correction-20states/"
-    out_dir2                 =  "/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/sergeys_correction/"
+    out_dir                 =  "/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_sergeys_joint_entropy_correction-20states/"
+    #out_dir2                 =  "/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_sergeys_joint_entropy_correction/"
 
     braw_files = glob.glob(braw_dir +"/*.braw.gz")
 
@@ -64,7 +64,7 @@ def main():
 
         print(protein)
         mat_file = out_dir + "/" + protein + ".sec.mat"
-        mat_file2 = out_dir2 + "/" + protein + ".sec.mat"
+        #mat_file2 = out_dir2 + "/" + protein + ".sec.mat"
 
         if not os.path.exists(mat_file):
             # read alignment
@@ -84,9 +84,9 @@ def main():
             io.write_matfile(mat, mat_file, meta)
 
 
-            meta['workflow'][0]['score']['nr_states']=21
-            mat = compute_corrected_mat_sergey_style(pair_freq, braw_corrected.x_pair,  nr_states = 21)
-            io.write_matfile(mat, mat_file2, meta)
+            # meta['workflow'][0]['score']['nr_states']=21
+            # mat = compute_corrected_mat_sergey_style(pair_freq, braw_corrected.x_pair,  nr_states = 21)
+            # io.write_matfile(mat, mat_file2, meta)
 
 if __name__ == '__main__':
     main()
