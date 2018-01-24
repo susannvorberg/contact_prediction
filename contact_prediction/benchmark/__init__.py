@@ -293,7 +293,7 @@ class Benchmark():
             return
 
         if protein_list is None:
-            alg_files = glob.glob(alignment_dir + "/*")
+            alg_files = glob.glob(alignment_dir + "/*.psc")
             protein_list = [os.path.basename(alg_file).split(".")[0] for alg_file in alg_files]
 
         print("Initialize evaluation files in {0}.".format(self.eval_dir))
