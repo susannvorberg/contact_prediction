@@ -16,9 +16,9 @@ import os
 import numpy as np
 import pandas as pd
 
-import utils.ext.weighting as weighting
-import utils.io_utils as io
-from benchmark import Benchmark
+from ..utils.ext import weighting as weighting
+from ..utils import io_utils as io
+from . import Benchmark
 
 
 def parse_args():
