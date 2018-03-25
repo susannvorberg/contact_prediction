@@ -57,7 +57,43 @@ def read_json_from_mat(matfile):
 
     return meta
 
-def read_alignment(alignment_file, format="psicov"):
+
+def remove_gapped_sequences(msa, max_gap_seq):
+
+    if max_gap_seq >= 100:
+        return msa
+
+    msa_gap_count_per_sequence = (msa == 20).sum(1)
+
+    #how many positions per sequence are allowed to contain gaps?
+    max_gap_percentage_per_sequence = (max_gap_seq / 100.0 * msa.shape[1])
+
+    high_coverage = np.where(msa_gap_count_per_sequence <  max_gap_percentage_per_sequence)
+
+    print("Removed {0} sequences with > {1} percent gaps.".format(
+        msa.shape[0] - len(high_coverage[0]), max_gap_seq/100.0))
+
+    return np.ascontiguousarray(msa[high_coverage[0], :])
+
+def remove_gapped_positions(msa, max_gap_percentage):
+
+    if max_gap_percentage >= 100:
+        return msa, []
+
+    msa_gap_counts = (msa == 20).sum(0)
+
+    max_gap_count = (max_gap_percentage/100.0 * msa.shape[0])
+
+    ungapped_positions  = np.where(msa_gap_counts <  max_gap_count)
+    gapped_positions    = np.where(msa_gap_counts >=  max_gap_count)
+
+
+    print("Removed {0} alignment positions with > {1} percent gaps.".format(
+        len(gapped_positions[0]), max_gap_percentage/100.0))
+
+    return np.ascontiguousarray(msa[:, ungapped_positions[0]]), gapped_positions[0]
+
+def read_alignment(alignment_file, format="psicov", max_gap_pos=100, max_gap_seq=100):
     """
     Read alignment file (Psicov Format)
 
@@ -92,6 +128,14 @@ def read_alignment(alignment_file, format="psicov"):
 
         alignment = [r.seq._data for r in records]
         alignment = np.array([[AMINO_INDICES[c] for c in x.strip()] for x in alignment], dtype=np.uint8)
+
+    #remove positions and sequences with too many gaps
+
+    if max_gap_seq < 100:
+        alignment = remove_gapped_sequences(alignment, max_gap_seq)
+
+    if max_gap_pos < 100:
+        alignment, gapped_positions = remove_gapped_positions(alignment, max_gap_pos)
 
     return alignment
 
