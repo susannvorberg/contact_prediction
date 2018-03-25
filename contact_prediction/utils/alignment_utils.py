@@ -50,6 +50,18 @@ def compute_counts(alignment, compute_weights=False):
 
     return single_counts, pairwise_counts
 
+def compute_neff_hhblits(alignment):
+
+    single_counts, pairwise_counts = compute_counts(alignment, compute_weights=False)
+    single_freqs = (single_counts + 1e-3) / np.sum(single_counts, axis=1)[:, np.newaxis]
+
+    single_freqs = single_freqs[:20]
+
+    entropies = - np.sum(single_freqs * np.log2(single_freqs), axis=1)
+
+    neff = 2 ** np.mean(entropies)
+
+    return neff
 
 def compute_neff(alignment):
     weights = weighting.calculate_weights_simple(alignment, 0.8, False)
