@@ -371,6 +371,7 @@ def plot_meanprecision_per_protein(scatter_dict, title, plot_out=None):
             max_mean_prec[0] = score
             max_mean_prec[1] = np.mean(scatter_dict[score]['mean_precision'])
 
+    #order all proteins according to ordering of proteins for this score
     order_indices = np.argsort(scatter_dict[max_mean_prec[0]]['mean_precision'])
     order_proteins = [scatter_dict[max_mean_prec[0]]['protein'][index] for index in order_indices]
 
@@ -381,7 +382,7 @@ def plot_meanprecision_per_protein(scatter_dict, title, plot_out=None):
             order_proteins += list(additional_proteins)
 
     data = []
-    for name, values in scatter_dict.iteritems():
+    for name, values in scatter_dict.items():
         line_data = go.Scatter(
             x=values['protein'],
             y=values['mean_precision'],
@@ -413,9 +414,6 @@ def plot_meanprecision_per_protein(scatter_dict, title, plot_out=None):
             )
         )
     }
-
-
-
 
     if plot_out is not None:
         plotly_plot(plot, filename=plot_out, auto_open=False)
@@ -569,17 +567,21 @@ def plot_evaluationmeasure_vs_rank_plotly(evaluation_dict, title, yaxistitle, le
     if legend_order is not None:
         methods = legend_order
     else:
-        methods = evaluation_dict.keys()
+        methods = list(evaluation_dict.keys())
         methods.remove('rank')
     max_value=1
 
-    method_colors = np.array(cl.scales[str(max(3, len(methods)))]['qual']['Set1'])
+    if len(methods) < 10:
+        method_colors = np.array(cl.scales[str(max(3, len(methods)))]['qual']['Set1'])
+    elif len(methods) < 13:
+        method_colors = np.array(cl.scales[str(max(3, len(methods)))]['qual']['Set3'])
+    else:
+        method_colors = np.array(cl.to_rgb(cl.interp(cl.scales['9']['qual']['Set1'], 50)))
 
     #just in case legend groups are specified
     legend_group_dict = {}
     linetype = ['dash', 'dot', 'longdash', 'dashdot', 'longdashdot', 'solid']
     for nr, method in enumerate(methods):
-        print(nr, method)
         sys.stdout.flush()
         if 'legend_group' in evaluation_dict[method]:
             legend_group_dict[evaluation_dict[method]['legend_group']] = {}
@@ -587,9 +589,7 @@ def plot_evaluationmeasure_vs_rank_plotly(evaluation_dict, title, yaxistitle, le
     if len(legend_group_dict.keys()) > 0:
         legend_group_colors = cl.scales[str(len(legend_group_dict.keys()))]['qual']['Set1']
 
-        for nr, legend_group_name in enumerate(sorted(legend_group_dict.keys())):
-            print(nr, legend_group_name)
-            sys.stdout.flush()
+        for nr, legend_group_name in enumerate(sorted(list(legend_group_dict.keys()))):
             legend_group_dict[legend_group_name] = {}
             legend_group_dict[legend_group_name]['color'] = legend_group_colors[nr]
             legend_group_dict[legend_group_name]['counter'] = 0
@@ -614,7 +614,6 @@ def plot_evaluationmeasure_vs_rank_plotly(evaluation_dict, title, yaxistitle, le
 
         if 'legend_group' in evaluation_dict[method]:
             legend_group_name = evaluation_dict[method]['legend_group']
-            print(nr, method, legend_group_name)
             sys.stdout.flush()
             method_trace['legendgroup'] = legend_group_name
             method_trace['line']['color']   = legend_group_dict[legend_group_name]['color']
@@ -674,7 +673,10 @@ def plot_precision_rank_facetted_plotly(precision_rank, title, legend_order=None
         methods = [col for col in precision_rank[precision_rank.keys()[0]].keys() if col != 'rank']
 
     #define colors for methods
-    method_colors = np.array(cl.scales[str(max(3, len(methods)))]['qual']['Set1'])
+    if len(methods) < 10:
+        method_colors = np.array(cl.scales[str(max(3, len(methods)))]['qual']['Set1'])
+    elif len(methods) < 13:
+        method_colors = np.array(cl.scales[str(max(3, len(methods)))]['qual']['Set3'])
 
     data = []
     annotations=[]
@@ -1267,7 +1269,7 @@ def plot_barplot(statistics_dict, title, y_axis_title, type='stack', colors=None
     else:
         return plot
 
-def draw_box(values, parameter_name, color=None, orient='v', jitter_pos=None):
+def draw_box(values, parameter_name, color=None, orient='v', jitter_pos=None, boxmean='sd'):
     # imitate jitter
     #     upper_quantile = np.percentile(values, 95)
     #     lower_quantile = np.percentile(values, 5)
@@ -1279,14 +1281,14 @@ def draw_box(values, parameter_name, color=None, orient='v', jitter_pos=None):
 
     if jitter_pos is not None:
         boxpoints = 'all'
-        jitter_pos = jitter_pos
         opacity = 1
 
     if orient == 'h':
         box = go.Box(
             x=values,
-            boxmean='sd',
+            boxmean=boxmean,
             pointpos=jitter_pos,
+            jitter=0.5,
             boxpoints=boxpoints,
             name=parameter_name.replace('_', '<br>_'),
             marker=dict(opacity=opacity),
@@ -1297,7 +1299,7 @@ def draw_box(values, parameter_name, color=None, orient='v', jitter_pos=None):
     else:
         box = go.Box(
             y=values,
-            boxmean='sd',
+            boxmean=boxmean,
             pointpos=jitter_pos,
             boxpoints=boxpoints,
             name=parameter_name,
@@ -1313,7 +1315,11 @@ def draw_box(values, parameter_name, color=None, orient='v', jitter_pos=None):
 
     return (box)
 
-def plot_boxplot(statistics_dict, title, y_axis_title, colors=None, jitter_pos=None, orient='v', print_total=False, order=None, plot_out=None):
+def plot_boxplot(
+        statistics_dict,
+        title, y_axis_title,
+        colors=None, jitter_pos=None, orient='v', print_total=False, order=None,
+        boxmean='sd', plot_out=None):
     """
     Plot the distribution of the statistics in the dictionary as boxplots
     Either plot it or return plot object
@@ -1344,7 +1350,8 @@ def plot_boxplot(statistics_dict, title, y_axis_title, colors=None, jitter_pos=N
                 key,
                 color,
                 orient,
-                jitter_pos
+                jitter_pos,
+                boxmean
             )
         )
 
@@ -1391,7 +1398,7 @@ def plot_boxplot(statistics_dict, title, y_axis_title, colors=None, jitter_pos=N
 
 def plot_scatter(scatter_dict, title, x_axis_title, y_axis_title, showlegend=False, colors = None,  plot_out=None, log_x=False):
     data=[]
-    for name, values in scatter_dict.iteritems():
+    for name, values in scatter_dict.items():
         scatter_data = go.Scatter(
             x= values[0],
             y= values[1],
