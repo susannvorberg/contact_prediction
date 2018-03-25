@@ -1,7 +1,7 @@
 
 def gen_dict_extract(key, var):
-    if hasattr(var, 'iteritems'):
-        for k, v in var.iteritems():
+    if hasattr(var, 'items'):
+        for k, v in var.items():
             if k == key:
                 yield v
             if isinstance(v, dict):
@@ -18,12 +18,12 @@ def find_dict_key(key, dictionary):
             return v
         if isinstance(v, dict):
             res = find_dict_key(key, v)
-            if res != 0:
+            if res is not None:
                 return res
         if isinstance(v, list):
             for d in v:
                 res = find_dict_key(key, d)
-                if res != 0:
+                if res is not None:
                     return res
 
-    return 0
+    return None
