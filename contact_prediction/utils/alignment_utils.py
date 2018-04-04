@@ -28,7 +28,7 @@ def compute_entropy_per_position(alignment):
     aa_freq_per_pos = np.zeros((21, L))
     for position in range(L):
         aa_counts = Counter(alignment[position])
-        for aa, counts in aa_counts.iteritems():
+        for aa, counts in aa_counts.items():
             freq = counts/N
             aa_freq_per_pos[aa,position] = freq
 
@@ -55,7 +55,7 @@ def compute_neff_hhblits(alignment):
     single_counts, pairwise_counts = compute_counts(alignment, compute_weights=False)
     single_freqs = (single_counts + 1e-3) / np.sum(single_counts, axis=1)[:, np.newaxis]
 
-    single_freqs = single_freqs[:20]
+    single_freqs = single_freqs[:, 20]
 
     entropies = - np.sum(single_freqs * np.log2(single_freqs), axis=1)
 
