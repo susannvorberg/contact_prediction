@@ -9,19 +9,26 @@
 import argparse
 import os
 import glob
-import raw
 import plotly.graph_objs as go
 from plotly.offline import plot as plotly_plot
 import numpy as np
-import utils.benchmark_utils as b
-import utils.io_utils as io
-import utils.alignment_utils as au
-from plotting.plot_contact_map import plot_contact_map
-from plotting.plot_precision_vs_rank import plot_precision_vs_rank
-from scipy.stats import ks_2samp, spearmanr, kendalltau
 import json
-import utils.utils as u
 import colorlover as cl
+from scipy.stats import ks_2samp, spearmanr, kendalltau, pearsonr, linregress
+from sklearn import linear_model
+import pandas as pd
+
+from contact_prediction.utils import ccmraw as raw
+from contact_prediction.utils import io_utils as io
+from contact_prediction.utils import plot_utils as plot
+from contact_prediction.utils import pdb_utils as pdb
+from contact_prediction.utils import benchmark_utils as bu
+from contact_prediction.utils import alignment_utils as au
+from contact_prediction.utils import utils as u
+from contact_prediction.plotting.plot_contact_map import plot_contact_map
+from contact_prediction.plotting.plot_precision_vs_rank import plot_precision_vs_rank
+
+
 
 def plot_scatter_comparison(title, x_axis_title, y_axis_title, mat_1, mat_2, plot_out, color_vector=None, qqplot=False):
 
@@ -31,9 +38,12 @@ def plot_scatter_comparison(title, x_axis_title, y_axis_title, mat_1, mat_2, plo
     score_1 = mat_1[upper_triangular_indices]
     score_2 = mat_2[upper_triangular_indices]
 
-    if qqplot:
-        score_1 = sorted(score_1)
-        score_2 = sorted(score_2)
+    lin_reg_x = list(np.arange(
+        np.min([np.min(score_1),np.min(score_2)]),
+        np.max([np.max(score_1),np.max(score_2)]),
+        0.05))
+    slope, intercept, rvalue, pvalue, stderr = linregress(score_1, score_2)
+    lin_reg_y = [intercept + slope * x for x in lin_reg_x]
 
 
     text = ["i: " + str(i+1) + ", j: " + str(j+1) for i,j in zip(upper_triangular_indices[0], upper_triangular_indices[1])]
@@ -42,47 +52,98 @@ def plot_scatter_comparison(title, x_axis_title, y_axis_title, mat_1, mat_2, plo
         text = [text[ij] + ", sum_nia * sum_njb: " + str(color_vector[ij]) for ij in range(len(text))]
         color_scale = cl.interp(cl.scales['3']['seq']['Reds'], 400)
         color_vector = [color_scale[i - 1] for i in color_vector]
+        opacity = 1
     else:
-       color_vector = 'blue'
+        color_vector = 'rgb(31,120,180)'
+        opacity = 1
 
-    # if l2norm:
-    #     mat_1 = b.compute_l2norm_from_braw(braw_1, apc)
-    #     mat_2 = b.compute_l2norm_from_braw(braw_2, apc)
-    #     score_1 = mat_1[upper_triangular_indices]
-    #     score_2 = mat_2[upper_triangular_indices]
-    #     plot_out = plot_out.replace(".html", "_l2norm_apc"+str(apc)+".html")
-    # else:
-    #     score_1 = braw_1.x_pair[upper_triangular_indices[0], upper_triangular_indices[1], :20, :20].flatten()
-    #     score_2 = braw_2.x_pair[upper_triangular_indices[0], upper_triangular_indices[1], :20, :20].flatten()
+    data=[]
 
 
+    data.append(
+        go.Scattergl(
+            x=[np.min([np.min(score_1), np.min(score_2)]), np.min([np.max(score_1), np.max(score_2)])],
+            y=[np.min([np.min(score_1), np.min(score_2)]), np.min([np.max(score_1), np.max(score_2)])],
+            mode='lines',
+            line=dict(color='lightgrey',
+                      width=3,
+                      dash='dash'
+                      ),
+            showlegend=False
+        )
+    )
 
-
-
-    data=[
+    data.append(
         go.Scattergl(
             x= score_1,
             y= score_2,
             text = text,
             mode = 'markers',
             marker=dict(
-                #opacity=0.2,
+                opacity=opacity,
                 color=color_vector),
             hoverinfo="x+y+text",
             showlegend=False
-        ),
+        )
+    )
+
+    if qqplot:
+
+        index_sorted_i = np.argsort(score_1)
+        index_sorted_j = np.argsort(score_2)
+
+        text_sorted = ["i: " + str(i+1) + ", j: " + str(j+1) for i,j in zip(
+            upper_triangular_indices[0][index_sorted_i],
+            upper_triangular_indices[1][index_sorted_j]
+        )]
+
+
+        data.append(
+            go.Scattergl(
+                x=sorted(score_1),
+                y=sorted(score_2),
+                text=text_sorted,
+                mode='markers',
+                marker=dict(
+                    color="rgb(255,127,0)"),
+                hoverinfo="x+y+text",
+                showlegend=False
+            )
+        )
+
+
+    data.append(
         go.Scattergl(
-            x=[np.min([np.min(score_1), np.min(score_2)]), np.max([np.max(score_1), np.max(score_2)])],
-            y=[np.min([np.min(score_1), np.min(score_2)]), np.max([np.max(score_1), np.max(score_2)])],
+            x=lin_reg_x,
+            y=lin_reg_y,
             mode='lines',
-            line=dict(color='black'),
+            line=dict(color="black",
+                      width=4),#"rgb(166,206,227)"),#"rgb(51,160,44)"),
             showlegend=False
         )
-    ]
+    )
+
+
+
 
     plot = {
         "data": data,
         "layout" : go.Layout(
+            annotations=go.Annotations([
+                go.Annotation(
+                    x=np.percentile(lin_reg_x, 95),
+                    y=np.percentile(lin_reg_y, 95),
+                    showarrow=True,
+                    ax=30,
+                    ay=50,
+                    arrowcolor='black',
+                    arrowside="start",
+                    text='y = {0} + {1}x'.format(np.round(intercept, decimals=3),np.round(slope, decimals=3)),
+                    font=dict(color="black", size=18),
+                    xref='x1',
+                    yref='y1'
+                )
+            ]),
             title = title,
             font=dict(size=18),
             yaxis1 = dict(
@@ -90,7 +151,7 @@ def plot_scatter_comparison(title, x_axis_title, y_axis_title, mat_1, mat_2, plo
                 exponentformat="e",
                 showexponent='All',
                 scaleratio=1.0,
-                scaleanchor='x'
+                scaleanchor='x',
             ),
             xaxis1 = dict(
                 title=x_axis_title,
@@ -103,10 +164,9 @@ def plot_scatter_comparison(title, x_axis_title, y_axis_title, mat_1, mat_2, plo
     }
 
 
-
     plotly_plot(plot, filename=plot_out, auto_open=False)
 
-def plot_ranked_predictions_sidebyside(protein, method_1, method_2, mat_apc_1, mat_apc_2, seq_sep,plot_dir, rank_only):
+def plot_ranked_predictions_sidebyside(protein, method_1, method_2, mat_apc_1, mat_apc_2, seq_sep, plot_dir, rank_only):
 
 
     plot_out = plot_dir + "/comparative_value_top_ranked_contacts_for_"+protein +"_method1_" + method_1.replace(" ", "_") + "_method2_" + method_2.replace(" ", "_") + "_seqsep"+str(seq_sep)+".html"
@@ -261,6 +321,62 @@ def plot_boxplot_scores(protein, method_1, method_2, braw_1, braw_2, plot_dir,l2
 
     plotly_plot(plot, filename=plot_out, auto_open=False)
 
+def plot_boxplot_correlation(stats_dict, method_1, method_2, keys_list, plot_dir):
+
+    df = pd.DataFrame(stats_dict)
+    df = df.transpose()
+
+    df['Pearson r'] = [x for x,y in df['pearson'].tolist()]
+    df['Pearson pvalue'] = [y for x,y in df['pearson'].tolist()]
+    df['Spearman rho'] = [x for x,y in df['spearmanrho'].tolist()]
+    df['Spearman pvalue'] = [y for x,y in df['spearmanrho'].tolist()]
+    df['Kendalls tau'] = [x for x,y in df['kendalltau'].tolist()]
+    df['Kendalls pvalue'] = [y for x,y in df['kendalltau'].tolist()]
+
+    df['kolmogorov-smirnov pvalue'] = [y for x,y in df['kolmogorov-smirnov'].tolist()]
+    df['kolmogorov-smirnov'] = [x for x,y in df['kolmogorov-smirnov'].tolist()]
+
+    df['linear fit slope'] = [slope for slope, intercept, rvalue, pvalue, stderr in df['linreg'].tolist()]
+    df['linear fit intercept'] = [intercept for slope, intercept, rvalue, pvalue, stderr in df['linreg'].tolist()]
+
+
+
+    df['protein'] = df.index
+    df['Neff'] = [int(x) for x in df.Neff.tolist()]
+
+
+    data = []
+    for key in keys_list:
+        data.append(
+            go.Box(
+                y=df[key],
+                name = key,
+                text=df['protein'],
+                showlegend=False,
+                boxmean=False,
+                boxpoints='Outliers'
+                #jitter=0.5,
+                #pointpos=1.8
+            )
+        )
+
+
+    plot = {
+        "data": data,
+        "layout": go.Layout(
+            margin=dict(t=10),
+            font=dict(size=18),
+            yaxis1=dict(
+                title="statistics value",
+                exponentformat="e",
+                showexponent='All',
+                range=[0,1]
+            )
+        )
+    }
+
+    plot_out = plot_dir + "/comparative_statistics_boxplot_for_"+method_1.replace(" ", "_") + "_" + method_2.replace(" ", "_") + "_l2norm_APC_scores.html"
+    plotly_plot(plot, filename=plot_out, auto_open=False, show_link=False)
 
 def parse_args():
     ### Parse arguments =========================================================================================
@@ -297,24 +413,28 @@ def main():
 
 
     ### debug
-    method_1 = "APC"
-    method_2 = "CSC"
-    method_2 = "EC"
-    protein="1e3mA04"
-    mat_file_1="/home/vorberg/"+protein+".frobenius.apc.mat"
-    mat_file_2="/home/vorberg/"+protein+".frobenius.csc.mat"
-    mat_file_2="/home/vorberg/"+protein+".squared_frobenius.csc.mat"
-    mat_file_2="/home/vorberg/"+protein+".frobenius.ec.mat"
-    mat_file_2="/home/vorberg/"+protein+".squared_frobenius.ec.mat"
-    #mat_dir_method1 = "/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/ccmpred-pll-centerv/mat/"
-    #mat_dir_method2 = "/home/vorberg/work/data/benchmark_contrastive_divergence/phd/gibbs_steps/1/"
-    #mat_dir_method2 = "/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/ccmpredpy_cd_gd/mat/"
-    #mat_dir_method2 = "/home/vorberg/"
+    method_1 = "persistent contrastive divergence"
+    method_2 = "pseudo-likelihood maximization"
+
+    method_1_short="PCD"
+    method_2_short="PLL"
+
+    # protein="1g2rA"
+    # mat_file_1="/home/vorberg/work/data/ccmgen/psicov/predictions_pcd/" + protein + ".frobenius.mat"
+    # mat_file_2="/home/vorberg/work/data/ccmgen/psicov/predictions_pll/" + protein + ".frobenius.mat"
+
+    mat_dir_method1 = "/home/vorberg/work/data/ccmgen/psicov/predictions_pcd/"
+    mat_dir_method2 = "/home/vorberg/work/data/ccmgen/psicov/predictions_pll/"
+
     alignment_dir = "/home/vorberg/work/data/benchmarkset_cathV4.1/psicov/"
+    alignment_dir = "/home/vorberg/work/data/ccmgen/psicov/alignments/"
+
     pdb_dir = "/home/vorberg/work/data/benchmarkset_cathV4.1/pdb_renum_combs/"
-    seq_sep = 8
+    pdb_dir = "/home/vorberg/work/data/ccmgen/psicov/pdb/"
+
+    seq_sep = 4
     #plot_dir = "/home/vorberg/work/plots/benchmark_full_likelihood_optimization/compare_cd_pll/"
-    plot_dir = "/home/vorberg/"
+    plot_dir = "/home/vorberg//work/plots/ccmgen/psicov/pll_vs_pcd_comparison/"
 
     #braw_file_1 = glob.glob(coupling_dir_1 +'/*' + protein + '*')
     #braw_file_2 = glob.glob(coupling_dir_2 + '/*' + protein + '*')
@@ -325,16 +445,16 @@ def main():
 
 
 
-    mat_files_method2 = glob.glob(mat_dir_method2 +"/*.mat")
+    mat_files_method2 = glob.glob(mat_dir_method2 +"/*.frobenius.mat")
 
     stats_dict={}
     for mat_file_2 in mat_files_method2:
 
         protein = os.path.basename(mat_file_2).split(".")[0]
         #mat_file_2 = glob.glob(mat_dir_method2 +"/"+protein+"*mat")[0]
-        print protein
+        print(protein)
 
-        mat_file_1 = glob.glob(mat_dir_method1 +"/"+protein+"*mat")[0]
+        mat_file_1 = glob.glob(mat_dir_method1 +"/"+protein+"*.frobenius.mat")[0]
 
         if len(mat_file_1) == 0 :
             print("There is no mat file for protein {0} in directory {1}. Skip protein".format(protein, mat_dir_method2))
@@ -343,7 +463,7 @@ def main():
         if alignment_dir is None:
             alignment_file = None
         else:
-            alignment_file = alignment_dir + "/" + protein + ".filt.psc"
+            alignment_file = alignment_dir + "/" + protein + ".aln"
 
         if pdb_dir is None:
             pdb_file = None
@@ -356,70 +476,67 @@ def main():
         L = mat_1.shape[0]
         Neff =  np.round(u.find_dict_key("neff",mat_meta), decimals=2)
 
+        ### Plot Scatter of Frobenius Norm scores for both methods
+        # alignment = io.read_alignment(alignment_file)
+        # single_counts, pairwise_counts = au.compute_counts(alignment)
+        # single_counts_binary = (single_counts[:, :20] > 0) * 1
+        # sum_counts = np.sum(single_counts_binary, axis=1)
+        # color_vector = np.multiply.outer(sum_counts, sum_counts)
+        # color_vector = color_vector[np.triu_indices(L, k=1)]
+        #
+        # plot_file = plot_dir + "/scatter_for_" + method_1.replace(" ", "_") + "_vs_" + method_2.replace(" ", "_") + "_"+protein +".html"
+        # x_axis_title = method_1
+        # y_axis_title = method_2
+        # title = protein + " L: "+str(L)+" Neff: "+str(Neff)+"<br>"
+        # plot_scatter_comparison(title, x_axis_title, y_axis_title, mat_1, mat_2, plot_file, color_vector=color_vector)
 
-        alignment = io.read_alignment(alignment_file)
-        single_counts, pairwise_counts = au.compute_counts(alignment)
-        single_counts_binary = (single_counts[:, :20] > 0) * 1
-        sum_counts = np.sum(single_counts_binary, axis=1)
-        print sum_counts
-        color_vector = np.multiply.outer(sum_counts, sum_counts)
-        color_vector = color_vector[np.triu_indices(L, k=1)]
 
-        plot_file = plot_dir + "/scatter_for_" + method_1.replace(" ", "_") + "_vs_" + method_2.replace(" ", "_") + "_"+protein +".html"
+        ### Compute APC corrected Frobenius Score
+        mat_apc_1 = bu.compute_apc_corrected_matrix(mat_1)
+        mat_apc_2 = bu.compute_apc_corrected_matrix(mat_2)
+
+
+        ### Plot Scatter and QQPlot of Frobenius Norm + APC scores for both methods
+        plot_file = plot_dir + "/scatter_for_" + method_1_short.replace(" ", "_") + "vs_" +  method_2_short.replace(" ", "_") + "_apc_"+protein +".html"
         x_axis_title = method_1
         y_axis_title = method_2
-        title = protein + " L: "+str(L)+" Neff: "+str(Neff)+"<br>"
-        plot_scatter_comparison(title, x_axis_title, y_axis_title, mat_1, mat_2, plot_file, color_vector=color_vector)
-
-
-
-
-        mat_apc_1 = b.compute_apc_corrected_matrix(mat_1)
-        mat_apc_2 = b.compute_apc_corrected_matrix(mat_2)
-
-        plot_file = plot_dir + "/scatter_for_" + method_1.replace(" ", "_") + "vs_" +  method_2.replace(" ", "_") + "_apc_"+protein +".html"
-        x_axis_title = "L2norm+APC of " + method_1 + " couplings"
-        y_axis_title = "L2norm+APC of " + method_2 + " couplings"
-        title = protein + " L: "+str(L)+" Neff: "+str(Neff)+"<br>"
-        plot_scatter_comparison(title, x_axis_title, y_axis_title, mat_apc_1, mat_apc_2, plot_file)
-
-        plot_file = plot_dir + "/qq_plot_for_" + method_1.replace(" ", "_") + "vs_" +  method_2.replace(" ", "_") + "_apc_"+protein +".html"
-        x_axis_title = "L2norm+APC of " + method_1 + " couplings"
-        y_axis_title = "L2norm+APC of " + method_2 + " couplings"
-        title = protein + " L: "+str(L)+" Neff: "+str(Neff)+"<br>"
+        title = "APC corrected contact scores for protein {0}".format(protein)
         plot_scatter_comparison(title, x_axis_title, y_axis_title, mat_apc_1, mat_apc_2, plot_file, qqplot=True)
 
 
-        plot_ranked_predictions_sidebyside(protein, method_1, method_2, mat_apc_1, mat_apc_2, seq_sep, plot_dir, rank_only=False)
+        ### Plot Ranks for both methods
+        # plot_ranked_predictions_sidebyside(protein, method_1, method_2, mat_apc_1, mat_apc_2, seq_sep, plot_dir, rank_only=False)
         #plot_ranked_predictions_sidebyside(protein, method_1, method_2, mat_apc_1, mat_apc_2, seq_sep, plot_dir, rank_only=True)
 
-        #plot_boxplot_scores(protein, method_1, method_2, braw_1, braw_2, plot_dir,l2norm=False, apc=False)
-        #plot_boxplot_scores(protein, method_1, method_2, braw_1, braw_2, plot_dir,l2norm=True, apc=False)
-        #plot_boxplot_scores(protein, method_1, method_2, braw_1, braw_2, plot_dir,l2norm=True, apc=True)
 
-        plot_file = plot_dir + "/contact_map_" + method_1.replace(" ", "_") + "_apc_"+protein +".html"
-        title = protein + " L: "+str(L)+" Neff: "+str(Neff)+"<br>" + method_1
-        plot_contact_map(mat_apc_1, seq_sep, 8, plot_file, title, alignment_file=alignment_file, pdb_file=pdb_file)
 
-        plot_file = plot_dir + "/contact_map_" + method_2.replace(" ", "_") + "_apc_"+protein +".html"
-        title = protein + " L: "+str(L)+" Neff: "+str(Neff)+"<br>" + method_2
-        plot_contact_map(mat_apc_2, seq_sep, 8, plot_file, title, alignment_file=alignment_file, pdb_file=pdb_file)
+        ### Plot Contact Maps for L2norm + APC score for both methods
+        # plot_file = plot_dir + "/contact_map_" + method_1.replace(" ", "_") + "_apc_"+protein +".html"
+        # title = protein + " L: "+str(L)+" Neff: "+str(Neff)+"<br>" + method_1
+        # plot_contact_map(mat_apc_1, seq_sep, 8, plot_file, title, alignment_file=alignment_file, pdb_file=pdb_file)
+        #
+        # plot_file = plot_dir + "/contact_map_" + method_2.replace(" ", "_") + "_apc_"+protein +".html"
+        # title = protein + " L: "+str(L)+" Neff: "+str(Neff)+"<br>" + method_2
+        # plot_contact_map(mat_apc_2, seq_sep, 8, plot_file, title, alignment_file=alignment_file, pdb_file=pdb_file)
 
-        dict_scores = {
-            method_1 + "_apc": mat_apc_1,
-            method_2 + "_apc": mat_apc_2
-        }
-        plot_precision_vs_rank(dict_scores, pdb_file, seq_sep, 8, plot_dir)
+        ### Plot Precision vs Rank
+        # dict_scores = {
+        #     method_1 + "_apc": mat_apc_1,
+        #     method_2 + "_apc": mat_apc_2
+        # }
+        # plot_precision_vs_rank(dict_scores, pdb_file, seq_sep, 8, plot_dir)
 
 
         scores_1 = mat_apc_1[np.triu_indices(mat_apc_1.shape[0], k=1)]
         scores_2 = mat_apc_2[np.triu_indices(mat_apc_2.shape[0], k=1)]
         stats_dict[protein] = {
+            "pearson": pearsonr(scores_1, scores_2),
             "kolmogorov-smirnov":  ks_2samp(scores_1, scores_2),
             "spearmanrho": spearmanr(scores_1, scores_2),
             "kendalltau": kendalltau(scores_1, scores_2),
             "Neff": Neff,
-            "L": L
+            "L": L,
+            "linreg": linregress(scores_1, scores_2)
         }
 
     stats_dump_file=plot_dir+"/stats_dump.json"
@@ -427,29 +544,32 @@ def main():
         json.dump(stats_dict, outfile)
 
 
-    df = pd.DataFrame(stats_dict)
-    df = df.transpose()
+    plot_boxplot_correlation(stats_dict, method_1, method_2, ["Pearson r", "Spearman rho", "Kendalls tau", "linear fit slope"], plot_dir)
 
-    df['spearman rho'] = [x for x,y in df['spearmanrho'].tolist()]
-    df['spearman pvalue'] = [y for x,y in df['spearmanrho'].tolist()]
 
-    df['kolmogorov-smirnov pvalue'] = [y for x,y in df['kolmogorov-smirnov'].tolist()]
-    df['kolmogorov-smirnov'] = [x for x,y in df['kolmogorov-smirnov'].tolist()]
-
-    df['protein'] = df.index
-    df['Neff'] = [int(x) for x in df.Neff.tolist()]
-
-    df =df[['protein', 'L', 'Neff','spearman rho',  'spearman pvalue', 'kolmogorov-smirnov', 'kolmogorov-smirnov pvalue']]
-
-    df = df.sort_values('Neff')
-    df_smallNeff = df[:50]
-    df_dump_file_smallNeff = '/home/vorberg/work/plots/benchmark_full_likelihood_optimization/compare_cd_pll//stats_dump_smallNeff.md'
-    df_smallNeff.to_csv(df_dump_file_smallNeff, sep="|", float_format="%2f", index=False)
-
-    df = df.sort_values('Neff', ascending=False)
-    df_largeNeff = df[:20]
-    df_dump_file_largeNeff = '/home/vorberg/work/plots/benchmark_full_likelihood_optimization/compare_cd_pll//stats_dump_largeNeff.md'
-    df_largeNeff.to_csv(df_dump_file_largeNeff, sep="|", float_format="%2f", index=False)
+    # df = pd.DataFrame(stats_dict)
+    # df = df.transpose()
+    #
+    # df['spearman rho'] = [x for x,y in df['spearmanrho'].tolist()]
+    # df['spearman pvalue'] = [y for x,y in df['spearmanrho'].tolist()]
+    #
+    # df['kolmogorov-smirnov pvalue'] = [y for x,y in df['kolmogorov-smirnov'].tolist()]
+    # df['kolmogorov-smirnov'] = [x for x,y in df['kolmogorov-smirnov'].tolist()]
+    #
+    # df['protein'] = df.index
+    # df['Neff'] = [int(x) for x in df.Neff.tolist()]
+    #
+    # df =df[['protein', 'L', 'Neff','spearman rho',  'spearman pvalue', 'kolmogorov-smirnov', 'kolmogorov-smirnov pvalue']]
+    #
+    # df = df.sort_values('Neff')
+    # df_smallNeff = df[:50]
+    # df_dump_file_smallNeff = '/home/vorberg/work/plots/benchmark_full_likelihood_optimization/compare_cd_pll//stats_dump_smallNeff.md'
+    # df_smallNeff.to_csv(df_dump_file_smallNeff, sep="|", float_format="%2f", index=False)
+    #
+    # df = df.sort_values('Neff', ascending=False)
+    # df_largeNeff = df[:20]
+    # df_dump_file_largeNeff = '/home/vorberg/work/plots/benchmark_full_likelihood_optimization/compare_cd_pll//stats_dump_largeNeff.md'
+    # df_largeNeff.to_csv(df_dump_file_largeNeff, sep="|", float_format="%2f", index=False)
 
 
 if __name__ == '__main__':

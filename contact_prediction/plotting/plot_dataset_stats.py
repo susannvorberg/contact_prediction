@@ -5,21 +5,20 @@
 ### Dataset must be path to directory with psicov files
 #===============================================================================
 
-import argparse
-import glob
 # ===============================================================================
 ### Load libraries
 # ===============================================================================
 import os
-
+import argparse
+import glob
 import numpy as np
 import pandas as pd
-import utils.alignment_utils as ali_ut
-import utils.io_utils as io
-import utils.plot_utils as p
+import contact_prediction.utils.alignment_utils as ali_ut
+import contact_prediction.utils.io_utils as io
+import contact_prediction.utils.plot_utils as p
 import plotly.graph_objs as go
 from plotly.offline import plot as plotly_plot
-
+from plotly import tools
 
 def plot_boxplot_for_statistic(stats_df, column_name, title, jitter_pos=None, plot_out=None):
 
@@ -44,7 +43,6 @@ def plot_boxplot_for_statistic(stats_df, column_name, title, jitter_pos=None, pl
         order=sorted_folds,
         plot_out=plot_out
     )
-
 
 def plot_stacked_barchart_cath(stats_df, title, plot_out=None):
 
@@ -110,7 +108,43 @@ def plot_stacked_barchart_cath(stats_df, title, plot_out=None):
 
     plotly_plot(plot, filename=plot_out, auto_open=False)
 
+def plot_boxplot_all_stats(stats_df, plot_out=None):
 
+    proteins=stats_df['protein']
+    stats_names = stats_df.keys().tolist()
+    stats_names.remove("protein")
+
+    ## define subplots
+    fig = tools.make_subplots(rows=1, cols=len(stats_names))
+
+    ## add traces as subplots
+    for nr, key in enumerate(stats_names):
+        trace = go.Box(
+            y=stats_df[key],
+            #boxmean='sd',
+            name=key,
+            hoverinfo='all',
+            orientation="v",
+            showlegend=False,
+            boxpoints="all",
+            jitter=0.5,
+            pointpos=2,
+            text=proteins
+        )
+        fig.append_trace(trace, 1, nr+1)
+
+    fig['layout'].update(
+        font = dict(size=18),
+        hovermode = 'closest',
+        title = "Dataset Statistics",
+        width=300 * len(stats_names),
+        height=500
+    )
+
+    if plot_out is not None:
+        plotly_plot(fig, filename=plot_out, auto_open=False, link_text='')
+    else:
+        return fig
 
 def main():
 
@@ -141,58 +175,86 @@ def main():
     #dataset_files      = "/home/vorberg/work/data/benchmarkset_cathV4.1/dataset/dataset_properties/"
 
 
-    dataset_folds={}
-    for file in glob.glob(dataset_files + "/*n5e01*"):
-        id = os.path.basename(file).split("_")[2]
-        dataset_folds[id] = pd.read_table(file, skipinitialspace=True)
-        dataset_folds[id].columns=['domain', 'resolution', 'CATH', 'L', 'N']
-
-
     stats = {
         'protein' :        [],
         'diversity' :      [],
-        'dataset' :           [],
         'N':               [],
         'L':               [],
-        'percent_gaps':    [],
-        'cath_topology':   [],
+        'percent_gaps':    []
     }
 
-    cath_classes = {
-        1 : 'CATH class 1 (mainly alpha)',
-        2 : 'CATH class 2 (mainly beta)',
-        3 : 'CATH class 3 (alpha beta)'
-    }
+    if dataset_files is not None:
+
+        dataset_folds = {}
+        for file in glob.glob(dataset_files + "/*n5e01*"):
+            id = os.path.basename(file).split("_")[2]
+            dataset_folds[id] = pd.read_table(file, skipinitialspace=True)
+            dataset_folds[id].columns = ['domain', 'resolution', 'CATH', 'L', 'N']
+
+        stats['dataset']=        []
+        stats['cath_topology'] = []
+
+        cath_classes = {
+            1 : 'CATH class 1 (mainly alpha)',
+            2 : 'CATH class 2 (mainly beta)',
+            3 : 'CATH class 3 (alpha beta)'
+        }
+
+        for fold in dataset_folds.keys():
+            for index, row in dataset_folds[fold].iterrows():
+
+                protein = row['domain']
+                cath = row['CATH']
+
+                psicov_file = alignment_path + "/" + protein +".filt.psc"
+
+                #if it does not exist, it has been filtered due to
+                #combs ambiguity or alignment filter
+                if os.path.exists(psicov_file):
+                    alignment = io.read_alignment(psicov_file)
+
+                    L = len(alignment[0])
+                    N = len(alignment)
+
+                    percent_gaps = ali_ut.compute_gaps_per_position(alignment)
+                    percent_gaps_alignment = np.mean(percent_gaps)
+
+                    stats['protein'].append(protein)
+                    stats['diversity'].append(np.sqrt(N)/L)
+                    stats['N'].append(N)
+                    stats['L'].append(L)
+                    stats['percent_gaps'].append(percent_gaps_alignment)
+                    stats['dataset'].append(fold)
+                    stats['cath_topology'].append(cath_classes[int(cath.split(".")[0])])
+
+        stats_df = pd.DataFrame(stats)
 
 
-    for fold in dataset_folds.keys():
-        for index, row in dataset_folds[fold].iterrows():
+    if dataset_files is None:
 
-            protein = row['domain']
-            cath = row['CATH']
+        psicov_files= glob.glob(alignment_path+"/*")
 
-            psicov_file = alignment_path + "/" + protein +".filt.psc"
+        for psicov_file in psicov_files:
+            protein = os.path.basename(psicov_file).split(".")[0]
+            print(protein)
 
-            #if it does not exist, it has been filtered due to
-            #combs ambiguity or alignment filter
-            if os.path.exists(psicov_file):
-                alignment = io.read_alignment(psicov_file)
+            alignment = io.read_alignment(psicov_file)
+            L = len(alignment[0])
+            N = len(alignment)
 
-                L = len(alignment[0])
-                N = len(alignment)
+            percent_gaps = ali_ut.compute_gaps_per_position(alignment)
+            percent_gaps_alignment = np.mean(percent_gaps)
 
-                percent_gaps = ali_ut.compute_gaps_per_position(alignment)
-                percent_gaps_alignment = np.mean(percent_gaps)
+            stats['protein'].append(protein)
+            stats['diversity'].append(np.sqrt(N) / L)
+            stats['N'].append(N)
+            stats['L'].append(L)
+            stats['percent_gaps'].append(percent_gaps_alignment)
 
-                stats['protein'].append(protein)
-                stats['diversity'].append(np.sqrt(N)/L)
-                stats['N'].append(N)
-                stats['L'].append(L)
-                stats['percent_gaps'].append(percent_gaps_alignment)
-                stats['dataset'].append(fold)
-                stats['cath_topology'].append(cath_classes[int(cath.split(".")[0])])
+        stats_df = pd.DataFrame(stats)
 
-    stats_df = pd.DataFrame(stats)
+        ### Plot
+        plot_boxplot_all_stats(stats_df, plot_out=plot_out+"/dataset_stats.html")
 
     #===============================================================================
     ### Plot

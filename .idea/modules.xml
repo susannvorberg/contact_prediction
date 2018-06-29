@@ -2,6 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/../CCMgen/.idea/CCMgen.iml" filepath="$PROJECT_DIR$/../CCMgen/.idea/CCMgen.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../CCMgen-scripts/.idea/CCMgen-scripts.iml" filepath="$PROJECT_DIR$/../CCMgen-scripts/.idea/CCMgen-scripts.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/contact_prediction.iml" filepath="$PROJECT_DIR$/.idea/contact_prediction.iml" />
     </modules>
   </component>

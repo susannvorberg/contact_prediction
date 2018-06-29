@@ -19,7 +19,7 @@ def subset_evaluation_dict(evaluation_statistics, bins, subset_property, methods
             np.round(bins[bin+1], decimals=2)
         )
         precision_dict_bin = {protein:protein_eval_metrics
-                              for protein, protein_eval_metrics in evaluation_statistics['proteins'].iteritems()
+                              for protein, protein_eval_metrics in evaluation_statistics['proteins'].items()
                               if (protein_eval_metrics[subset_property] > bins[bin])
                               and (protein_eval_metrics[subset_property] <= bins[bin+1])}
 
@@ -63,13 +63,12 @@ def precision_vs_rank(evaluation_statistics, methods):
 
     return precision_recall
 
-def evaluationmeasure_vs_rank(evaluation_statistics, methods, evaluation_measure):
+def evaluationmeasure_vs_rank(evaluation_statistics, evaluation_measure):
 
     # compute mean "measure" over all ranks
     evaluation_by_rank = {'rank': evaluation_statistics['ranks']}
 
-
-    for method in methods:
+    for method in evaluation_statistics['methods']:
 
         measure_per_method_all_proteins_all_ranks = [protein_eval_metrics['methods'][method][evaluation_measure]
                                                      for protein_eval_metrics in evaluation_statistics['proteins'].values()]
@@ -165,7 +164,7 @@ def compute_rollingmean_in_scatterdict(evaluation_statistics, methods, property)
 
     return scatter_dict
 
-def mean_precision_per_protein(evaluation_statistics, methods):
+def mean_precision_per_protein(evaluation_statistics):
     """
     evaluation_statistics is of form:
     {
@@ -193,11 +192,11 @@ def mean_precision_per_protein(evaluation_statistics, methods):
     :return:
     """
     scatter_dict = {}
-    for method in methods:
+    for method in evaluation_statistics['methods']:
         scatter_dict[method] = {}
 
         #all protein names
-        scatter_dict[method]['protein'] = evaluation_statistics['proteins'].keys()
+        scatter_dict[method]['protein'] = list(evaluation_statistics['proteins'].keys())
 
         #mean precision for this method for all proteins
         scatter_dict[method]['mean_precision'] = [np.nanmean(protein_eval_metrics['methods'][method]['precision'])
@@ -210,10 +209,10 @@ def mean_precision_per_protein(evaluation_statistics, methods):
             ", L: " + str(protein_eval_metrics['L']) +
             ", N: " + str(protein_eval_metrics['N']) +
             ", neff: " + str(np.round(protein_eval_metrics['neff'], decimals=3)) +
-            ", cath: " + str(protein_eval_metrics['cath class']) +
+            #", cath: " + str(protein_eval_metrics['cath class']) +
             ", percentage_gaps: " + str(np.round(protein_eval_metrics['gap_percentage'], decimals=3)) +
             ", diversity: " + str(np.round(protein_eval_metrics['diversity'], decimals=3))
-            for protein, protein_eval_metrics in evaluation_statistics['proteins'].iteritems()]
+            for protein, protein_eval_metrics in evaluation_statistics['proteins'].items()]
 
     return scatter_dict
 
@@ -361,70 +360,49 @@ def compute_corrected_mat_joint_entropy(pair_freq, neff, lambda_w, braw_x_pair, 
     return (corrected_mat)
 
 
-def compute_scaling_factor_eta(x_pair, ui, uij, nr_states, squared=True):
+def compute_scaling_factor_eta(x_pair, uij, nr_states, squared=True):
+
+    squared_sum_couplings = np.sum(x_pair[:,:,:20,:20] * x_pair[:,:,:20,:20], axis=(3,2))
 
     if squared:
-        # compute scaling factor in matrix form
-        # L=single_freq.shape[0]
-        # upper_indices = np.triu_indices(L, k=1)
 
-        x_pair_sq = x_pair * x_pair
-        prod = x_pair_sq[:,:,:nr_states,:nr_states] * uij #(L,L,21,21) (L,L,21,21)
-        scaling_factor_eta = np.sum(prod)
-        #scaling_factor_eta = np.sum(prod[upper_indices[0], upper_indices[1], :, :])
-        # print "scaling_factor_eta: ", scaling_factor_eta
+        squared_sum_entropy = np.sum(uij[:,:,:nr_states,:nr_states], axis=(3,2))
+        scaling_factor = np.sum(squared_sum_couplings * squared_sum_entropy)
 
-        # ui_sq = ui * ui
-        # uij_sq = np.transpose(np.multiply.outer(ui_sq, ui_sq), (0,2,1,3))
-        # denominator = np.sum(uij_sq[upper_indices[0], upper_indices[1], :, :])
-        sum_ui_sq = np.sum(ui * ui)
-        denominator = sum_ui_sq * sum_ui_sq
-        # print "denominator: ", denominator
-        scaling_factor_eta /= denominator
-        # print "scaling_factor_eta: ", scaling_factor_eta
-
-
-        # compute scaling factor element-wise for testing
-        # L = single_freq.shape[0]
-        # scaling_factor_eta = 0
-        # denominator=0
-        # ui_sq = ui * ui
-        # print "L: {0}".format(L)
-        # for i in range(L):
-        #     for j in range(L):
-        #         for a in range(20):
-        #             for b in range(20):
-        #                 scaling_factor_eta += (x_pair[i,j,a,b]*x_pair[i,j,a,b]) * ui[i,a] * ui[j,b]
-        #                 denominator += ui_sq[i,a] * ui_sq[j,b]
-        # print "scaling_factor_eta_elementwise: ", scaling_factor_eta
-        # print "denominator: ", denominator
-        # print "scaling_factor_eta_elementwise: ", scaling_factor_eta / denominator
+        denominator = np.sum(uij * uij)
+        scaling_factor /= denominator
 
     else:
-        c_ij =  np.sqrt(np.sum(x_pair[:,:,:nr_states,:nr_states] * x_pair[:,:,:nr_states,:nr_states], axis=(3,2)))
-        e_ij =  np.sqrt(np.sum(uij, axis=(3,2)))
 
-        scaling_factor_eta = np.sum(c_ij  * e_ij)
-        denominator = np.sum(uij)
-        scaling_factor_eta /= denominator
+        #According to Stefan's CCMgen paper
+        #both are LxL matrices
+        c_ij =  np.sqrt(squared_sum_couplings)
+        e_ij =  np.sqrt(np.sum(uij[:,:,:nr_states,:nr_states], axis=(3,2)))
 
-    return scaling_factor_eta
+        scaling_factor = np.sum(c_ij  * e_ij)
+        denominator = np.sum(uij[:,:,:nr_states,:nr_states])
+        scaling_factor /= denominator
+
+    return scaling_factor
 
 def compute_entropy_correction(single_freq, neff, lambda_w, x_pair, entropy=True, squared=True, nr_states = 20):
 
-    # debugging
-    # N_factor = neff / np.sqrt(neff-1)
-    N_factor = np.sqrt(neff) * (1.0 / lambda_w)
 
     if entropy:
         #it doesn't matter whether x*log(x) or x * (-log(x)) --> when computing ui * ui the minus vanishes
+        N_factor = 1
         ui = N_factor * single_freq[:, :nr_states] * (-np.log2(single_freq[:, :nr_states]))
     else:
+        #correct for fractional counts
+        N_factor = np.sqrt(neff) * (1.0 / lambda_w)
+        # N_factor = neff / np.sqrt(neff-1)
         ui = N_factor * single_freq[:, :nr_states] * (1 - single_freq[:, :nr_states])
+
     uij = np.transpose(np.multiply.outer(ui, ui), (0,2,1,3))
 
     ### compute scaling factor eta
-    scaling_factor_eta = compute_scaling_factor_eta(x_pair, ui, uij, nr_states, squared=squared)
+    scaling_factor_eta = compute_scaling_factor_eta(x_pair, uij, nr_states, squared=squared)
+
 
     return(uij, scaling_factor_eta)
 
@@ -456,7 +434,7 @@ def compute_entropy_correction_ij(single_freq, neff, lambda_w, braw_x_pair, resi
     uij = np.transpose(np.multiply.outer(ui, ui), (0,2,1,3))
 
     ### compute scaling factor eta
-    scaling_factor_eta = compute_scaling_factor_eta(braw_x_pair, ui, uij, nr_states, squared=squared)
+    scaling_factor_eta = compute_scaling_factor_eta(braw_x_pair, uij, nr_states, squared=squared)
 
     ### compute correction
     correction = scaling_factor_eta * np.sum(uij, axis=(3,2))
@@ -467,21 +445,20 @@ def compute_entropy_correction_ij(single_freq, neff, lambda_w, braw_x_pair, resi
     entropy_correction_ij = uij[residue_i-1, residue_j-1, :, :]
     return(ui, entropy_correction_ij, scaling_factor_eta)
 
-def compute_joint_entropy_correction(pair_freq, neff, lambda_w, braw_x_pair):
+def compute_joint_entropy_correction(pair_freq, neff, lambda_w, braw_x_pair, nr_states = 20):
 
-    nr_states = 20
 
     N_factor = neff / (lambda_w*lambda_w)
+
     joint_entropy = - np.sum(
         pair_freq[:, :, :nr_states, :nr_states] * np.log2(pair_freq[:, :, :nr_states, :nr_states]),
-        axis=(3,2)
+        axis=(3, 2)
     )
     uij = N_factor * joint_entropy
     c_ij = compute_l2norm_from_braw(braw_x_pair, apc=False, squared=False)
 
-
     ### compute scaling factor eta
-    scaling_factor = np.sum(c_ij * uij) / np.sum(joint_entropy*joint_entropy)
+    scaling_factor = np.sum(c_ij * uij) / np.sum(uij * uij)
 
     return(uij, scaling_factor)
 

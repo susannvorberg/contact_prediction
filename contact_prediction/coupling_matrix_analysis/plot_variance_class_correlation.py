@@ -13,19 +13,20 @@ import glob
 import os
 
 import colorlover as cl
-import contact_prior.ext.weighting as weighting
+
 import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
 from plotly import tools
 from plotly.offline import plot as plotly_plot
 
-import raw
-import utils.ext.counts as counts
-import utils.io_utils as io
-import utils.pdb_utils as pdb
-import utils.plot_utils as plots
-from utils.io_utils import AMINO_ACIDS
+import contact_prediction.utils.ccmraw as raw
+import contact_prediction.utils.ext.weighting as weighting
+import contact_prediction.utils.ext.counts as counts
+import contact_prediction.utils.io_utils as io
+import contact_prediction.utils.pdb_utils as pdb
+import contact_prediction.utils.plot_utils as plots
+from contact_prediction.utils.io_utils import AMINO_ACIDS
 
 
 def collect_data(braw_dir, alignment_dir, pdb_dir,

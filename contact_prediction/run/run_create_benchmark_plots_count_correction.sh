@@ -37,14 +37,15 @@ function run_plot_script  {
     contactthr=$4
 
 
-    plotdir="/usr/users/svorber/work/plots/bayesian_framework/bayesian_contact_score/predictions/cathV4.1/count_correction/$plot_subdir"
+    #plotdir="/usr/users/svorber/work/plots/bayesian_framework/bayesian_contact_score/predictions/cathV4.1/count_correction/$plot_subdir"
+    plotdir="/usr/users/svorber/work/plots/benchmark_entropy_correction/$plot_subdir"
 
     if [ ! -d "$plotdir" ]; then
         mkdir -p $plotdir
     fi
 
     #Plot benchmark plots
-    settings="/usr/users/svorber/work/data/benchmarkset_cathV4.1/evaluation/ "
+    settings="/usr/users/svorber/work/data/benchmarkset_cathV4.1/evaluation_entropy_correction/ "
     settings=$settings" --plot_dir $plotdir "
     settings=$settings" --seqsep 12 "
     settings=$settings" --contact_thr "$contactthr
@@ -171,24 +172,53 @@ methods=$methods",squared-frobenius-csc_eta_fix4"
 #run_plot_script $methods "eta_factor_lambda_squared" $CONTACT_PREDICTION_PATH 8
 
 
-methods="ccmpred-pll-centerv+apc"
-methods=$methods",frobenius-ec_eta"
-#methods=$methods",frobenius-ec_eta_stefan"
-methods=$methods",squared-frobenius-ec_eta"
-methods=$methods",ec_pair_weight_20000_balance5_regcoeff10"
-methods=$methods",ec_pair_weight_20000_balance5_regcoeff1"
-methods=$methods",ec_pair_weight_10000_balance1_regcoeff1"
-methods=$methods",ec_pair_weight_50000_balance2_regcoeff10"
-#methods=$methods",ec_pair_weight_logreg_20000_balance5_regcoeff10"
-run_plot_script $methods "ec_pairweights" $CONTACT_PREDICTION_PATH 8
+#methods="ccmpred-pll-centerv+apc"
+#methods=$methods",frobenius-ec_eta"
+##methods=$methods",frobenius-ec_eta_stefan"
+#methods=$methods",squared-frobenius-ec_eta"
+#methods=$methods",ec_pair_weight_20000_balance5_regcoeff10"
+#methods=$methods",ec_pair_weight_20000_balance5_regcoeff1"
+#methods=$methods",ec_pair_weight_10000_balance1_regcoeff1"
+#methods=$methods",ec_pair_weight_50000_balance2_regcoeff10"
+##methods=$methods",ec_pair_weight_logreg_20000_balance5_regcoeff10"
+#run_plot_script $methods "ec_pairweights" $CONTACT_PREDICTION_PATH 8
 
 
 methods="ccmpred-pll-centerv+apc"
-methods=$methods",frobenius-ec_eta"
-methods=$methods",frobenius-ec_eta-21"
-methods=$methods",sec-21"
-methods=$methods",jec-21"
-methods=$methods",sec-20"
+methods=$methods",fec-20"
+methods=$methods",fec-21"
 methods=$methods",jec-20"
-#methods=$methods",ec_pair_weight_logreg_20000_balance5_regcoeff10"
-run_plot_script $methods "20_vs_21_states" $CONTACT_PREDICTION_PATH 8
+methods=$methods",jec-21"
+methods=$methods",sjec-20"
+methods=$methods",sjec-21"
+run_plot_script $methods "20_vs_21" $CONTACT_PREDICTION_PATH 8
+
+
+methods="ccmpred-pll-centerv+apc"
+methods=$methods",fec-21"
+methods=$methods",fec-21-loge"
+methods=$methods",jec-21"
+methods=$methods",jec-21-loge"
+methods=$methods",sjec-21"
+methods=$methods",sjec-21-loge"
+run_plot_script $methods "log2_vs_loge" $CONTACT_PREDICTION_PATH 8
+
+
+methods="ccmpred-pll-centerv+apc"
+methods=$methods",fec-20"
+methods=$methods",fec-20-alnfilter"
+methods=$methods",jec-20"
+methods=$methods",jec-20-alnfilter"
+methods=$methods",sjec-20"
+methods=$methods",sjec-20-alnfilter"
+run_plot_script $methods "alignment_filter_20" $CONTACT_PREDICTION_PATH 8
+
+
+methods="ccmpred-pll-centerv+apc"
+methods=$methods",fec-21"
+methods=$methods",fec-21-alnfilter"
+methods=$methods",jec-21"
+methods=$methods",jec-21-alnfilter"
+methods=$methods",sjec-21"
+methods=$methods",sjec-21-alnfilter"
+run_plot_script $methods "alignment_filter_21" $CONTACT_PREDICTION_PATH 8

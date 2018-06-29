@@ -12,13 +12,13 @@
 ### load libraries ===============================================================================
 import argparse
 import os
-
+import glob
 import numpy as np
 import pandas as pd
 
-from ..utils.ext import weighting as weighting
-from ..utils import io_utils as io
-from . import Benchmark
+
+from contact_prediction.utils import io_utils as io
+from contact_prediction.benchmark import Benchmark
 
 
 def parse_args():
@@ -49,52 +49,57 @@ def main():
 
     #debugging
     # property_files_dir  = "/home/vorberg/work/data/benchmarkset_cathV4.1/dataset/dataset_properties/"
+    property_files_dir = None
     # evaluation_dir      = "/home/vorberg/work/data/benchmarkset_cathV4.1/evaluation/"
+    #evaluation_dir      = '/home/vorberg/Documents/eval_ccmgen/evaluation'
+    evaluation_dir      = '/home/vorberg/work/data/ccmgen/psicov/evaluation'
     # alignment_dir       = "/home/vorberg/work/data/benchmarkset_cathV4.1/psicov/"
+    #alignment_dir       = '/home/vorberg/Documents/eval_ccmgen/alignments'
+    alignment_dir       = '/home/vorberg/work/data/ccmgen/psicov/alignments'
     # pdb_dir             = "/home/vorberg/work/data/benchmarkset_cathV4.1/pdb_renum_combs/"
-    # min_seqsep          = 6
+    #pdb_dir             = '/home/vorberg/Documents/eval_ccmgen/pdb/'
+    pdb_dir             = '/home/vorberg/work/data/ccmgen/psicov/pdb/'
+    min_seqsep          = 4
 
-    #read dataset fold information
-    dataset_folds = pd.DataFrame()
-    for fold, file in enumerate(sorted(os.listdir(property_files_dir))):
-        print fold+1 , file
-        fold_df = pd.read_table(property_files_dir +"/" + file, skipinitialspace=True)
-        fold_df['fold'] = fold+1
-        print len(fold_df)
-        dataset_folds = dataset_folds.append(fold_df, ignore_index=True)
 
+    if property_files_dir is not None:
+        #read dataset fold information
+        dataset_folds = pd.DataFrame()
+        for fold, file in enumerate(sorted(os.listdir(property_files_dir))):
+            print(fold+1 , file)
+            fold_df = pd.read_table(property_files_dir +"/" + file, skipinitialspace=True)
+            fold_df['fold'] = fold+1
+            print(len(fold_df))
+            dataset_folds = dataset_folds.append(fold_df, ignore_index=True)
+        dataset_folds = dataset_folds.rename(columns={'#  domain': '#domain'})
+        protein_list = dataset_folds['#domain'].tolist()
+    else:
+        alignment_files = glob.glob(alignment_dir+"/*")
+        protein_list = [os.path.basename(aln_file).split(".")[0] for aln_file in alignment_files]
 
     # Initialise benchmark object
     b = Benchmark(evaluation_dir)
 
     # Create evaluation files
-    b.create_evaluation_files(pdb_dir, alignment_dir, min_seqsep, dataset_folds['#  domain'].tolist())
-
-    # Annotate eval_meta files with cath and fold
-    for protein in b.proteins:
-
-        print protein
-
-        cath_class = dataset_folds[dataset_folds['#  domain'] == protein]['CATH-topology'].values[0].lstrip()
-        fold = dataset_folds[dataset_folds['#  domain'] == protein]['fold'].values[0]
-
-        alignment_file=alignment_dir+"/"+protein+".filt.psc"
-        if not os.path.exists(alignment_file):
-            print("Alignment File {0} does not exist (used for annotating eval file with Neff). Skip.".format(alignment_file))
-            continue
-
-        alignment = io.read_alignment(alignment_file)
-        weights = weighting.calculate_weights_simple(alignment, 0.8, False)
-        neff=np.sum(weights)
-
-        meta = {
-            'cath class': cath_class,
-            'fold': fold,
-            'neff' : neff
-        }
-        b.add_protein_meta_data(protein, meta)
+    b.create_evaluation_files(pdb_dir, alignment_dir, min_seqsep, protein_list)
 
 
+    if property_files_dir is not None:
+        # Annotate eval_meta files with cath and fold
+        for protein in b.proteins:
+
+            print protein
+            meta={}
+
+            if protein in dataset_folds['#domain'].tolist():
+
+                cath_class = dataset_folds[dataset_folds['#domain'] == protein]['CATH-topology'].values[0].lstrip()
+                fold = dataset_folds[dataset_folds['#domain'] == protein]['fold'].values[0]
+
+                meta['cath class'] = cath_class
+                meta['fold']= fold
+
+            b.add_protein_meta_data(protein, meta)
 
 
 

@@ -933,6 +933,8 @@ def plot_contact_map_someScore_plotly(plot_matrix, title, seqsep, gaps_percentag
     fig['layout']['yaxis2']['zeroline'] = False
 
     fig['layout']['font']['size']=18
+    fig['layout']['height']=850
+    fig['layout']['width']=1000
 
     if gaps_percentage_plot is not None:
         for trace in gaps_percentage_plot['data']:
@@ -948,6 +950,8 @@ def plot_contact_map_someScore_plotly(plot_matrix, title, seqsep, gaps_percentag
         # line plot domain 0.9-1.0
         fig['layout']['yaxis1']['title'] = 'Percentage of Gaps'
         fig['layout']['yaxis1']['domain'] = [0.9, 1.0]
+
+
 
     if plot_file:
         plotly_plot(fig, filename=plot_file, auto_open=False)

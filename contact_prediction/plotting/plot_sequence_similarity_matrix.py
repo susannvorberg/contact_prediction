@@ -15,16 +15,25 @@ from plotly.offline import plot as plotly_plot
 from contact_prediction.utils.ext.weighting import count_ids
 from contact_prediction.utils import io_utils as io
 import plotly.figure_factory as FF
-from scipy.spatial.distance import pdist, squareform
 import numpy as np
+from scipy.spatial.distance import pdist, squareform
+import glob
 
 def plot_seq_id_matrix(seq_id_matrix, plot_file=None):
 
-    trace = go.Heatmap(z=seq_id_matrix)
+    trace = go.Heatmap(
+        z=seq_id_matrix,
+        colorscale='Greys',
+        reversescale=True,
+        zmin=0,
+        zmax=1
+    )
 
     data = [trace]
 
     layout=go.Layout(
+        width=1000,
+        height=1000,
         xaxis=dict(
             scaleratio=1,
             scaleanchor='y'
@@ -41,11 +50,18 @@ def plot_seq_id_matrix(seq_id_matrix, plot_file=None):
     if plot_file is None:
         return fig
     else:
-        plotly_plot(fig, filename=plot_file, auto_open=False)
+        plotly_plot(fig, filename=plot_file, auto_open=False, show_link=False)
 
 def compute_seq_identities(alignment):
     L=alignment.shape[1]
     return count_ids(alignment) / L
+
+def hamming_distance_vector(alignment):
+    return pdist(alignment, metric='hamming')
+
+def hamming_distance_matrix(alignment):
+    hamming_dist = pdist(alignment, metric='hamming')
+    return squareform(hamming_dist)
 
 def plot_seq_id_matrix_with_dendrogram(alignment, seq_id_matrix, plot_file=None):
 
@@ -54,7 +70,7 @@ def plot_seq_id_matrix_with_dendrogram(alignment, seq_id_matrix, plot_file=None)
     # Initialize figure by creating upper dendrogram
     figure = FF.create_dendrogram(
         alignment,
-        distfun=compute_seq_identities,
+        distfun=hamming_distance_vector,#compute_seq_identities,
         orientation='bottom',
         labels=dendro_leave_names #sets ticktext and tickvals
     )
@@ -73,7 +89,7 @@ def plot_seq_id_matrix_with_dendrogram(alignment, seq_id_matrix, plot_file=None)
     # Create Side Dendrogram
     dendro_side = FF.create_dendrogram(
         alignment,
-        distfun=compute_seq_identities,
+        distfun=hamming_distance_vector,#compute_seq_identities,
         orientation='right'
     )
 
@@ -103,7 +119,10 @@ def plot_seq_id_matrix_with_dendrogram(alignment, seq_id_matrix, plot_file=None)
             z=heat_data,
             hoverinfo="text",
             text=[["x: {0}<br>y: {1}<br> z: {2}".format(i,j, np.round(heat_data[i,j], decimals=3)) for i in dendro_leaves] for j in dendro_leaves],
-            #colorscale='YIGnBu'
+            colorscale='Greys',
+            reversescale=True,
+            zmin=0,
+            zmax=1
         )
     ])
 
@@ -161,6 +180,70 @@ def plot_seq_id_matrix_with_dendrogram(alignment, seq_id_matrix, plot_file=None)
     else:
         plotly_plot(figure, filename=plot_file, auto_open=False)
 
+def plot_seq_id_boxplot(alignment_dir_list, topology, plot_file, protein=None):
+
+    data = []
+
+    for alignment_dir in alignment_dir_list:
+        method = os.path.basename(os.path.abspath(alignment_dir))
+        print(method)
+
+        box_data = []
+
+        if protein is not None:
+                alignment_file = alignment_dir+"/"+protein+ topology+".aln"
+                alignment = io.read_alignment(alignment_file)
+                similarity_matrix = compute_seq_identities(alignment)
+                box_data = similarity_matrix[np.triu_indices(similarity_matrix.shape[0], k=1)]
+
+        else:
+            alignment_files = glob.glob(alignment_dir+"/*"+topology+".aln")
+
+            for alignment_file in alignment_files:
+                alignment = io.read_alignment(alignment_file)
+                protein = os.path.basename(alignment_file).split(".")[0]
+                similarity_matrix = compute_seq_identities(alignment)
+                mean_seq_id = np.mean(similarity_matrix[np.triu_indices(similarity_matrix.shape[0], k=1)])
+                median_seq_id = np.median(similarity_matrix[np.triu_indices(similarity_matrix.shape[0], k=1)])
+
+                box_data.append(mean_seq_id)
+
+
+
+        box = go.Box(
+            y=box_data,
+            boxmean='sd',
+            boxpoints='Outliers',
+            name=method,
+            marker=dict(opacity=1),
+            orientation='v',
+            showlegend=False
+        )
+
+        data.append(box)
+
+    plot = {
+        "data": data,
+        "layout": go.Layout(
+            yaxis=dict(
+                exponentformat='e',
+                showexponent='All',
+                range=[0,1]
+            ),
+            font=dict(size=18)
+        )
+    }
+
+    if protein is None:
+        plot['layout']['title'] = "Mean sequence Ids for all proteins"
+        plot['layout']['yaxis']['title'] = "mean sequence id"
+    else:
+        plot['layout']['title'] = "Pairwise sequence identities for protein {0}".format(protein)
+        plot['layout']['yaxis']['title'] = "pairwise sequence id"
+
+    plotly_plot(plot, filename=plot_file, auto_open=False)
+
+
 
 def main():
 
@@ -175,24 +258,53 @@ def main():
     plot_dir                   = str(args.plot_dir)
 
 
-    plot_dir = "/home/vorberg/"
-    protein='1g2rA'
-    topology="star"
-    topology="binary"
-    alignment_file="/home/vorberg/" + protein + "."+topology+".aln"
-
-
+    plot_dir = "/home/vorberg/work/plots/ccmgen/psicov/seq_identity_matrices_alignments/"
+    protein='1dqgA' #'1i5gA' # '1dqgA'#'1ag6A'#'1ej0A'#'1g2rA'
+    topology=""
+    topology=".star"
+    topology=".binary"
+    # alignment_file="/home/vorberg/" + protein +topology+".mr50.aln"
+    # alignment_file="/home/vorberg/work/data/ccmgen/psicov/alignments/" + protein +topology+".aln"
+    # alignment_file="/home/vorberg/work/data/ccmgen/psicov/sampled_pcd/" + protein +topology+".aln"
+    # alignment_file="/home/vorberg/work/data/ccmgen/psicov/sampled_pcd_cheating_12/" + protein +topology+".aln"
+    alignment_file="/home/vorberg/work/data/ccmgen/psicov/sampled_pcd_cheating_12_incmr_4/" + protein +topology+".aln"
+    # alignment_file="/home/vorberg/work/data/ccmgen/psicov/sampled_pcd_cheating_12_mr100/" + protein +topology+".aln"
+    # alignment_file="/home/vorberg/work/data/ccmgen/psicov/sampled_pcd_cheating_12_mr10/" + protein +topology+".aln"
+    # alignment_file="/home/vorberg/work/data/ccmgen/psicov/sampled_pcd_cheating_12_mr1/" + protein +topology+".aln"
+    # alignment_file="/home/vorberg/work/data/ccmgen/psicov/sampled_pcd_lfactor1e-3_cheating_12_mr100/" + protein +topology+".aln"
+    # alignment_file="/home/vorberg/work/data/ccmgen/psicov/sampled_pcd_lfactor1e-3_cheating_12_mr10/" + protein +topology+".aln"
+    # alignment_file="/home/vorberg/work/data/ccmgen/psicov/sampled_pcd_lfactor1e-3_cheating_12_mr1/" + protein +topology+".aln"
 
     alignment = io.read_alignment(alignment_file)
     protein = os.path.basename(alignment_file).split(".")[0]
 
     #compute amino acid counts only once
-    seq_id_matrix = compute_seq_identities(alignment)
+    similarity_matrix = compute_seq_identities(alignment)
+    #similarity_matrix = hamming_distance_matrix(alignment)
+    print(np.mean(similarity_matrix[-100,:-100]))
+    print(np.min(similarity_matrix))
+    print(np.mean(similarity_matrix))
 
-    plot_file = plot_dir + "/sequence_similarity_matrix_"+protein+"."+topology+".html"
-    plot_seq_id_matrix(seq_id_matrix, plot_file=plot_file)
-    plot_file = plot_dir + "/sequence_similarity_matrix_dendrogram_"+protein+"."+topology+".html"
-    plot_seq_id_matrix_with_dendrogram(alignment, seq_id_matrix, plot_file=plot_file)
+    #plot seq similarity matrix
+    plot_file = plot_dir + "/sequence_similarity_matrix_"+protein+topology+".html"
+    plot_seq_id_matrix(similarity_matrix, plot_file=plot_file)
+
+    #plot dendrogramm with similarity matrix - use hamming distance matrix
+    plot_file = plot_dir + "/sequence_similarity_matrix_dendrogram_"+protein+topology+".html"
+    plot_seq_id_matrix_with_dendrogram(alignment, similarity_matrix, plot_file=plot_file)
+
+
+    #plot boxplot of pairwise sequence identities for one protein and different methods
+    plot_file = plot_dir + "/boxplot_sequence_similarities_"+topology+".html"
+    alignment_dir_list=["/home/vorberg/work/data/ccmgen/psicov/sampled_pcd_cheating_12_mr1/",
+                        "/home/vorberg/work/data/ccmgen/psicov/sampled_pcd_cheating_12_mr3/",
+                        "/home/vorberg/work/data/ccmgen/psicov/sampled_pcd_cheating_12_mr10/",
+                        "/home/vorberg/work/data/ccmgen/psicov/sampled_pcd_cheating_12_mr100/"]
+    plot_seq_id_boxplot(alignment_dir_list, topology, plot_file=plot_file, protein=None)
+
+
+    plot_file = plot_dir + "/boxplot_sequence_similarities"+topology+"."+protein+".html"
+    plot_seq_id_boxplot(alignment_dir_list, topology, plot_file, protein=protein)
 
 
 

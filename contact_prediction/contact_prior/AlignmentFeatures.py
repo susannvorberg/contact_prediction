@@ -8,16 +8,16 @@ import numpy as np
 import pandas as pd
 import scipy.stats
 from sklearn.utils import shuffle
-import contact_prior.data.aa_bg_frequencies as aa_background
-import contact_prior.data.contact_prior_model_given_L as cp
-import contact_prior.data.physico_chemical_properties as physchemprop
-import contact_prior.data.potential_matrices as potential_matrices
-import raw
-import utils.benchmark_utils as be
-import utils.ext.weighting
-import utils.ext.counts
-import utils.io_utils as io
-import utils.pdb_utils as pdb
+import contact_prediction.contact_prior.data.aa_bg_frequencies as aa_background
+import contact_prediction.contact_prior.data.contact_prior_model_given_L as cp
+import contact_prediction.contact_prior.data.physico_chemical_properties as physchemprop
+import contact_prediction.contact_prior.data.potential_matrices as potential_matrices
+import ccmpred.raw
+import contact_prediction.utils.benchmark_utils as be
+import contact_prediction.utils.ext.weighting
+import contact_prediction.utils.ext.counts
+import contact_prediction.utils.io_utils as io
+import contact_prediction.utils.pdb_utils as pdb
 
 
 class AlignmentFeatures():
@@ -156,10 +156,10 @@ class AlignmentFeatures():
 
         :return:
         """
-        self.weights = utils.ext.weighting.calculate_weights_simple(self.msa, 0.8, True)
+        self.weights = contact_prediction.utils.ext.weighting.calculate_weights_simple(self.msa, 0.8, True)
         self.neff = np.sum(self.weights)
 
-        self.single_counts, self.pairwise_counts = utils.ext.counts.both_counts(self.msa, self.weights)
+        self.single_counts, self.pairwise_counts = contact_prediction.utils.ext.counts.both_counts(self.msa, self.weights)
 
 
         self.Ni = self.single_counts[:,:20].sum(1)
@@ -546,7 +546,7 @@ class AlignmentFeatures():
         self.features['global']['prior_L']=np.array([cp.contact_prior_model_givenL[contact_thr][seqsep](self.L)/ (self.L-1)])
 
     def compute_coupling_feature(self, braw_file, method, qij=False, raw_couplings=False):
-        braw = raw.parse_msgpack(braw_file)
+        braw = ccmpred.raw.parse_msgpack(braw_file)
         couplings = braw.x_pair[:,:,:20,:20].reshape(self.L, self.L, 400)
 
         if raw_couplings:

@@ -1,145 +1,47 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="56344df7-1f72-4ad9-b3bd-4f6ac7be1d2d" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/coupling_matrix_analysis/plot_inverse_covariance_analysis.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/run/full_likelihood_optimization/run_cd_gibbs_steps.sh" />
-      <change type="NEW" beforePath="" afterPath="$USER_HOME$/work/scripts/predict_contacts/run_ccmpredpy_contrastive_divergence.sh" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/run/run_predict_protein_bayesianmodel.sh" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plotting/plot_density_modelprob.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/run/run_compute_cd.sh" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plotting/dash/app_optimization_logfile.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plotting/plot_scatter_couplings_methodcomparison.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/coupling_prior/ext/Likelihood_Protein_PyWrapper.cpp" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plotting/dash/__init__.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/run/full_likelihood_optimization/run_cd_adam_alpha0_lindecayrate.sh" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/run/full_likelihood_optimization/run_cd_expdecayrate.sh" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/run/full_likelihood_optimization/run_cd_adam_gibbs.sh" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/run/run_create_benchmark_plots_bayesian_models.sh" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plotting/plot_pdb_growth.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/run/full_likelihood_optimization/run_cd_samplesize.sh" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/run/full_likelihood_optimization/run_pcd.sh" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plotting/plot_scalingfactor_eta_vs_neff.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/run/full_likelihood_optimization/run_cd_convergenceprev.sh" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/run/run_compute_pll_count_statistic_correction.sh" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/run/run_train_RFcv_hyperparameters.sh" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/run/run_update_evaluation_files_count_correction.sh" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/run/full_likelihood_optimization/run_cd_adam_alpha0_exp_decayrate.sh" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/run/full_likelihood_optimization/run_cd_adam_pcd.sh" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/run/run_update_evaluation_files_randomforest_models.sh" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plotting/plot_corrections.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/contact_prior/train_RF_cv_hyperparameters.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plotting/plot_optcode_vs_neff.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/run/full_likelihood_optimization/run_cd_sqrtdecayrate.sh" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/run/full_likelihood_optimization/run_cd_sigmoidaldecayrate.sh" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/run/full_likelihood_optimization/run_cd_adam_alpha0_sig_decayrate.sh" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/run/full_likelihood_optimization/run_cd_regularizer.sh" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/coupling_matrix_analysis/plot_variance_class_correlation.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/run/run_train_RFcv.sh" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/run/full_likelihood_optimization/run_cd_adam_learningrate.sh" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/run/full_likelihood_optimization/run_cd_lindecayrate.sh" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plotting/plot_ccmpred_logfiles.py" />
-      <change type="NEW" beforePath="" afterPath="$USER_HOME$/work/scripts/bayesian_framework/create_eval_files_for_contrastivedivergence_benchmark.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/run/run_create_benchmark_plots_random_forest_models.sh" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/run/run_create_benchmark_plots_count_correction.sh" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/coupling_prior/ext/Regularizer_PyWrapper.hpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/contact_prior/ext/weighting/weighting.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/coupling_prior/ext/Regularizer.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/coupling_prior/ext/Regularizer_PyWrapper.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/contact_prior/ext/weighting/__init__.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/contact_prior/ext/counts/__init__.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/contact_prior/ext/weighting/weighting.c" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/coupling_prior/ext/Regularizer.hpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/contact_prior/ext/counts/msacounts.c" afterPath="" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/plotting/plot_pairwise_aa_freq.py" afterPath="$PROJECT_DIR$/plotting/plot_pairwise_aa_freq.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/coupling_prior/infer_hyperparameters_for_coupling_prior.py" afterPath="$PROJECT_DIR$/coupling_prior/infer_hyperparameters_for_coupling_prior.py" />
-      <change type="MODIFICATION" beforePath="$USER_HOME$/work/scripts/bayesian_framework/cpp_functions/OptimProtein_PyWrapper.cpp" afterPath="$USER_HOME$/work/scripts/bayesian_framework/cpp_functions/OptimProtein_PyWrapper.cpp" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/coupling_prior/check_derivatives.py" afterPath="$PROJECT_DIR$/coupling_prior/check_derivatives.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../ccmpred-new/ccmpred/algorithm/numdiff.py" afterPath="$PROJECT_DIR$/../ccmpred-new/ccmpred/algorithm/numdiff.py" />
-      <change type="MODIFICATION" beforePath="$USER_HOME$/work/scripts/bayesian_framework/bayesian_contact_score/check_functions/check_Protein_LaplacianApprox.py" afterPath="$USER_HOME$/work/scripts/bayesian_framework/bayesian_contact_score/check_functions/check_Protein_LaplacianApprox.py" />
-      <change type="MODIFICATION" beforePath="$USER_HOME$/work/scripts/bayesian_framework/bayesian_contact_score/check_functions/check_model_probabilities.py" afterPath="$USER_HOME$/work/scripts/bayesian_framework/bayesian_contact_score/check_functions/check_model_probabilities.py" />
-      <change type="MODIFICATION" beforePath="$USER_HOME$/work/scripts/bayesian_framework/plot_qij_bubblematrix.py" afterPath="$USER_HOME$/work/scripts/bayesian_framework/plot_qij_bubblematrix.py" />
-      <change type="MODIFICATION" beforePath="$USER_HOME$/work/scripts/predict_contacts/run_cmmpredpy_with_parameter_grid_search.sh" afterPath="$USER_HOME$/work/scripts/predict_contacts/run_cmmpredpy_with_parameter_grid_search.sh" />
-      <change type="MODIFICATION" beforePath="$USER_HOME$/work/scripts/bayesian_framework/cpp_functions/compute_OMES_covariance_score.cpp" afterPath="$USER_HOME$/work/scripts/bayesian_framework/cpp_functions/compute_OMES_covariance_score.cpp" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contact_prior/TrainContactPriorModel.py" afterPath="$PROJECT_DIR$/contact_prior/TrainContactPriorModel.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/plotting/plot_contact_map.py" afterPath="$PROJECT_DIR$/plotting/plot_contact_map.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/coupling_prior/ext/Parameters.cpp" afterPath="$PROJECT_DIR$/coupling_prior/ext/Parameters.cpp" />
-      <change type="MODIFICATION" beforePath="$USER_HOME$/work/scripts/bayesian_framework/bayesian_contact_score/learn_params_bayesian_contact_score_laplacianApprox_cg.py" afterPath="$USER_HOME$/work/scripts/bayesian_framework/bayesian_contact_score/learn_params_bayesian_contact_score_laplacianApprox_cg.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/run/run_update_evaluation_files_full_likelihood_methods.sh" afterPath="$PROJECT_DIR$/run/run_update_evaluation_files_full_likelihood_methods.sh" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/benchmark/create_evaluation_files_for_dataset.py" afterPath="$PROJECT_DIR$/benchmark/create_evaluation_files_for_dataset.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../ccmpred-new/ccmpred/io/contactmatrix.py" afterPath="$PROJECT_DIR$/../ccmpred-new/ccmpred/io/contactmatrix.py" />
-      <change type="MODIFICATION" beforePath="$USER_HOME$/work/scripts/third_party_scripts/force/force.html" afterPath="$USER_HOME$/work/scripts/third_party_scripts/force/force.html" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/coupling_prior/optimizer.py" afterPath="$PROJECT_DIR$/coupling_prior/optimizer.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/coupling_prior/parameters.py" afterPath="$PROJECT_DIR$/coupling_prior/parameters.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contact_prior/train_RF.py" afterPath="$PROJECT_DIR$/contact_prior/train_RF.py" />
-      <change type="MODIFICATION" beforePath="$USER_HOME$/work/scripts/bayesian_framework/bayesian_contact_score/learn_params_bayesian_contact_score_sfo_artificial_data.py" afterPath="$USER_HOME$/work/scripts/bayesian_framework/bayesian_contact_score/learn_params_bayesian_contact_score_sfo_artificial_data.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/run/run_infer_hyperparamters_for_coupling_prior.sh" afterPath="$PROJECT_DIR$/run/run_infer_hyperparamters_for_coupling_prior.sh" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contact_prior/add_to_evaluation_files.py" afterPath="$PROJECT_DIR$/contact_prior/add_to_evaluation_files.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../ccmpred-new/ccmpred/model_probabilities.py" afterPath="$PROJECT_DIR$/../ccmpred-new/ccmpred/model_probabilities.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/run/run_create_benchmark_plots_full_likelihood_methods.sh" afterPath="$PROJECT_DIR$/run/run_create_benchmark_plots_full_likelihood_methods.sh" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contact_prior/train_RF_cv.py" afterPath="$PROJECT_DIR$/contact_prior/train_RF_cv.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/run/run_infer_lambda_w.sh" afterPath="$PROJECT_DIR$/run/run_infer_lambda_w.sh" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/run/run_update_evaluation_files.sh" afterPath="$PROJECT_DIR$/run/run_update_evaluation_files.sh" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/utils/utils.py" afterPath="$PROJECT_DIR$/utils/utils.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../ccmpred-new/ccmpred/pseudocounts.py" afterPath="$PROJECT_DIR$/../ccmpred-new/ccmpred/pseudocounts.py" />
-      <change type="MODIFICATION" beforePath="$USER_HOME$/work/scripts/bayesian_framework/bayesian_contact_score/plot_component_responsibility_contact_vs_noncontacts.py" afterPath="$USER_HOME$/work/scripts/bayesian_framework/bayesian_contact_score/plot_component_responsibility_contact_vs_noncontacts.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/coupling_prior/ext/Likelihood_Protein.cpp" afterPath="$PROJECT_DIR$/coupling_prior/ext/Likelihood_Protein.cpp" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/contact_prior/ext/__init__.py" afterPath="$PROJECT_DIR$/contact_prior/predict_protein.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../ccmpred-new/ccmpred/algorithm/adam.py" afterPath="$PROJECT_DIR$/../ccmpred-new/ccmpred/algorithm/adam.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../ccmpred-new/ccmpred/objfun/cd/__init__.py" afterPath="$PROJECT_DIR$/../ccmpred-new/ccmpred/objfun/cd/__init__.py" />
-      <change type="MODIFICATION" beforePath="$USER_HOME$/work/scripts/bayesian_framework/priors/learn_contact_prior_dependent_L.py" afterPath="$USER_HOME$/work/scripts/bayesian_framework/priors/learn_contact_prior_dependent_L.py" />
-      <change type="MODIFICATION" beforePath="$USER_HOME$/work/scripts/bayesian_framework/priors/prior_util_fct.py" afterPath="$USER_HOME$/work/scripts/bayesian_framework/priors/prior_util_fct.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/run/run_grid_search_RF.sh" afterPath="$PROJECT_DIR$/run/run_grid_search_RF.sh" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/run/run_create_benchmark_plots.sh" afterPath="$PROJECT_DIR$/run/run_create_benchmark_plots.sh" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/plotting/plot_optimization_logfile.py" afterPath="$PROJECT_DIR$/plotting/plot_optimization_logfile.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../ccmpred-new/ccmpred/algorithm/conjugate_gradients.py" afterPath="$PROJECT_DIR$/../ccmpred-new/ccmpred/algorithm/conjugate_gradients.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/plotting/plot_pfamilies_wrt_pdb.py" afterPath="$PROJECT_DIR$/plotting/plot_pfamilies_wrt_pdb.py" />
-      <change type="MODIFICATION" beforePath="$USER_HOME$/work/scripts/bayesian_framework/create_eval_files_for_ccmpredpy_benchmark.py" afterPath="$USER_HOME$/work/scripts/bayesian_framework/create_eval_files_for_ccmpredpy_benchmark.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/coupling_prior/regularization.py" afterPath="$PROJECT_DIR$/coupling_prior/regularization.py" />
-      <change type="MODIFICATION" beforePath="$USER_HOME$/work/scripts/bayesian_framework/bayesian_contact_score/run_learn_params_bayesian_contact_laplacianApprox_cg_py.sh" afterPath="$USER_HOME$/work/scripts/bayesian_framework/bayesian_contact_score/run_learn_params_bayesian_contact_laplacianApprox_cg_py.sh" />
-      <change type="MODIFICATION" beforePath="$USER_HOME$/work/scripts/benchmark_prepare/nikos_combs_editing_scripts/renumber_pdb_to_seqtom.py" afterPath="$USER_HOME$/work/scripts/benchmark_prepare/nikos_combs_editing_scripts/renumber_pdb_to_seqtom.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/coupling_matrix_analysis/plot_2d_coupling_profile.py" afterPath="$PROJECT_DIR$/coupling_matrix_analysis/plot_2d_coupling_profile.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/utils/plot_utils.py" afterPath="$PROJECT_DIR$/utils/plot_utils.py" />
-      <change type="MODIFICATION" beforePath="$USER_HOME$/work/scripts/bayesian_framework/cpp_functions/io.cpp" afterPath="$USER_HOME$/work/scripts/bayesian_framework/cpp_functions/io.cpp" />
-      <change type="MODIFICATION" beforePath="$USER_HOME$/work/scripts/coupling_analysis/inverse_covariance_estimation_for_couplings.py" afterPath="$USER_HOME$/work/scripts/coupling_analysis/inverse_covariance_estimation_for_couplings.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/plotting/plot_learning_rate_schedules.py" afterPath="$PROJECT_DIR$/plotting/plot_learning_rate_schedules.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/bayesian_model/BayesianContactPredictor.py" afterPath="$PROJECT_DIR$/bayesian_model/BayesianContactPredictor.py" />
-      <change type="MODIFICATION" beforePath="$USER_HOME$/work/scripts/bayesian_framework/cpp_functions/OptimProtein.cpp" afterPath="$USER_HOME$/work/scripts/bayesian_framework/cpp_functions/OptimProtein.cpp" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../ccmpred-new/ccmpred.py" afterPath="$PROJECT_DIR$/../ccmpred-new/ccmpred.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/coupling_matrix_analysis/plot_1d_coupling_profile_for_multiple_pairs.py" afterPath="$PROJECT_DIR$/coupling_matrix_analysis/plot_1d_coupling_profile_for_multiple_pairs.py" />
-      <change type="MODIFICATION" beforePath="$USER_HOME$/work/scripts/third_party_scripts/force/force2.js" afterPath="$USER_HOME$/work/scripts/third_party_scripts/force/force2.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contact_prior/grid_search_RF.py" afterPath="$PROJECT_DIR$/contact_prior/grid_search_RF.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/benchmark/__init__.py" afterPath="$PROJECT_DIR$/benchmark/__init__.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/benchmark/append_to_evaluation_file.py" afterPath="$PROJECT_DIR$/benchmark/append_to_evaluation_file.py" />
-      <change type="MODIFICATION" beforePath="$USER_HOME$/work/scripts/dataset_statistics/plot_dataset_stats.py" afterPath="$USER_HOME$/work/scripts/dataset_statistics/plot_dataset_stats.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/plotting/plot_dataset_stats.py" afterPath="$PROJECT_DIR$/plotting/plot_dataset_stats.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../ccmpred-new/ccmpred/objfun/pll/__init__.py" afterPath="$PROJECT_DIR$/../ccmpred-new/ccmpred/objfun/pll/__init__.py" />
-      <change type="MODIFICATION" beforePath="$USER_HOME$/work/scripts/benchmark_prepare/nikos_combs_editing_scripts/getFastaFromPDB.py" afterPath="$USER_HOME$/work/scripts/benchmark_prepare/nikos_combs_editing_scripts/getFastaFromPDB.py" />
-      <change type="MODIFICATION" beforePath="$USER_HOME$/work/scripts/bayesian_framework/bayesian_contact_score/learn_params_bayesian_contact_score_functions.py" afterPath="$USER_HOME$/work/scripts/bayesian_framework/bayesian_contact_score/learn_params_bayesian_contact_score_functions.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/coupling_prior/likelihood_protein.py" afterPath="$PROJECT_DIR$/coupling_prior/likelihood_protein.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/plotting/plot_precision_vs_rank.py" afterPath="$PROJECT_DIR$/plotting/plot_precision_vs_rank.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/coupling_prior/coupling_data.py" afterPath="$PROJECT_DIR$/coupling_prior/coupling_data.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/bayesian_model/predict_protein.py" afterPath="$PROJECT_DIR$/bayesian_model/predict_protein.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../ccmpred-new/ccmpred/regularization.py" afterPath="$PROJECT_DIR$/../ccmpred-new/ccmpred/regularization.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/coupling_prior/likelihood.py" afterPath="$PROJECT_DIR$/coupling_prior/likelihood.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/bayesian_model/update_evaluation_files.py" afterPath="$PROJECT_DIR$/bayesian_model/update_evaluation_files.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/utils/benchmark_utils.py" afterPath="$PROJECT_DIR$/utils/benchmark_utils.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contact_prior/data/aa_bg_frequencies.py" afterPath="$PROJECT_DIR$/contact_prior/data/aa_bg_frequencies.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/plotting/plot_alignment_aminoacid_distribution.py" afterPath="$PROJECT_DIR$/plotting/plot_alignment_aminoacid_distribution.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/run/run_train_RF.sh" afterPath="$PROJECT_DIR$/run/run_train_RF.sh" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../ccmpred-new/ccmpred/parameter_handling.py" afterPath="$PROJECT_DIR$/../ccmpred-new/ccmpred/parameter_handling.py" />
-      <change type="MODIFICATION" beforePath="$USER_HOME$/work/scripts/bayesian_framework/cpp_functions/io.hpp" afterPath="$USER_HOME$/work/scripts/bayesian_framework/cpp_functions/io.hpp" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contact_prior/AlignmentFeatures.py" afterPath="$PROJECT_DIR$/contact_prior/AlignmentFeatures.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/run/full_likelihood_optimization/run_cd_learningrate.sh" afterPath="$PROJECT_DIR$/run/full_likelihood_optimization/run_cd_learningrate.sh" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/plotting/plot_alignment_coverage.py" afterPath="$PROJECT_DIR$/plotting/plot_alignment_coverage.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/coupling_prior/utils_coupling_prior.py" afterPath="$PROJECT_DIR$/coupling_prior/utils_coupling_prior.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../ccmpred-new/ccmpred/objfun/pll/cext/pll.c" afterPath="$PROJECT_DIR$/../ccmpred-new/ccmpred/objfun/pll/cext/pll.c" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/plotting/plot_benchmark_from_eval_files.py" afterPath="$PROJECT_DIR$/plotting/plot_benchmark_from_eval_files.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/utils/alignment_utils.py" afterPath="$PROJECT_DIR$/utils/alignment_utils.py" />
-      <change type="MODIFICATION" beforePath="$USER_HOME$/work/scripts/predict_contacts/run_ccmpredpy.sh" afterPath="$USER_HOME$/work/scripts/predict_contacts/run_ccmpredpy.sh" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../ccmpred-new/ccmpred/__init__.py" afterPath="$PROJECT_DIR$/../ccmpred-new/ccmpred/__init__.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/run/run_update_evaluation_files_bayesian_models.sh" afterPath="$PROJECT_DIR$/run/run_update_evaluation_files_bayesian_models.sh" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../ccmpred-new/ccmpred/algorithm/gradient_descent.py" afterPath="$PROJECT_DIR$/../ccmpred-new/ccmpred/algorithm/gradient_descent.py" />
+    <list default="true" id="56344df7-1f72-4ad9-b3bd-4f6ac7be1d2d" name="Default" comment="added pdb restraints handling to ccmgen">
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/contact_prediction/plotting/plot_ccmgen_log_reached_neff.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/contact_prediction/plotting/plot_ccmgen_paper_benchmark.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/contact_prediction/plotting/plot_compare_alignments_via_pca.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/contact_prediction/plotting/plot_empirical_vs_model_statistics.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/contact_prediction/plotting/plot_empirical_vs_model_statistics_pearson_scatter.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/contact_prediction/plotting/plot_scatter_apc_vs_ec.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/contact_prediction/run/run_ccmgen.sh" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/contact_prediction/run/run_compute_pll_and_pcd_for_ccmgen.sh" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/contact_prediction/run/run_compute_pll_lbfgs.sh" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/contact_prediction/run/run_create_benchmark_plots_lbfgs.sh" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/contact_prediction/run/run_update_evaluation_files_lbfgs.sh" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/misc.xml" afterPath="" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contact_prediction/utils/ext/counts/libmsacounts.so" afterPath="$PROJECT_DIR$/contact_prediction/utils/ext/counts/libmsacounts.so" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contact_prediction/utils/ext/weighting/libweighting.so" afterPath="$PROJECT_DIR$/contact_prediction/utils/ext/weighting/libweighting.so" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../CCMgen/ccmpred/logo.py" afterPath="$PROJECT_DIR$/../CCMgen/ccmpred/logo.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/contact_prediction.iml" afterPath="$PROJECT_DIR$/.idea/contact_prediction.iml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/modules.xml" afterPath="$PROJECT_DIR$/.idea/modules.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/preferred-vcs.xml" afterPath="$PROJECT_DIR$/.idea/preferred-vcs.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/vcs.xml" afterPath="$PROJECT_DIR$/.idea/vcs.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contact_prediction/benchmark/__init__.py" afterPath="$PROJECT_DIR$/contact_prediction/benchmark/__init__.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contact_prediction/benchmark/append_to_evaluation_file.py" afterPath="$PROJECT_DIR$/contact_prediction/benchmark/append_to_evaluation_file.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contact_prediction/benchmark/create_evaluation_files_for_dataset.py" afterPath="$PROJECT_DIR$/contact_prediction/benchmark/create_evaluation_files_for_dataset.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contact_prediction/contact_prior/AlignmentFeatures.py" afterPath="$PROJECT_DIR$/contact_prediction/contact_prior/AlignmentFeatures.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contact_prediction/coupling_matrix_analysis/plot_inverse_covariance_analysis.py" afterPath="$PROJECT_DIR$/contact_prediction/coupling_matrix_analysis/plot_inverse_covariance_analysis.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contact_prediction/coupling_matrix_analysis/plot_variance_class_correlation.py" afterPath="$PROJECT_DIR$/contact_prediction/coupling_matrix_analysis/plot_variance_class_correlation.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contact_prediction/plotting/plot_alignment_aminoacid_distribution.py" afterPath="$PROJECT_DIR$/contact_prediction/plotting/plot_alignment_aminoacid_distribution.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contact_prediction/plotting/plot_benchmark_from_eval_files.py" afterPath="$PROJECT_DIR$/contact_prediction/plotting/plot_benchmark_from_eval_files.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contact_prediction/plotting/plot_contact_map.py" afterPath="$PROJECT_DIR$/contact_prediction/plotting/plot_contact_map.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contact_prediction/plotting/plot_dataset_stats.py" afterPath="$PROJECT_DIR$/contact_prediction/plotting/plot_dataset_stats.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contact_prediction/plotting/plot_optcode_vs_neff.py" afterPath="$PROJECT_DIR$/contact_prediction/plotting/plot_optcode_vs_neff.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contact_prediction/plotting/plot_scatter_couplings_methodcomparison.py" afterPath="$PROJECT_DIR$/contact_prediction/plotting/plot_scatter_couplings_methodcomparison.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contact_prediction/plotting/plot_sequence_similarity_matrix.py" afterPath="$PROJECT_DIR$/contact_prediction/plotting/plot_sequence_similarity_matrix.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contact_prediction/run/full_likelihood_optimization/run_cd_samplesize.sh" afterPath="$PROJECT_DIR$/contact_prediction/run/full_likelihood_optimization/run_cd_samplesize.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contact_prediction/run/run_compute_pll_count_statistic_correction.sh" afterPath="$PROJECT_DIR$/contact_prediction/run/run_compute_pll_count_statistic_correction.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contact_prediction/run/run_create_benchmark_plots_count_correction.sh" afterPath="$PROJECT_DIR$/contact_prediction/run/run_create_benchmark_plots_count_correction.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contact_prediction/run/run_update_evaluation_files_count_correction.sh" afterPath="$PROJECT_DIR$/contact_prediction/run/run_update_evaluation_files_count_correction.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contact_prediction/utils/alignment_utils.py" afterPath="$PROJECT_DIR$/contact_prediction/utils/alignment_utils.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contact_prediction/utils/benchmark_utils.py" afterPath="$PROJECT_DIR$/contact_prediction/utils/benchmark_utils.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contact_prediction/utils/plot_utils.py" afterPath="$PROJECT_DIR$/contact_prediction/utils/plot_utils.py" />
     </list>
     <ignored path="$PROJECT_DIR$/.idea/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -150,7 +52,6 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="ChangesViewManager" flattened_view="false" />
-  <component name="ExecutionTargetManager" SELECTED_TARGET="default_target" />
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300" />
   </component>
@@ -163,22 +64,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>cl</find>
-      <find>go.Figu</find>
-      <find>test</find>
-      <find>ab_list</find>
-      <find>evaluation_new</find>
-      <find>evaluation_set_kde</find>
-      <find>self.proteins</find>
-      <find>contact_likelihood_mat</find>
-      <find>contactthr</find>
-      <find>sample_counts_single_prev</find>
-      <find>rgb(166,206</find>
-      <find>Get couplings for Plotting</find>
-      <find>get_decoy_set</find>
-      <find>generate_coupling_decoy_set</find>
-      <find>initialize_optimization_plot</find>
-      <find>line</find>
       <find>opacity</find>
       <find>L_dependent</find>
       <find>L</find>
@@ -192,78 +77,116 @@
       <find>weighting</find>
       <find>counts</find>
       <find>20,</find>
+      <find>backinsert_gapped_positions</find>
+      <find>AMINO_ACIDS</find>
+      <find>cd_alnfile</find>
+      <find>degap</find>
       <find>print</find>
+      <find>datetime</find>
+      <find>sample_position_in_sequences</find>
+      <find>run_ccmpred</find>
+      <find>str</find>
+      <find>mutate</find>
+      <find>pd</find>
+      <find>s</find>
+      <find>plot_opt_progress</find>
+      <find>early_stopping</find>
+      <find>io.</find>
+      <find>io</find>
+      <find>contactmatrix</find>
     </findStrings>
     <replaceStrings>
       <replace>evaluation</replace>
       <replace>f_df_py_protein_parallel</replace>
+      <replace>ccmpred</replace>
     </replaceStrings>
   </component>
   <component name="Git.Settings">
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="ROOT_SYNC" value="SYNC" />
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../CCMgen-scripts" />
+    <option name="RECENT_COMMON_BRANCH" value="master" />
   </component>
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/run/run_infer_lambda_w.sh" />
-        <option value="$PROJECT_DIR$/bayesian_model/predict_protein.py" />
-        <option value="$PROJECT_DIR$/bayesian_model/update_evaluation_files.py" />
-        <option value="$PROJECT_DIR$/run/run_compute_pll_count_statistic_corretion.sh" />
-        <option value="$PROJECT_DIR$/utils/utils.py" />
-        <option value="$PROJECT_DIR$/../ccmpred-new/ccmpred/algorithm/numdiff.py" />
-        <option value="$PROJECT_DIR$/../ccmpred-new/ccmpred/objfun/pll/cext/pll.c" />
-        <option value="$PROJECT_DIR$/coupling_prior/regularization.py" />
-        <option value="$PROJECT_DIR$/../ccmpred-new/ccmpred/parameter_handling.py" />
-        <option value="$PROJECT_DIR$/plotting/plot_density_modelprob.py" />
-        <option value="$PROJECT_DIR$/coupling_prior/likelihood_protein.py" />
-        <option value="$PROJECT_DIR$/coupling_prior/ext/Likelihood_Protein.cpp" />
-        <option value="$PROJECT_DIR$/coupling_prior/likelihood.py" />
-        <option value="$PROJECT_DIR$/coupling_prior/check_derivatives.py" />
-        <option value="$PROJECT_DIR$/run/run_create_benchmark_plots.sh" />
-        <option value="$PROJECT_DIR$/../ccmpred-new/ccmpred/regularization.py" />
-        <option value="$PROJECT_DIR$/benchmark/__init__.py" />
-        <option value="$PROJECT_DIR$/../ccmpred-new/build/lib.linux-x86_64-2.7/ccmpred/objfun/cd/__init__.py" />
-        <option value="$PROJECT_DIR$/../ccmpred-new/ccmpred/algorithm/gradient_descent.py" />
-        <option value="$PROJECT_DIR$/../ccmpred-new/ccmpred/objfun/cd/__init__.py" />
-        <option value="$PROJECT_DIR$/../ccmpred-new/ccmpred/model_probabilities.py" />
-        <option value="$PROJECT_DIR$/run/run_compute_cd.sh" />
-        <option value="$PROJECT_DIR$/run/run_compute_pll_count_statistic_correction.sh" />
-        <option value="$PROJECT_DIR$/run/run_update_evaluation_files_count_correction.sh" />
-        <option value="$PROJECT_DIR$/run/run_create_benchmark_plots_count_correction.sh" />
-        <option value="$PROJECT_DIR$/plotting/plot_scalingfactor_eta_vs_neff.py" />
-        <option value="$PROJECT_DIR$/run/run_create_benchmark_plots_bayesian_models.sh" />
-        <option value="$PROJECT_DIR$/run/run_update_evaluation_files_bayesian_models.sh" />
-        <option value="$PROJECT_DIR$/run/run_infer_hyperparamters_for_coupling_prior.sh" />
-        <option value="$PROJECT_DIR$/contact_prior/AlignmentFeatures.py" />
-        <option value="$PROJECT_DIR$/../ccmpred-new/ccmpred/objfun/pll/__init__.py" />
-        <option value="$PROJECT_DIR$/../ccmpred-new/ccmpred.py" />
-        <option value="$PROJECT_DIR$/plotting/plot_scatter_couplings_methodcomparison.py" />
-        <option value="$PROJECT_DIR$/../ccmpred-new/ccmpred/pseudocounts.py" />
-        <option value="$PROJECT_DIR$/utils/plot_utils.py" />
-        <option value="$PROJECT_DIR$/../ccmpred-new/ccmpred/algorithm/conjugate_gradients.py" />
-        <option value="$PROJECT_DIR$/../ccmpred-new/ccmpred/io/contactmatrix.py" />
-        <option value="$PROJECT_DIR$/../ccmpred-new/ccmpred/__init__.py" />
-        <option value="$PROJECT_DIR$/plotting/plot_contact_map.py" />
-        <option value="$PROJECT_DIR$/plotting/plot_ccmpred_logfiles.py" />
-        <option value="$PROJECT_DIR$/plotting/plot_pfamilies_wrt_pdb.py" />
-        <option value="$PROJECT_DIR$/entropy_correction/__init__.py" />
-        <option value="$PROJECT_DIR$/utils/benchmark_utils.py" />
-        <option value="$PROJECT_DIR$/plotting/plot_corrections.py" />
-        <option value="$PROJECT_DIR$/entropy_correction/learn_pair_weighted_scoring_matrix.py" />
-        <option value="$PROJECT_DIR$/utils/io_utils.py" />
-        <option value="$PROJECT_DIR$/utils/alignment_utils.py" />
-        <option value="$PROJECT_DIR$/plotting/plot_alignment_aminoacid_distribution.py" />
-        <option value="$PROJECT_DIR$/plotting/plot_pairwise_aa_freq.py" />
-        <option value="$PROJECT_DIR$/coupling_matrix_analysis/plot_coupling_matrix.py" />
-        <option value="$PROJECT_DIR$/plotting/dash/viz_residue_pairs.py" />
+        <option value="$PROJECT_DIR$/../CCMgen/ccmpred/trees.py" />
+        <option value="$PROJECT_DIR$/../CCMgen/ccmpred/scripts/run_ccmpred.py" />
+        <option value="$PROJECT_DIR$/../CCMgen/ccmpred/logo.py" />
+        <option value="$PROJECT_DIR$/contact_prediction/contact_prior/AlignmentFeatures.py" />
+        <option value="$PROJECT_DIR$/contact_prediction/coupling_matrix_analysis/plot_inverse_covariance_analysis.py" />
+        <option value="$PROJECT_DIR$/contact_prediction/plotting/plot_optcode_vs_neff.py" />
+        <option value="$PROJECT_DIR$/contact_prediction/run/run_compute_pll_and_pcd_for_ccmgen.sh" />
+        <option value="$PROJECT_DIR$/../CCmpredPy/ccmpred/scripts/run_ccmpred.py" />
+        <option value="$PROJECT_DIR$/../CCmpredPy/ccmpred/__init__.py" />
+        <option value="$PROJECT_DIR$/../CCmpredPy/ccmpred/sampling/__init__.py" />
+        <option value="$PROJECT_DIR$/../CCmpredPy/ccmpred/scripts/run_ccmgen.py" />
+        <option value="$PROJECT_DIR$/contact_prediction/plotting/plot_empirical_vs_model_statistics.py" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/plotting/scripts/plot_alignment_statistics_mcmc_vs_observed.py" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/bin/plot_alignment_statistics_mcmc_vs_observed.sh" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/bin/plot_contact_maps.sh" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/bin/plot_scatter_apc_vs_ec.sh" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/bin/plot_benchmark_pll_vs_pcd.sh.py" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/plotting/scripts/plot_benchmark_pll_vs_pcd.sh.py" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/plotting/scripts/create_evaluation_protein_files.py" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/plotting/scripts/create_evaluation_score_files.py" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/bin/run_ccmpred_pll.sh" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/bin/run_ccmpred_pcd.sh" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/bin/run_ccmpred_pcd_with_constraints.sh" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/bin/run_ccmpred_recover.sh" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/bin/plot_benchmark_pll_vs_pcd.sh" />
+        <option value="$PROJECT_DIR$/contact_prediction/plotting/plot_ccmgen_paper_benchmark.py" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/plotting/utils/io_utils.py" />
+        <option value="$PROJECT_DIR$/../CCMgen/ccmpred/io/pdb.py" />
+        <option value="$PROJECT_DIR$/../CCMgen/ccmpred/io/alignment.py" />
+        <option value="$PROJECT_DIR$/../CCMgen/ccmpred/io/contactmatrix.py" />
+        <option value="$PROJECT_DIR$/../CCMgen/ccmpred/__init__.py" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/plotting/benchmark/__init__.py" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/plotting/scripts/plot_benchmark_pll_vs_pcd.py" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/plotting/scripts/plot_runtimes_pll_vs_pcd.py" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/plotting/scripts/plot_scatter_apc_vs_ec.py" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/plotting/scripts/plot_fig_3d.py" />
+        <option value="$PROJECT_DIR$/../CCMgen/ccmpred/plotting/__init__.py" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/plot_fig_1ab.sh" />
+        <option value="$PROJECT_DIR$/../CCMgen/ccmpred/scripts/plot_ccmpred.py" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/plot_fig_3abc.sh" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/run_ccmpred_pcd.sh" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/run_ccmgen.sh" />
+        <option value="$PROJECT_DIR$/../CCMgen/ccmpred/scripts/run_ccmgen.py" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/benchmark.py" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/plot_fig_S1.py" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/plot_fig_S4.py" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/plot_fig_S5.py" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/plot_fig_1d.py" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/plot_fig_1c.py" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/plot_fig_6.py" />
+        <option value="$PROJECT_DIR$/../CCMgen-scripts/run_ccmpred_recover.sh" />
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds">
-    <option name="x" value="1973" />
-    <option name="y" value="34" />
-    <option name="width" value="1863" />
-    <option name="height" value="1160" />
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="x" value="2042" />
+    <option name="y" value="19" />
+    <option name="width" value="1865" />
+    <option name="height" value="1196" />
+  </component>
+  <component name="ProjectInspectionProfilesVisibleTreeState">
+    <entry key="Project Default">
+      <profile-state>
+        <expanded-state>
+          <State>
+            <id />
+          </State>
+          <State>
+            <id>Internationalization issues</id>
+          </State>
+        </expanded-state>
+        <selected-state>
+          <State>
+            <id>Apex</id>
+          </State>
+        </selected-state>
+      </profile-state>
+    </entry>
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
@@ -281,117 +204,49 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope">
-        <subPane subId="Project Files">
-          <PATH>
-            <PATH_ELEMENT USER_OBJECT="Root">
-              <option name="myItemId" value="" />
-              <option name="myItemType" value="" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT USER_OBJECT="External Dependencies">
-              <option name="myItemId" value="" />
-              <option name="myItemType" value="" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT USER_OBJECT="/">
-              <option name="myItemId" value="" />
-              <option name="myItemType" value="" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT USER_OBJECT="home">
-              <option name="myItemId" value="" />
-              <option name="myItemType" value="" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT USER_OBJECT="vorberg">
-              <option name="myItemId" value="" />
-              <option name="myItemType" value="" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT USER_OBJECT=".PyCharmCE2017.1">
-              <option name="myItemId" value="" />
-              <option name="myItemType" value="" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT USER_OBJECT="system">
-              <option name="myItemId" value="" />
-              <option name="myItemType" value="" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT USER_OBJECT="python_stubs">
-              <option name="myItemId" value="" />
-              <option name="myItemType" value="" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT USER_OBJECT="-941405960">
-              <option name="myItemId" value="" />
-              <option name="myItemType" value="" />
-            </PATH_ELEMENT>
-          </PATH>
+      <pane id="ProjectPane">
+        <subPane>
+          <expand>
+            <path>
+              <item name="contact_prediction" type="b2602c69:ProjectViewProjectNode" />
+              <item name="CCMgen-scripts" type="462c0819:PsiDirectoryNode" />
+            </path>
+          </expand>
+          <select />
         </subPane>
       </pane>
       <pane id="Scratches" />
-      <pane id="ProjectPane">
-        <subPane>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="contact_prediction" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="contact_prediction" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="contact_prediction" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="contact_prediction" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="entropy_correction" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="contact_prediction" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="contact_prediction" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="coupling_matrix_analysis" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-        </subPane>
-      </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
-    <property name="last_opened_file_path" value="$USER_HOME$/anaconda2/envs/py36/bin/python3.6" />
-    <property name="settings.editor.selected.configurable" value="project.propVCSSupport.Mappings" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../CCMgen-scripts" />
+    <property name="settings.editor.selected.configurable" value="editor.preferences.fonts.default" />
     <property name="com.intellij.ide.scratch.LRUPopupBuilder$2/Languages" value="Python" />
   </component>
   <component name="PyConsoleOptionsProvider">
     <option name="myPythonConsoleState">
-      <console-settings custom-start-script="import sys; print('Python %s on %s' % (sys.version, sys.platform))&#10;sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])&#10;sys.path.append('/home/vorberg/Documents/ccmpred-new')&#10;" module-name="contact_prediction" sdk-home="$USER_HOME$/anaconda2/envs/py36/bin/python3.6" working-directory="$PROJECT_DIR$">
-        <option name="myCustomStartScript" value="import sys; print('Python %s on %s' % (sys.version, sys.platform))&#10;sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])&#10;sys.path.append('/home/vorberg/Documents/ccmpred-new')&#10;" />
-        <option name="mySdkHome" value="$USER_HOME$/anaconda2/envs/py36/bin/python3.6" />
+      <console-settings custom-start-script="import sys; print('Python %s on %s' % (sys.version, sys.platform))&#10;sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])" module-name="contact_prediction" sdk-home="$USER_HOME$/anaconda2/envs/py36/bin/python" working-directory="$PROJECT_DIR$">
+        <option name="myCustomStartScript" value="import sys; print('Python %s on %s' % (sys.version, sys.platform))&#10;sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])" />
+        <option name="mySdkHome" value="$USER_HOME$/anaconda2/envs/py36/bin/python" />
         <option name="myModuleName" value="contact_prediction" />
         <option name="myWorkingDirectory" value="$PROJECT_DIR$" />
         <option name="myAddSourceRoots" value="true" />
       </console-settings>
     </option>
+    <option name="myIpythonEnabled" value="false" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/../CCmpredPy/ccmpred/sampling/cext" />
+      <recent name="$PROJECT_DIR$/../CCmpredPy/ccmpred" />
+      <recent name="$PROJECT_DIR$/contact_prediction/plotting" />
+      <recent name="$PROJECT_DIR$/contact_prediction/run" />
       <recent name="$PROJECT_DIR$/run" />
-      <recent name="$USER_HOME$" />
-      <recent name="$APPLICATION_CONFIG_DIR$/scratches" />
-      <recent name="$PROJECT_DIR$/run/full_likelihood_optimization" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/../CCMgen-scripts/" />
+      <recent name="$PROJECT_DIR$/../CCmpredPy/ccmpred/scripts" />
       <recent name="$PROJECT_DIR$/utils/ext" />
       <recent name="$PROJECT_DIR$/coupling_matrix_analysis" />
     </key>
@@ -409,50 +264,6 @@
     </option>
   </component>
   <component name="RunManager">
-    <configuration default="true" type="ApexTest" factoryName="Apex Test">
-      <method />
-    </configuration>
-    <configuration default="true" type="BashConfigurationType" factoryName="Bash">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="INTERPRETER_PATH" value="/bin/bash" />
-      <option name="WORKING_DIRECTORY" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <option name="SCRIPT_NAME" value="" />
-      <option name="PARAMETERS" value="" />
-      <module name="" />
-      <envs />
-      <method />
-    </configuration>
-    <configuration default="true" type="PythonConfigurationType" factoryName="Python">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="" />
-      <option name="IS_MODULE_SDK" value="false" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="contact_prediction" />
-      <option name="SCRIPT_NAME" value="" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <method />
-    </configuration>
-    <configuration default="true" type="Tox" factoryName="Tox">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs />
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="" />
-      <option name="IS_MODULE_SDK" value="false" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="contact_prediction" />
-      <method />
-    </configuration>
     <configuration default="true" type="tests" factoryName="Doctests">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -470,6 +281,91 @@
       <option name="TEST_TYPE" value="TEST_SCRIPT" />
       <option name="PATTERN" value="" />
       <option name="USE_PATTERN" value="false" />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="Nosetests">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="CCmpredPy" />
+      <option name="_new_regexPattern" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;&quot;" />
+      <option name="_new_targetType" value="&quot;PATH&quot;" />
+    </configuration>
+    <configuration default="true" type="PythonConfigurationType" factoryName="Python">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="contact_prediction" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+    </configuration>
+    <configuration default="true" type="Tox" factoryName="Tox">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="contact_prediction" />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="Unittests">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="CCmpredPy" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;&quot;" />
+      <option name="_new_targetType" value="&quot;PATH&quot;" />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="py.test">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="CCmpredPy" />
+      <option name="_new_keywords" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;&quot;" />
+      <option name="_new_targetType" value="&quot;PATH&quot;" />
+    </configuration>
+    <configuration default="true" type="ApexTest" factoryName="Apex Test">
+      <method />
+    </configuration>
+    <configuration default="true" type="BashConfigurationType" factoryName="Bash">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="INTERPRETER_PATH" value="/bin/bash" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="PARAMETERS" value="" />
+      <module name="" />
+      <envs />
       <method />
     </configuration>
     <configuration default="true" type="tests" factoryName="Nosetests">
@@ -524,350 +420,350 @@
       <option name="presentableId" value="Default" />
       <updated>1499408232222</updated>
     </task>
-    <task id="LOCAL-00004" summary="fixed wrong path to data">
-      <created>1501145297989</created>
-      <option name="number" value="00004" />
-      <option name="presentableId" value="LOCAL-00004" />
+    <task id="LOCAL-00189" summary="set upper boundery for mutation rate to 100">
+      <created>1527231155568</created>
+      <option name="number" value="00189" />
+      <option name="presentableId" value="LOCAL-00189" />
       <option name="project" value="LOCAL" />
-      <updated>1501145297989</updated>
+      <updated>1527231155569</updated>
     </task>
-    <task id="LOCAL-00005" summary="fixed path and renamed file">
-      <created>1501145332394</created>
-      <option name="number" value="00005" />
-      <option name="presentableId" value="LOCAL-00005" />
+    <task id="LOCAL-00190" summary="adapted logging">
+      <created>1528182047673</created>
+      <option name="number" value="00190" />
+      <option name="presentableId" value="LOCAL-00190" />
       <option name="project" value="LOCAL" />
-      <updated>1501145332395</updated>
+      <updated>1528182047673</updated>
     </task>
-    <task id="LOCAL-00006" summary="script to predict contacts for one protein with RF model">
-      <created>1501227664981</created>
-      <option name="number" value="00006" />
-      <option name="presentableId" value="LOCAL-00006" />
+    <task id="LOCAL-00191" summary="prettifyed printing">
+      <created>1528182076988</created>
+      <option name="number" value="00191" />
+      <option name="presentableId" value="LOCAL-00191" />
       <option name="project" value="LOCAL" />
-      <updated>1501227664981</updated>
+      <updated>1528182076988</updated>
     </task>
-    <task id="LOCAL-00007" summary="script to do cross-validation for a one dataset option">
-      <created>1501227710914</created>
-      <option name="number" value="00007" />
-      <option name="presentableId" value="LOCAL-00007" />
+    <task id="LOCAL-00192" summary="initialisation without arguments">
+      <created>1528182095162</created>
+      <option name="number" value="00192" />
+      <option name="presentableId" value="LOCAL-00192" />
       <option name="project" value="LOCAL" />
-      <updated>1501227710914</updated>
+      <updated>1528182095162</updated>
     </task>
-    <task id="LOCAL-00008" summary="train a model and do feature selection">
-      <created>1501227756296</created>
-      <option name="number" value="00008" />
-      <option name="presentableId" value="LOCAL-00008" />
+    <task id="LOCAL-00193" summary=" removed unncessary parameters">
+      <created>1528182131941</created>
+      <option name="number" value="00193" />
+      <option name="presentableId" value="LOCAL-00193" />
       <option name="project" value="LOCAL" />
-      <updated>1501227756296</updated>
+      <updated>1528182131941</updated>
     </task>
-    <task id="LOCAL-00009" summary="added feature selection and improved plotting">
-      <created>1501227794828</created>
-      <option name="number" value="00009" />
-      <option name="presentableId" value="LOCAL-00009" />
+    <task id="LOCAL-00194" summary="plot file is specified by user">
+      <created>1528182154320</created>
+      <option name="number" value="00194" />
+      <option name="presentableId" value="LOCAL-00194" />
       <option name="project" value="LOCAL" />
-      <updated>1501227794828</updated>
+      <updated>1528182154320</updated>
     </task>
-    <task id="LOCAL-00010" summary="evaluate grid search with prec_rank and prec_recall both on protein test set">
-      <created>1501227866628</created>
-      <option name="number" value="00010" />
-      <option name="presentableId" value="LOCAL-00010" />
+    <task id="LOCAL-00195" summary="adapted package call">
+      <created>1528182173513</created>
+      <option name="number" value="00195" />
+      <option name="presentableId" value="LOCAL-00195" />
       <option name="project" value="LOCAL" />
-      <updated>1501227866628</updated>
+      <updated>1528182173513</updated>
     </task>
-    <task id="LOCAL-00011" summary="added logL">
-      <created>1501227907874</created>
-      <option name="number" value="00011" />
-      <option name="presentableId" value="LOCAL-00011" />
+    <task id="LOCAL-00196" summary="updated flags">
+      <created>1528182199486</created>
+      <option name="number" value="00196" />
+      <option name="presentableId" value="LOCAL-00196" />
       <option name="project" value="LOCAL" />
-      <updated>1501227907874</updated>
+      <updated>1528182199486</updated>
     </task>
-    <task id="LOCAL-00012" summary="removed pdb file as class parameter&#10;&#10;pdb file needs only to be specified when compute_distances_and_pairs is called">
-      <created>1501247110782</created>
-      <option name="number" value="00012" />
-      <option name="presentableId" value="LOCAL-00012" />
+    <task id="LOCAL-00197" summary="updated flags">
+      <created>1528182215339</created>
+      <option name="number" value="00197" />
+      <option name="presentableId" value="LOCAL-00197" />
       <option name="project" value="LOCAL" />
-      <updated>1501247110782</updated>
+      <updated>1528182215339</updated>
     </task>
-    <task id="LOCAL-00013" summary="initial commit of bayesian contact predictor class">
-      <created>1501247148316</created>
-      <option name="number" value="00013" />
-      <option name="presentableId" value="LOCAL-00013" />
+    <task id="LOCAL-00198" summary="new function to initialise progress logging class">
+      <created>1528182240252</created>
+      <option name="number" value="00198" />
+      <option name="presentableId" value="LOCAL-00198" />
       <option name="project" value="LOCAL" />
-      <updated>1501247148316</updated>
+      <updated>1528182240252</updated>
     </task>
-    <task id="LOCAL-00014" summary="static class for computing likelihood of protein residue pairs">
-      <created>1501247195633</created>
-      <option name="number" value="00014" />
-      <option name="presentableId" value="LOCAL-00014" />
+    <task id="LOCAL-00199" summary="updated link in logo">
+      <created>1528182258619</created>
+      <option name="number" value="00199" />
+      <option name="presentableId" value="LOCAL-00199" />
       <option name="project" value="LOCAL" />
-      <updated>1501247195633</updated>
+      <updated>1528182258619</updated>
     </task>
-    <task id="LOCAL-00015" summary="specify_paths_to_data needs to be called separately">
-      <created>1501247253662</created>
-      <option name="number" value="00015" />
-      <option name="presentableId" value="LOCAL-00015" />
+    <task id="LOCAL-00200" summary="updated tree class">
+      <created>1528182280666</created>
+      <option name="number" value="00200" />
+      <option name="presentableId" value="LOCAL-00200" />
       <option name="project" value="LOCAL" />
-      <updated>1501247253662</updated>
+      <updated>1528182280667</updated>
     </task>
-    <task id="LOCAL-00016" summary="removed dependence on compute_contact_prior&#10;compute contact prior with BayesianContactPredictor class">
-      <created>1501248073250</created>
-      <option name="number" value="00016" />
-      <option name="presentableId" value="LOCAL-00016" />
+    <task id="LOCAL-00201" summary="removed unused optimzers and restructured parameters">
+      <created>1528187678862</created>
+      <option name="number" value="00201" />
+      <option name="presentableId" value="LOCAL-00201" />
       <option name="project" value="LOCAL" />
-      <updated>1501248073250</updated>
+      <updated>1528187678862</updated>
     </task>
-    <task id="LOCAL-00017" summary="refactored to BayesianContactPredictor Class">
-      <created>1501248111772</created>
-      <option name="number" value="00017" />
-      <option name="presentableId" value="LOCAL-00017" />
+    <task id="LOCAL-00202" summary="removed unused corrections">
+      <created>1528187697616</created>
+      <option name="number" value="00202" />
+      <option name="presentableId" value="LOCAL-00202" />
       <option name="project" value="LOCAL" />
-      <updated>1501248111772</updated>
+      <updated>1528187697616</updated>
     </task>
-    <task id="LOCAL-00018" summary="outsourced plot_contact_map">
-      <created>1501255619799</created>
-      <option name="number" value="00018" />
-      <option name="presentableId" value="LOCAL-00018" />
+    <task id="LOCAL-00203" summary="cleaned up">
+      <created>1528187731013</created>
+      <option name="number" value="00203" />
+      <option name="presentableId" value="LOCAL-00203" />
       <option name="project" value="LOCAL" />
-      <updated>1501255619799</updated>
+      <updated>1528187731013</updated>
     </task>
-    <task id="LOCAL-00019" summary="added functionality: add to eval suite">
-      <created>1501255658659</created>
-      <option name="number" value="00019" />
-      <option name="presentableId" value="LOCAL-00019" />
+    <task id="LOCAL-00204" summary="removed unused sampling functions">
+      <created>1528187746724</created>
+      <option name="number" value="00204" />
+      <option name="presentableId" value="LOCAL-00204" />
       <option name="project" value="LOCAL" />
-      <updated>1501255658659</updated>
+      <updated>1528187746724</updated>
     </task>
-    <task id="LOCAL-00020" summary="predict contact map with bayesian model and plot contact map and plot precision vs rank">
-      <created>1501255699018</created>
-      <option name="number" value="00020" />
-      <option name="presentableId" value="LOCAL-00020" />
+    <task id="LOCAL-00205" summary="cleaned up unneccesary flags">
+      <created>1528187786848</created>
+      <option name="number" value="00205" />
+      <option name="presentableId" value="LOCAL-00205" />
       <option name="project" value="LOCAL" />
-      <updated>1501255699018</updated>
+      <updated>1528187786848</updated>
     </task>
-    <task id="LOCAL-00021" summary="initial commit">
-      <created>1501255751201</created>
-      <option name="number" value="00021" />
-      <option name="presentableId" value="LOCAL-00021" />
+    <task id="LOCAL-00206" summary="removed ignore_gaps argument">
+      <created>1528187804358</created>
+      <option name="number" value="00206" />
+      <option name="presentableId" value="LOCAL-00206" />
       <option name="project" value="LOCAL" />
-      <updated>1501255751201</updated>
+      <updated>1528187804358</updated>
     </task>
-    <task id="LOCAL-00022" summary="add predictions for a certain numnber of proteins to evaluation suite">
-      <created>1501255793563</created>
-      <option name="number" value="00022" />
-      <option name="presentableId" value="LOCAL-00022" />
+    <task id="LOCAL-00207" summary="removed L1 reg and adapted minimize function">
+      <created>1528187840889</created>
+      <option name="number" value="00207" />
+      <option name="presentableId" value="LOCAL-00207" />
       <option name="project" value="LOCAL" />
-      <updated>1501255793563</updated>
+      <updated>1528187840889</updated>
     </task>
-    <task id="LOCAL-00023" summary="refactored bayesian predictor">
-      <created>1501255835701</created>
-      <option name="number" value="00023" />
-      <option name="presentableId" value="LOCAL-00023" />
+    <task id="LOCAL-00208" summary="cleaned code">
+      <created>1528187851725</created>
+      <option name="number" value="00208" />
+      <option name="presentableId" value="LOCAL-00208" />
       <option name="project" value="LOCAL" />
-      <updated>1501255835701</updated>
+      <updated>1528187851725</updated>
     </task>
-    <task id="LOCAL-00024" summary="Alignment features does not take pdb file as initial parameter&#10;&#10;call compute_distances_and_pairs separately">
-      <created>1501256005367</created>
-      <option name="number" value="00024" />
-      <option name="presentableId" value="LOCAL-00024" />
+    <task id="LOCAL-00209" summary="removed unused freq calculations">
+      <created>1528187871117</created>
+      <option name="number" value="00209" />
+      <option name="presentableId" value="LOCAL-00209" />
       <option name="project" value="LOCAL" />
-      <updated>1501256005367</updated>
+      <updated>1528187871117</updated>
     </task>
-    <task id="LOCAL-00025" summary="compute likelihood pairwise in compute_f_df">
-      <created>1501256086369</created>
-      <option name="number" value="00025" />
-      <option name="presentableId" value="LOCAL-00025" />
+    <task id="LOCAL-00210" summary="removed L1 regularization">
+      <created>1528187885012</created>
+      <option name="number" value="00210" />
+      <option name="presentableId" value="LOCAL-00210" />
       <option name="project" value="LOCAL" />
-      <updated>1501256086369</updated>
+      <updated>1528187885012</updated>
     </task>
-    <task id="LOCAL-00026" summary="removed bugs in initial parameter setting&#10;&#10;can be set from file if parameter file already exists">
-      <created>1501256160497</created>
-      <option name="number" value="00026" />
-      <option name="presentableId" value="LOCAL-00026" />
+    <task id="LOCAL-00211" summary="updated epilog">
+      <created>1528188097646</created>
+      <option name="number" value="00211" />
+      <option name="presentableId" value="LOCAL-00211" />
       <option name="project" value="LOCAL" />
-      <updated>1501256160497</updated>
+      <updated>1528188097646</updated>
     </task>
-    <task id="LOCAL-00027" summary="removed bugs from pythons reference bahaviour">
-      <created>1501256226038</created>
-      <option name="number" value="00027" />
-      <option name="presentableId" value="LOCAL-00027" />
+    <task id="LOCAL-00212" summary="removed printing of packages">
+      <created>1528203719540</created>
+      <option name="number" value="00212" />
+      <option name="presentableId" value="LOCAL-00212" />
       <option name="project" value="LOCAL" />
-      <updated>1501256226038</updated>
+      <updated>1528203719540</updated>
     </task>
-    <task id="LOCAL-00028" summary="parameters to data are not specified in couplingdata constructor anymore">
-      <created>1501256300663</created>
-      <option name="number" value="00028" />
-      <option name="presentableId" value="LOCAL-00028" />
+    <task id="LOCAL-00213" summary="fixed library path">
+      <created>1528203774578</created>
+      <option name="number" value="00213" />
+      <option name="presentableId" value="LOCAL-00213" />
       <option name="project" value="LOCAL" />
-      <updated>1501256300663</updated>
+      <updated>1528203774578</updated>
     </task>
-    <task id="LOCAL-00029" summary="small caption changes">
-      <created>1501256342342</created>
-      <option name="number" value="00029" />
-      <option name="presentableId" value="LOCAL-00029" />
+    <task id="LOCAL-00214" summary="cleaned argument parser">
+      <created>1528277186061</created>
+      <option name="number" value="00214" />
+      <option name="presentableId" value="LOCAL-00214" />
       <option name="project" value="LOCAL" />
-      <updated>1501256342342</updated>
+      <updated>1528277186061</updated>
     </task>
-    <task id="LOCAL-00030" summary="regularizer is written in python not in cpp&#10;new extension module for likelihood of protein">
-      <created>1501256385759</created>
-      <option name="number" value="00030" />
-      <option name="presentableId" value="LOCAL-00030" />
+    <task id="LOCAL-00215" summary="removed nseq as tree class variable">
+      <created>1528277206276</created>
+      <option name="number" value="00215" />
+      <option name="presentableId" value="LOCAL-00215" />
       <option name="project" value="LOCAL" />
-      <updated>1501256385759</updated>
+      <updated>1528277206276</updated>
     </task>
-    <task id="LOCAL-00031" summary="fixed bugs">
-      <created>1501509123589</created>
-      <option name="number" value="00031" />
-      <option name="presentableId" value="LOCAL-00031" />
+    <task id="LOCAL-00216" summary="handle the case that msa is None">
+      <created>1528277230787</created>
+      <option name="number" value="00216" />
+      <option name="presentableId" value="LOCAL-00216" />
       <option name="project" value="LOCAL" />
-      <updated>1501509123589</updated>
+      <updated>1528277230787</updated>
     </task>
-    <task id="LOCAL-00032" summary="fixed some bugs&#10;&#10;load_contact_prior_model is class method not static">
-      <created>1501509167397</created>
-      <option name="number" value="00032" />
-      <option name="presentableId" value="LOCAL-00032" />
+    <task id="LOCAL-00217" summary="renamed num-threads argument">
+      <created>1528287836746</created>
+      <option name="number" value="00217" />
+      <option name="presentableId" value="LOCAL-00217" />
       <option name="project" value="LOCAL" />
-      <updated>1501509167397</updated>
+      <updated>1528287836746</updated>
     </task>
-    <task id="LOCAL-00033" summary="renamed from add to update">
-      <created>1501666154405</created>
-      <option name="number" value="00033" />
-      <option name="presentableId" value="LOCAL-00033" />
+    <task id="LOCAL-00218" summary="updated argument parsing">
+      <created>1528287850658</created>
+      <option name="number" value="00218" />
+      <option name="presentableId" value="LOCAL-00218" />
       <option name="project" value="LOCAL" />
-      <updated>1501666154405</updated>
+      <updated>1528287850658</updated>
     </task>
-    <task id="LOCAL-00034" summary="initial commit">
-      <created>1501666181471</created>
-      <option name="number" value="00034" />
-      <option name="presentableId" value="LOCAL-00034" />
+    <task id="LOCAL-00219" summary="switched ccmpred logo to ccmpredpy logo">
+      <created>1528287873324</created>
+      <option name="number" value="00219" />
+      <option name="presentableId" value="LOCAL-00219" />
       <option name="project" value="LOCAL" />
-      <updated>1501666181471</updated>
+      <updated>1528287873324</updated>
     </task>
-    <task id="LOCAL-00035" summary="added chmod for groups">
-      <created>1501666316723</created>
-      <option name="number" value="00035" />
-      <option name="presentableId" value="LOCAL-00035" />
+    <task id="LOCAL-00220" summary="removed L1 regularization option">
+      <created>1528287892865</created>
+      <option name="number" value="00220" />
+      <option name="presentableId" value="LOCAL-00220" />
       <option name="project" value="LOCAL" />
-      <updated>1501666316723</updated>
+      <updated>1528287892865</updated>
     </task>
-    <task id="LOCAL-00036" summary="parameter files as last argument is optional">
-      <created>1501666516875</created>
-      <option name="number" value="00036" />
-      <option name="presentableId" value="LOCAL-00036" />
+    <task id="LOCAL-00221" summary="updated function for generating alignment statistics plot">
+      <created>1529579941767</created>
+      <option name="number" value="00221" />
+      <option name="presentableId" value="LOCAL-00221" />
       <option name="project" value="LOCAL" />
-      <updated>1501666516875</updated>
+      <updated>1529579941767</updated>
     </task>
-    <task id="LOCAL-00037" summary="loading parameter files is staticmethod">
-      <created>1501666565686</created>
-      <option name="number" value="00037" />
-      <option name="presentableId" value="LOCAL-00037" />
+    <task id="LOCAL-00222" summary="updated function to generate alignment statistics plot">
+      <created>1529579971334</created>
+      <option name="number" value="00222" />
+      <option name="presentableId" value="LOCAL-00222" />
       <option name="project" value="LOCAL" />
-      <updated>1501666565686</updated>
+      <updated>1529579971334</updated>
     </task>
-    <task id="LOCAL-00038" summary="chmod for groups added">
-      <created>1501666594356</created>
-      <option name="number" value="00038" />
-      <option name="presentableId" value="LOCAL-00038" />
+    <task id="LOCAL-00223" summary="formatting">
+      <created>1530256973089</created>
+      <option name="number" value="00223" />
+      <option name="presentableId" value="LOCAL-00223" />
       <option name="project" value="LOCAL" />
-      <updated>1501666594356</updated>
+      <updated>1530256973089</updated>
     </task>
-    <task id="LOCAL-00039" summary="set plotly subplots print_grid=false">
-      <created>1501672616543</created>
-      <option name="number" value="00039" />
-      <option name="presentableId" value="LOCAL-00039" />
+    <task id="LOCAL-00224" summary="added function to search meta data for specific key">
+      <created>1530257010149</created>
+      <option name="number" value="00224" />
+      <option name="presentableId" value="LOCAL-00224" />
       <option name="project" value="LOCAL" />
-      <updated>1501672616543</updated>
+      <updated>1530257010149</updated>
     </task>
-    <task id="LOCAL-00040" summary="new folder with plotting scripts regardign coupling matrix analysis">
-      <created>1501834906752</created>
-      <option name="number" value="00040" />
-      <option name="presentableId" value="LOCAL-00040" />
+    <task id="LOCAL-00225" summary="in case PDB file has more residues than alignment (one case in PSICOV set)">
+      <created>1530257054284</created>
+      <option name="number" value="00225" />
+      <option name="presentableId" value="LOCAL-00225" />
       <option name="project" value="LOCAL" />
-      <updated>1501834906752</updated>
+      <updated>1530257054284</updated>
     </task>
-    <task id="LOCAL-00041" summary="chmod +x">
-      <created>1501834937683</created>
-      <option name="number" value="00041" />
-      <option name="presentableId" value="LOCAL-00041" />
+    <task id="LOCAL-00226" summary="formatting">
+      <created>1530257071548</created>
+      <option name="number" value="00226" />
+      <option name="presentableId" value="LOCAL-00226" />
       <option name="project" value="LOCAL" />
-      <updated>1501834937683</updated>
+      <updated>1530257071548</updated>
     </task>
-    <task id="LOCAL-00042" summary="modularized script and adapted plot">
-      <created>1501862368103</created>
-      <option name="number" value="00042" />
-      <option name="presentableId" value="LOCAL-00042" />
+    <task id="LOCAL-00227" summary="added max-gap-pos option">
+      <created>1530257103732</created>
+      <option name="number" value="00227" />
+      <option name="presentableId" value="LOCAL-00227" />
       <option name="project" value="LOCAL" />
-      <updated>1501862368103</updated>
+      <updated>1530257103732</updated>
     </task>
-    <task id="LOCAL-00043" summary="changes evaluation suite from one eval file per protein to &#10;one eval file per protein per method">
-      <created>1502195842525</created>
-      <option name="number" value="00043" />
-      <option name="presentableId" value="LOCAL-00043" />
+    <task id="LOCAL-00228" summary="default for seq0_mrf set to 10">
+      <created>1530257129819</created>
+      <option name="number" value="00228" />
+      <option name="presentableId" value="LOCAL-00228" />
       <option name="project" value="LOCAL" />
-      <updated>1502195842525</updated>
+      <updated>1530257129819</updated>
     </task>
-    <task id="LOCAL-00044" summary="introduced distance definition&#10;either Cb or sth else which is minimal atomic distance of side chain atoms">
-      <created>1502902220757</created>
-      <option name="number" value="00044" />
-      <option name="presentableId" value="LOCAL-00044" />
+    <task id="LOCAL-00229" summary="added diversity and gapped_positions to meta data">
+      <created>1530257163412</created>
+      <option name="number" value="00229" />
+      <option name="presentableId" value="LOCAL-00229" />
       <option name="project" value="LOCAL" />
-      <updated>1502902220757</updated>
+      <updated>1530257163412</updated>
     </task>
-    <task id="LOCAL-00045" summary="regularizer is written in python not in cpp&#10;new extension module for likelihood of protein">
-      <created>1504511251810</created>
-      <option name="number" value="00045" />
-      <option name="presentableId" value="LOCAL-00045" />
+    <task id="LOCAL-00230" summary="fixed typos in method names">
+      <created>1530262754572</created>
+      <option name="number" value="00230" />
+      <option name="presentableId" value="LOCAL-00230" />
       <option name="project" value="LOCAL" />
-      <updated>1504511251810</updated>
+      <updated>1530262754572</updated>
     </task>
-    <task id="LOCAL-00046" summary="only log_L feature, not L">
-      <created>1504511297622</created>
-      <option name="number" value="00046" />
-      <option name="presentableId" value="LOCAL-00046" />
+    <task id="LOCAL-00231" summary="specified fixed size of plot">
+      <created>1530262773951</created>
+      <option name="number" value="00231" />
+      <option name="presentableId" value="LOCAL-00231" />
       <option name="project" value="LOCAL" />
-      <updated>1504511297622</updated>
+      <updated>1530262773951</updated>
     </task>
-    <task id="LOCAL-00047" summary="updated plots">
-      <created>1505411631646</created>
-      <option name="number" value="00047" />
-      <option name="presentableId" value="LOCAL-00047" />
+    <task id="LOCAL-00232" summary="fixed bugs with package imports">
+      <created>1530262793353</created>
+      <option name="number" value="00232" />
+      <option name="presentableId" value="LOCAL-00232" />
       <option name="project" value="LOCAL" />
-      <updated>1505411631646</updated>
+      <updated>1530262793353</updated>
     </task>
-    <task id="LOCAL-00048" summary="simulate the learning rate schedules for stochastic gradient descent">
-      <created>1505411675890</created>
-      <option name="number" value="00048" />
-      <option name="presentableId" value="LOCAL-00048" />
+    <task id="LOCAL-00233" summary="added plot title">
+      <created>1530262812516</created>
+      <option name="number" value="00233" />
+      <option name="presentableId" value="LOCAL-00233" />
       <option name="project" value="LOCAL" />
-      <updated>1505411675890</updated>
+      <updated>1530262812516</updated>
     </task>
-    <task id="LOCAL-00049" summary="new script for plotting full likelihood optimization benchamrks">
-      <created>1505411725317</created>
-      <option name="number" value="00049" />
-      <option name="presentableId" value="LOCAL-00049" />
+    <task id="LOCAL-00234" summary="fixed size of plot">
+      <created>1530262831643</created>
+      <option name="number" value="00234" />
+      <option name="presentableId" value="LOCAL-00234" />
       <option name="project" value="LOCAL" />
-      <updated>1505411725317</updated>
+      <updated>1530262831643</updated>
     </task>
-    <task id="LOCAL-00050" summary="running ccmpredpy with contrastive divergence">
-      <created>1505411769484</created>
-      <option name="number" value="00050" />
-      <option name="presentableId" value="LOCAL-00050" />
+    <task id="LOCAL-00235" summary="updated description for reproducing fig 6">
+      <created>1530262853118</created>
+      <option name="number" value="00235" />
+      <option name="presentableId" value="LOCAL-00235" />
       <option name="project" value="LOCAL" />
-      <updated>1505411769485</updated>
+      <updated>1530262853118</updated>
     </task>
-    <task id="LOCAL-00051" summary="update evaluation files for various methods">
-      <created>1505411821464</created>
-      <option name="number" value="00051" />
-      <option name="presentableId" value="LOCAL-00051" />
+    <task id="LOCAL-00236" summary="changed order of methods in legend">
+      <created>1530273855531</created>
+      <option name="number" value="00236" />
+      <option name="presentableId" value="LOCAL-00236" />
       <option name="project" value="LOCAL" />
-      <updated>1505411821464</updated>
+      <updated>1530273855531</updated>
     </task>
-    <task id="LOCAL-00052" summary="learn a contact prior based on protein length&#10;&#10;learning lin model and plotting">
-      <created>1505411869231</created>
-      <option name="number" value="00052" />
-      <option name="presentableId" value="LOCAL-00052" />
+    <task id="LOCAL-00237" summary="added topology in log name file">
+      <created>1530273869404</created>
+      <option name="number" value="00237" />
+      <option name="presentableId" value="LOCAL-00237" />
       <option name="project" value="LOCAL" />
-      <updated>1505411869231</updated>
+      <updated>1530273869404</updated>
     </task>
-    <option name="localTasksCounter" value="53" />
+    <option name="localTasksCounter" value="238" />
     <servers />
   </component>
   <component name="TodoView">
@@ -880,30 +776,53 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="1973" y="34" width="1863" height="1160" extended-state="0" />
+    <frame x="1973" y="-4" width="1867" height="1204" extended-state="6" />
     <layout>
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.26769063" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="15" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug Logs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="true" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3295238" sideWeight="0.501922" order="1" side_tool="true" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="false" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="WINDOWED" visible="false" show_stripe_button="true" weight="0.3295238" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" x="53" y="24" width="1867" height="1176" />
-      <window_info id="Execute Anonymous" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="14" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.255366" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Version Control" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.31809524" sideWeight="0.498078" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="FLOATING" visible="false" show_stripe_button="true" weight="0.3295238" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" x="53" y="-4" width="1867" height="1204" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="14" side_tool="false" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Data View" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Salesforce" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3295238" sideWeight="0.5" order="23" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="12" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug Logs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="13" side_tool="false" content_ui="tabs" />
+      <window_info id="Execute Anonymous" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3295238" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Salesforce" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3295238" sideWeight="0.5" order="23" side_tool="false" content_ui="tabs" />
     </layout>
+    <layout-to-restore>
+      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="12" side_tool="false" content_ui="tabs" />
+      <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug Logs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="true" content_ui="tabs" />
+      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3295238" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="FLOATING" visible="true" show_stripe_button="true" weight="0.3295238" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" x="53" y="24" width="1867" height="1176" />
+      <window_info id="Execute Anonymous" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25919825" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3295238" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
+      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
+      <window_info id="Data View" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Salesforce" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3295238" sideWeight="0.5" order="13" side_tool="false" content_ui="tabs" />
+    </layout-to-restore>
   </component>
   <component name="UnknownFeatures">
     <option featureType="com.intellij.fileTypeFactory" implementationName="*.js" />
@@ -912,32 +831,36 @@
     <option name="myLimit" value="2678400000" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="removed bugs from pythons reference bahaviour" />
-    <MESSAGE value="parameters to data are not specified in couplingdata constructor anymore" />
-    <MESSAGE value="small caption changes" />
-    <MESSAGE value="fixed bugs" />
-    <MESSAGE value="fixed some bugs&#10;&#10;load_contact_prior_model is class method not static" />
-    <MESSAGE value="renamed from add to update" />
-    <MESSAGE value="initial commit" />
-    <MESSAGE value="added chmod for groups" />
-    <MESSAGE value="parameter files as last argument is optional" />
-    <MESSAGE value="loading parameter files is staticmethod" />
-    <MESSAGE value="chmod for groups added" />
-    <MESSAGE value="set plotly subplots print_grid=false" />
-    <MESSAGE value="new folder with plotting scripts regardign coupling matrix analysis" />
-    <MESSAGE value="chmod +x" />
-    <MESSAGE value="modularized script and adapted plot" />
-    <MESSAGE value="changes evaluation suite from one eval file per protein to &#10;one eval file per protein per method" />
-    <MESSAGE value="introduced distance definition&#10;either Cb or sth else which is minimal atomic distance of side chain atoms" />
-    <MESSAGE value="regularizer is written in python not in cpp&#10;new extension module for likelihood of protein" />
-    <MESSAGE value="only log_L feature, not L" />
-    <MESSAGE value="updated plots" />
-    <MESSAGE value="simulate the learning rate schedules for stochastic gradient descent" />
-    <MESSAGE value="new script for plotting full likelihood optimization benchamrks" />
-    <MESSAGE value="running ccmpredpy with contrastive divergence" />
-    <MESSAGE value="update evaluation files for various methods" />
-    <MESSAGE value="learn a contact prior based on protein length&#10;&#10;learning lin model and plotting" />
-    <option name="LAST_COMMIT_MESSAGE" value="learn a contact prior based on protein length&#10;&#10;learning lin model and plotting" />
+    <MESSAGE value="removed printing of packages" />
+    <MESSAGE value="fixed library path" />
+    <MESSAGE value="cleaned argument parser" />
+    <MESSAGE value="removed nseq as tree class variable" />
+    <MESSAGE value="handle the case that msa is None" />
+    <MESSAGE value="renamed num-threads argument" />
+    <MESSAGE value="updated argument parsing" />
+    <MESSAGE value="switched ccmpred logo to ccmpredpy logo" />
+    <MESSAGE value="removed L1 regularization option" />
+    <MESSAGE value="updated function for generating alignment statistics plot" />
+    <MESSAGE value="updated function to generate alignment statistics plot" />
+    <MESSAGE value="added function to search meta data for specific key" />
+    <MESSAGE value="in case PDB file has more residues than alignment (one case in PSICOV set)" />
+    <MESSAGE value="formatting" />
+    <MESSAGE value="added max-gap-pos option" />
+    <MESSAGE value="default for seq0_mrf set to 10" />
+    <MESSAGE value="added diversity and gapped_positions to meta data" />
+    <MESSAGE value="fixed typos in method names" />
+    <MESSAGE value="specified fixed size of plot" />
+    <MESSAGE value="fixed bugs with package imports" />
+    <MESSAGE value="added plot title" />
+    <MESSAGE value="fixed size of plot" />
+    <MESSAGE value="updated description for reproducing fig 6" />
+    <MESSAGE value="changed order of methods in legend" />
+    <MESSAGE value="added topology in log name file" />
+    <option name="LAST_COMMIT_MESSAGE" value="added topology in log name file" />
+  </component>
+  <component name="WindowStateProjectService">
+    <state width="455" height="396" key="Git.Branch.Popup" />
+    <state width="455" height="396" key="Git.Branch.Popup/1920.0.1920.1200/0.0.1920.1200" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -947,320 +870,725 @@
           <line>3</line>
           <option name="timeStamp" value="37" />
         </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/contact_prediction/plotting/plot_ccmpred_logfiles.py</url>
+          <line>9</line>
+          <option name="timeStamp" value="103" />
+        </line-breakpoint>
       </breakpoints>
-      <option name="time" value="87" />
+      <option name="time" value="188" />
     </breakpoint-manager>
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/contact_prior/predict_protein.py">
+    <entry file="file://$PROJECT_DIR$/../CCmpredPy/ccmpred/sampling/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="965">
+          <caret line="107" column="4" lean-forward="false" selection-start-line="107" selection-start-column="4" selection-end-line="107" selection-end-column="4" />
+          <folding>
+            <element signature="e#396#477#0" expanded="false" />
+            <element signature="e#506#650#0" expanded="false" />
+            <element signature="e#577#631#0" expanded="false" />
+            <element signature="e#715#1501#0" expanded="false" />
+            <element signature="e#968#1364#0" expanded="false" />
+            <element signature="e#5587#8127#0" expanded="false" />
+            <element signature="e#6738#7062#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen-scripts/plotting/scripts/plot_alignment_statistics_mcmc_vs_observed.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="605">
+          <caret line="63" column="91" lean-forward="false" selection-start-line="63" selection-start-column="91" selection-end-line="63" selection-end-column="91" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen/setup.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="839">
+          <caret line="56" column="21" lean-forward="false" selection-start-line="56" selection-start-column="13" selection-end-line="56" selection-end-column="21" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/contact_prediction/plotting/plot_scatter_couplings_methodcomparison.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-503">
+          <caret line="32" column="120" lean-forward="false" selection-start-line="32" selection-start-column="120" selection-end-line="32" selection-end-column="120" />
+          <folding>
+            <element signature="n#!!doc" expanded="false" />
+            <element signature="e#1397#5289#0" expanded="false" />
+            <element signature="e#2017#2265#0" expanded="false" />
+            <element signature="e#2284#2336#0" expanded="false" />
+            <element signature="e#3143#3780#0" expanded="false" />
+            <element signature="e#3248#3426#0" expanded="false" />
+            <element signature="e#4067#5229#0" expanded="false" />
+            <element signature="e#4160#4724#0" expanded="false" />
+            <element signature="e#5418#8651#0" expanded="false" />
+            <element signature="e#6141#6241#0" expanded="false" />
+            <element signature="e#6440#7431#0" expanded="false" />
+            <element signature="e#7437#7490#0" expanded="false" />
+            <element signature="e#8026#8592#0" expanded="false" />
+            <element signature="e#8762#10449#0" expanded="false" />
+            <element signature="e#8996#9276#0" expanded="false" />
+            <element signature="e#9295#9506#0" expanded="false" />
+            <element signature="e#9520#9852#0" expanded="false" />
+            <element signature="e#9865#10390#0" expanded="false" />
+            <element signature="e#10539#12381#0" expanded="false" />
+            <element signature="e#11516#11824#0" expanded="false" />
+            <element signature="e#11758#11770#0" expanded="false" />
+            <element signature="e#11838#12150#0" expanded="false" />
+            <element signature="e#12405#13476#0" expanded="false" />
+            <element signature="e#14033#14050#0" expanded="false" />
+            <element signature="e#14904#14966#0" expanded="false" />
+            <element signature="e#15270#19469#0" expanded="false" />
+            <element signature="e#15548#15678#0" expanded="false" />
+            <element signature="e#16205#16263#0" expanded="false" />
+            <element signature="e#17729#17760#0" expanded="false" />
+            <element signature="e#19125#19469#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/contact_prediction/plotting/plot_corrections.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-909">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/anaconda2/envs/py36/lib/python3.6/io.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/utils/ext/__init__.py">
+    <entry file="file://$PROJECT_DIR$/../CCMgen-scripts/bin/plot_benchmark_pll_vs_pcd.sh.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/contact_prior/train_RF.py">
+    <entry file="file://$PROJECT_DIR$/../CCMgen-scripts/plotting/scripts/create_evaluation_protein_files.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="52" selection-end-column="10" />
+          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/contact_prior/TrainContactPriorModel.py">
+    <entry file="file://$PROJECT_DIR$/contact_prediction/benchmark/create_evaluation_files_for_dataset.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        <state relative-caret-position="283">
+          <caret line="63" column="0" lean-forward="true" selection-start-line="63" selection-start-column="0" selection-end-line="63" selection-end-column="0" />
+          <folding>
+            <element signature="e#632#647#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/contact_prior/AlignmentFeatures.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="270">
-          <caret line="18" column="0" lean-forward="false" selection-start-line="18" selection-start-column="0" selection-end-line="18" selection-end-column="27" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/plotting/plot_alignment_coverage.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/coupling_matrix_analysis/plot_variance_class_correlation.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="332">
-          <caret line="212" column="38" lean-forward="true" selection-start-line="212" selection-start-column="8" selection-end-line="212" selection-end-column="38" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/utils/ext/weighting/__init__.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/../ccmpred-new/ccmpred/weighting/cext/__init__.py" />
-    <entry file="file://$PROJECT_DIR$/../ccmpred-new/ccmpred/weighting/__init__.py" />
-    <entry file="file://$PROJECT_DIR$/../ccmpred-new/ccmpred/regularization.py" />
-    <entry file="file://$PROJECT_DIR$/../ccmpred-new/ccmpred/pseudocounts.py" />
-    <entry file="file://$PROJECT_DIR$/utils/ext/counts/__init__.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="420">
-          <caret line="49" column="4" lean-forward="false" selection-start-line="49" selection-start-column="4" selection-end-line="49" selection-end-column="4" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/plotting/plot_scatter_couplings_methodcomparison.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="300">
-          <caret line="337" column="0" lean-forward="true" selection-start-line="337" selection-start-column="0" selection-end-line="337" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/plotting/plot_precision_vs_rank.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="885">
-          <caret line="131" column="0" lean-forward="false" selection-start-line="131" selection-start-column="0" selection-end-line="131" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/../ccmpred-new/ccmpred/algorithm/conjugate_gradients.py" />
-    <entry file="file://$PROJECT_DIR$/../ccmpred-new/ccmpred/objfun/pll/__init__.py" />
-    <entry file="file://$PROJECT_DIR$/../ccmpred-new/ccmpred/io/contactmatrix.py" />
-    <entry file="file://$PROJECT_DIR$/../ccmpred-new/ccmpred.py" />
-    <entry file="file://$PROJECT_DIR$/../ccmpred-new/ccmpred/__init__.py" />
-    <entry file="file://$PROJECT_DIR$/plotting/plot_optimization_logfile.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-2">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/plotting/plot_learning_rate_schedules.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/../ccmpred-new/ccmpred/algorithm/gradient_descent.py" />
-    <entry file="file://$PROJECT_DIR$/plotting/plot_optcode_vs_neff.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/../ccmpred-new/ccmpred/objfun/cd/cext/cd.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-225">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/../ccmpred-new/ccmpred/objfun/cd/__init__.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1530">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/plotting/plot_scalingfactor_eta_vs_neff.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="240">
-          <caret line="20" column="0" lean-forward="false" selection-start-line="20" selection-start-column="0" selection-end-line="39" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/plotting/plot_ccmpred_logfiles.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="773">
-          <caret line="203" column="0" lean-forward="false" selection-start-line="203" selection-start-column="0" selection-end-line="203" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/plotting/plot_pfamilies_wrt_pdb.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="645">
-          <caret line="231" column="0" lean-forward="true" selection-start-line="231" selection-start-column="0" selection-end-line="231" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/coupling_prior/likelihood.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/dataset/extract_combs_from_psicov.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/run/run_compute_cd.sh">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="45">
-          <caret line="3" column="0" lean-forward="false" selection-start-line="3" selection-start-column="0" selection-end-line="5" selection-end-column="80" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/coupling_prior/infer_hyperparameters_for_coupling_prior.py">
+    <entry file="file://$PROJECT_DIR$/contact_prediction/benchmark/append_to_evaluation_file.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="675">
-          <caret line="84" column="38" lean-forward="true" selection-start-line="84" selection-start-column="5" selection-end-line="84" selection-end-column="38" />
+          <caret line="48" column="47" lean-forward="true" selection-start-line="48" selection-start-column="47" selection-end-line="48" selection-end-column="47" />
+          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/entropy_correction/__init__.py">
+    <entry file="file://$PROJECT_DIR$/../CCMgen-scripts/run_ccmpred_pcd_with_constraints.sh">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        <state relative-caret-position="778">
+          <caret line="65" column="50" lean-forward="false" selection-start-line="65" selection-start-column="50" selection-end-line="65" selection-end-column="50" />
+          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/coupling_prior/coupling_data.py">
+    <entry file="file://$PROJECT_DIR$/../CCMgen-scripts/plotting/scripts/create_evaluation_score_files.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="359">
-          <caret line="336" column="0" lean-forward="false" selection-start-line="336" selection-start-column="0" selection-end-line="348" selection-end-column="56" />
+        <state relative-caret-position="225">
+          <caret line="15" column="0" lean-forward="false" selection-start-line="15" selection-start-column="0" selection-end-line="15" selection-end-column="40" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen-scripts/run_ccmpred_pll.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="748">
+          <caret line="59" column="50" lean-forward="false" selection-start-line="59" selection-start-column="50" selection-end-line="59" selection-end-column="50" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/contact_prediction/utils/benchmark_utils.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="240">
+          <caret line="75" column="106" lean-forward="true" selection-start-line="75" selection-start-column="45" selection-end-line="75" selection-end-column="106" />
           <folding>
-            <element signature="e#24#33#0" expanded="true" />
+            <element signature="e#235#1459#0" expanded="false" />
+            <element signature="e#343#1432#0" expanded="false" />
+            <element signature="e#571#884#0" expanded="false" />
+            <element signature="e#1054#1432#0" expanded="false" />
+            <element signature="e#1070#1216#0" expanded="false" />
+            <element signature="e#1520#2500#0" expanded="false" />
+            <element signature="e#1520#1718#1" expanded="false" />
+            <element signature="e#1826#2471#0" expanded="false" />
+            <element signature="e#1849#2006#0" expanded="false" />
+            <element signature="e#2036#2182#0" expanded="false" />
+            <element signature="e#3341#6598#0" expanded="false" />
+            <element signature="e#3527#3598#0" expanded="false" />
+            <element signature="e#3674#3749#0" expanded="false" />
+            <element signature="e#3770#3851#0" expanded="false" />
+            <element signature="e#4031#4130#0" expanded="false" />
+            <element signature="e#4282#4370#0" expanded="false" />
+            <element signature="e#4419#4485#0" expanded="false" />
+            <element signature="e#5062#5199#0" expanded="false" />
+            <element signature="e#5199#5305#0" expanded="false" />
+            <element signature="e#5685#6565#0" expanded="false" />
+            <element signature="e#6268#6565#0" expanded="false" />
+            <element signature="e#6686#7277#0" expanded="false" />
+            <element signature="e#6817#7252#0" expanded="false" />
+            <element signature="e#6850#6993#0" expanded="false" />
+            <element signature="e#7338#9107#0" expanded="false" />
+            <element signature="e#7338#7915#1" expanded="false" />
+            <element signature="e#7998#9082#0" expanded="false" />
+            <element signature="e#8248#8420#0" expanded="false" />
+            <element signature="e#8497#9082#0" expanded="false" />
+            <element signature="e#9170#9660#0" expanded="false" />
+            <element signature="e#9170#9310#1" expanded="false" />
+            <element signature="e#9715#10202#0" expanded="false" />
+            <element signature="e#9715#9800#1" expanded="false" />
+            <element signature="e#10250#10519#0" expanded="false" />
+            <element signature="e#10250#10386#1" expanded="false" />
+            <element signature="e#10594#11133#0" expanded="false" />
+            <element signature="e#10594#10789#1" expanded="false" />
+            <element signature="e#11210#11648#0" expanded="false" />
+            <element signature="e#11210#11401#1" expanded="false" />
+            <element signature="e#11735#12144#0" expanded="false" />
+            <element signature="e#12271#13065#0" expanded="false" />
+            <element signature="e#12271#12542#1" expanded="false" />
+            <element signature="e#13169#13648#0" expanded="false" />
+            <element signature="e#13726#14449#0" expanded="false" />
+            <element signature="e#13838#14066#0" expanded="false" />
+            <element signature="e#14087#14422#0" expanded="false" />
+            <element signature="e#14087#14122#0" expanded="false" />
+            <element signature="e#14570#15261#0" expanded="false" />
+            <element signature="e#14590#14801#0" expanded="false" />
+            <element signature="e#14820#15032#0" expanded="false" />
+            <element signature="e#15394#16733#0" expanded="false" />
+            <element signature="e#15394#15596#1" expanded="false" />
+            <element signature="e#15622#15633#0" expanded="false" />
+            <element signature="e#15747#15937#0" expanded="false" />
+            <element signature="e#16835#17268#0" expanded="false" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/app.py">
+    <entry file="file://$PROJECT_DIR$/contact_prediction/utils/plot_utils.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="189">
-          <caret line="157" column="12" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="202" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/utils/utils.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="435">
-          <caret line="29" column="0" lean-forward="true" selection-start-line="29" selection-start-column="0" selection-end-line="29" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/utils/pdb_utils.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="326">
-          <caret line="51" column="4" lean-forward="false" selection-start-line="51" selection-start-column="4" selection-end-line="51" selection-end-column="4" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/utils/alignment_utils.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="60">
-          <caret line="4" column="13" lean-forward="false" selection-start-line="4" selection-start-column="13" selection-end-line="4" selection-end-column="13" />
+        <state relative-caret-position="45">
+          <caret line="3" column="0" lean-forward="false" selection-start-line="3" selection-start-column="0" selection-end-line="4" selection-end-column="46" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/utils/plot_utils.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="138" lean-forward="false" selection-start-line="0" selection-start-column="138" selection-end-line="0" selection-end-column="138" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/plotting/plot_alignment_aminoacid_distribution.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="285">
-          <caret line="31" column="29" lean-forward="false" selection-start-line="31" selection-start-column="29" selection-end-line="31" selection-end-column="29" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/utils/io_utils.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="693">
-          <caret line="139" column="13" lean-forward="false" selection-start-line="139" selection-start-column="8" selection-end-line="139" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/utils/benchmark_utils.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="96" lean-forward="false" selection-start-line="0" selection-start-column="96" selection-end-line="0" selection-end-column="96" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/plotting/plot_pairwise_aa_freq.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="750">
-          <caret line="57" column="12" lean-forward="false" selection-start-line="57" selection-start-column="12" selection-end-line="57" selection-end-column="12" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/run/run_compute_pll_count_statistic_correction.sh">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-687">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/plotting/plot_contact_map.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="715">
-          <caret line="155" column="0" lean-forward="false" selection-start-line="155" selection-start-column="0" selection-end-line="155" selection-end-column="146" />
-          <folding>
-            <element signature="e#343#358#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/entropy_correction/learn_pair_weighted_scoring_matrix.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1665">
-          <caret line="121" column="41" lean-forward="true" selection-start-line="121" selection-start-column="41" selection-end-line="121" selection-end-column="41" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/plotting/dash/viz_residue_pairs.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="7935">
-          <caret line="529" column="0" lean-forward="true" selection-start-line="529" selection-start-column="0" selection-end-line="529" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/coupling_matrix_analysis/plot_coupling_matrix.py">
+    <entry file="file://$PROJECT_DIR$/contact_prediction/utils/utils.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="270">
-          <caret line="18" column="4" lean-forward="false" selection-start-line="18" selection-start-column="4" selection-end-line="18" selection-end-column="4" />
-          <folding>
-            <element signature="e#393#408#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/plotting/plot_corrections.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-741">
-          <caret line="19" column="59" lean-forward="false" selection-start-line="19" selection-start-column="50" selection-end-line="19" selection-end-column="59" />
+          <caret line="18" column="31" lean-forward="true" selection-start-line="18" selection-start-column="31" selection-end-line="18" selection-end-column="31" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/entropy_correction/compute_pair_weight_score.py">
+    <entry file="file://$PROJECT_DIR$/../CCMgen/ccmpred/io/pdb.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="579">
-          <caret line="68" column="57" lean-forward="true" selection-start-line="68" selection-start-column="57" selection-end-line="68" selection-end-column="57" />
+        <state relative-caret-position="770">
+          <caret line="68" column="42" lean-forward="true" selection-start-line="68" selection-start-column="42" selection-end-line="68" selection-end-column="42" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen/ccmpred/io/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#109#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen-scripts/plotting/utils/io_utils.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="435">
+          <caret line="45" column="60" lean-forward="true" selection-start-line="45" selection-start-column="4" selection-end-line="45" selection-end-column="60" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen-scripts/bin/plot_benchmark_pll_vs_pcd.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="735">
+          <caret line="49" column="39" lean-forward="false" selection-start-line="49" selection-start-column="39" selection-end-line="49" selection-end-column="67" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/contact_prediction/benchmark/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="445">
+          <caret line="107" column="88" lean-forward="true" selection-start-line="107" selection-start-column="31" selection-end-line="107" selection-end-column="88" />
+          <folding>
+            <element signature="e#23#34#0" expanded="false" />
+            <element signature="e#657#869#0" expanded="false" />
+            <element signature="e#689#869#0" expanded="false" />
+            <element signature="e#902#1000#0" expanded="false" />
+            <element signature="e#1478#2213#0" expanded="false" />
+            <element signature="e#1635#1723#0" expanded="false" />
+            <element signature="e#2249#2571#0" expanded="false" />
+            <element signature="e#2658#2998#1" expanded="false" />
+            <element signature="e#3791#4004#0" expanded="false" />
+            <element signature="e#4437#4695#0" expanded="false" />
+            <element signature="e#5082#7009#0" expanded="false" />
+            <element signature="e#5082#5431#1" expanded="false" />
+            <element signature="e#5688#5810#0" expanded="false" />
+            <element signature="e#6174#6273#0" expanded="false" />
+            <element signature="e#6633#6893#0" expanded="false" />
+            <element signature="e#6738#6822#0" expanded="false" />
+            <element signature="e#7082#7997#0" expanded="false" />
+            <element signature="e#7082#7228#1" expanded="false" />
+            <element signature="e#7809#7997#0" expanded="false" />
+            <element signature="e#7916#7997#0" expanded="false" />
+            <element signature="e#8047#8844#0" expanded="false" />
+            <element signature="e#8523#8823#0" expanded="false" />
+            <element signature="e#8673#8823#0" expanded="false" />
+            <element signature="e#8898#9079#0" expanded="false" />
+            <element signature="e#9147#9829#0" expanded="false" />
+            <element signature="e#9195#9254#0" expanded="false" />
+            <element signature="e#9373#9454#0" expanded="false" />
+            <element signature="e#9666#9753#0" expanded="false" />
+            <element signature="e#9929#11813#0" expanded="false" />
+            <element signature="e#9929#10543#1" expanded="false" />
+            <element signature="e#10596#10682#0" expanded="false" />
+            <element signature="e#10742#10834#0" expanded="false" />
+            <element signature="e#10881#11020#0" expanded="false" />
+            <element signature="e#11163#11813#0" expanded="false" />
+            <element signature="e#11322#11422#0" expanded="false" />
+            <element signature="e#11545#11651#0" expanded="false" />
+            <element signature="e#11935#13253#0" expanded="false" />
+            <element signature="e#11941#12040#0" expanded="false" />
+            <element signature="e#12153#13253#0" expanded="false" />
+            <element signature="e#12651#12783#0" expanded="false" />
+            <element signature="e#12829#13015#0" expanded="false" />
+            <element signature="e#13050#13184#0" expanded="false" />
+            <element signature="e#13346#13894#0" expanded="false" />
+            <element signature="e#13391#13473#0" expanded="false" />
+            <element signature="e#13635#13756#0" expanded="false" />
+            <element signature="e#13968#14477#0" expanded="false" />
+            <element signature="e#13968#14155#1" expanded="false" />
+            <element signature="e#14213#14306#0" expanded="false" />
+            <element signature="e#14521#14905#0" expanded="false" />
+            <element signature="e#14521#14621#1" expanded="false" />
+            <element signature="e#14943#15047#0" expanded="false" />
+            <element signature="e#14943#15024#1" expanded="false" />
+            <element signature="e#15118#15641#0" expanded="false" />
+            <element signature="e#15200#15413#0" expanded="false" />
+            <element signature="e#15242#15403#0" expanded="false" />
+            <element signature="e#15759#19023#0" expanded="false" />
+            <element signature="e#15896#16017#0" expanded="false" />
+            <element signature="e#16318#16458#0" expanded="false" />
+            <element signature="e#17221#17333#0" expanded="false" />
+            <element signature="e#17534#17640#0" expanded="false" />
+            <element signature="e#18064#18985#0" expanded="false" />
+            <element signature="e#18680#18985#0" expanded="false" />
+            <element signature="e#19115#21196#0" expanded="false" />
+            <element signature="e#19115#19282#1" expanded="false" />
+            <element signature="e#21262#37032#0" expanded="false" />
+            <element signature="e#22175#22859#0" expanded="false" />
+            <element signature="e#22920#23626#0" expanded="false" />
+            <element signature="e#23686#24705#0" expanded="false" />
+            <element signature="e#24762#25511#0" expanded="false" />
+            <element signature="e#25576#27201#0" expanded="false" />
+            <element signature="e#25714#25821#0" expanded="false" />
+            <element signature="e#25961#26572#0" expanded="false" />
+            <element signature="e#26636#27201#0" expanded="false" />
+            <element signature="e#27256#28850#0" expanded="false" />
+            <element signature="e#27450#27552#0" expanded="false" />
+            <element signature="e#27690#28261#0" expanded="false" />
+            <element signature="e#28325#28850#0" expanded="false" />
+            <element signature="e#28907#30523#0" expanded="false" />
+            <element signature="e#29113#29211#0" expanded="false" />
+            <element signature="e#29351#29928#0" expanded="false" />
+            <element signature="e#29992#30523#0" expanded="false" />
+            <element signature="e#30582#32549#0" expanded="false" />
+            <element signature="e#30712#30805#0" expanded="false" />
+            <element signature="e#30946#31944#0" expanded="false" />
+            <element signature="e#32008#32549#0" expanded="false" />
+            <element signature="e#32608#34016#0" expanded="false" />
+            <element signature="e#32705#32798#0" expanded="false" />
+            <element signature="e#32898#33426#0" expanded="false" />
+            <element signature="e#33490#34016#0" expanded="false" />
+            <element signature="e#34075#35614#0" expanded="false" />
+            <element signature="e#34166#34259#0" expanded="false" />
+            <element signature="e#34449#35041#0" expanded="false" />
+            <element signature="e#35105#35614#0" expanded="false" />
+            <element signature="e#35678#36322#0" expanded="false" />
+            <element signature="e#36385#37010#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen-scripts/bin/plot_runtimes_pll_vs_pcd.bash">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="255">
+          <caret line="17" column="25" lean-forward="false" selection-start-line="17" selection-start-column="20" selection-end-line="17" selection-end-column="25" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen/ccmpred/io/contactmatrix.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="225">
+          <caret line="109" column="15" lean-forward="false" selection-start-line="109" selection-start-column="4" selection-end-line="109" selection-end-column="15" />
+          <folding>
+            <element signature="e#93#296#0" expanded="false" />
+            <element signature="e#93#248#1" expanded="false" />
+            <element signature="e#317#663#0" expanded="false" />
+            <element signature="e#317#476#1" expanded="false" />
+            <element signature="e#735#1785#0" expanded="false" />
+            <element signature="e#735#1056#1" expanded="false" />
+            <element signature="e#1174#1402#0" expanded="false" />
+            <element signature="e#1423#1758#0" expanded="false" />
+            <element signature="e#1423#1458#0" expanded="false" />
+            <element signature="e#1932#2821#0" expanded="false" />
+            <element signature="e#2051#2148#0" expanded="false" />
+            <element signature="e#2167#2335#0" expanded="false" />
+            <element signature="e#2551#2652#0" expanded="false" />
+            <element signature="e#2671#2776#0" expanded="false" />
+            <element signature="e#2867#3201#0" expanded="false" />
+            <element signature="e#3233#3326#1" expanded="false" />
+            <element signature="e#3922#4386#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen-scripts/bin/plot_scatter_apc_vs_ec.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="675">
+          <caret line="45" column="58" lean-forward="true" selection-start-line="45" selection-start-column="22" selection-end-line="45" selection-end-column="58" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen-scripts/plotting/scripts/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen-scripts/plotting/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen/ccmpred/io/alignment.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="60">
+          <caret line="6" column="4" lean-forward="false" selection-start-line="6" selection-start-column="4" selection-end-line="6" selection-end-column="4" />
+          <folding>
+            <element signature="e#455#824#0" expanded="false" />
+            <element signature="e#724#795#0" expanded="false" />
+            <element signature="e#902#1523#0" expanded="false" />
+            <element signature="e#933#988#0" expanded="false" />
+            <element signature="e#1059#1205#0" expanded="false" />
+            <element signature="e#1399#1494#0" expanded="false" />
+            <element signature="e#1603#1790#0" expanded="false" />
+            <element signature="e#1844#1978#0" expanded="false" />
+            <element signature="e#2066#2559#0" expanded="false" />
+            <element signature="e#2373#2518#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen/ccmpred/scripts/run_ccmpred.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="418">
+          <caret line="219" column="12" lean-forward="false" selection-start-line="219" selection-start-column="12" selection-end-line="219" selection-end-column="12" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen/ccmpred/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="451">
+          <caret line="261" column="43" lean-forward="true" selection-start-line="261" selection-start-column="12" selection-end-line="261" selection-end-column="43" />
+          <folding>
+            <element signature="e#2733#3501#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/contact_prediction/plotting/plot_empirical_vs_model_statistics.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="291">
+          <caret line="339" column="0" lean-forward="false" selection-start-line="339" selection-start-column="0" selection-end-line="339" selection-end-column="47" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen-scripts/run_ccmpred_pcd.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="883">
+          <caret line="69" column="98" lean-forward="false" selection-start-line="69" selection-start-column="98" selection-end-line="69" selection-end-column="98" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen/ccmpred/scripts/run_ccmgen.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="540">
+          <caret line="80" column="96" lean-forward="false" selection-start-line="80" selection-start-column="96" selection-end-line="80" selection-end-column="96" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen-scripts/run_ccmgen_mcmc.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen-scripts/plot_fig_3abc.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="538">
+          <caret line="49" column="60" lean-forward="true" selection-start-line="49" selection-start-column="60" selection-end-line="49" selection-end-column="60" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen-scripts/run_ccmgen.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="538">
+          <caret line="47" column="0" lean-forward="false" selection-start-line="47" selection-start-column="0" selection-end-line="47" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/contact_prediction/plotting/plot_ccmgen_paper_benchmark.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="293">
+          <caret line="255" column="0" lean-forward="true" selection-start-line="255" selection-start-column="0" selection-end-line="288" selection-end-column="74" />
+          <folding>
+            <element signature="e#1268#1980#0" expanded="false" />
+            <element signature="e#1664#1722#0" expanded="false" />
+            <element signature="e#1750#1832#0" expanded="false" />
+            <element signature="e#2066#7424#0" expanded="false" />
+            <element signature="e#2477#2995#0" expanded="false" />
+            <element signature="e#2537#2978#0" expanded="false" />
+            <element signature="e#2710#2894#0" expanded="false" />
+            <element signature="e#3041#3564#0" expanded="false" />
+            <element signature="e#3103#3547#0" expanded="false" />
+            <element signature="e#3277#3463#0" expanded="false" />
+            <element signature="e#3570#3599#0" expanded="false" />
+            <element signature="e#6122#6180#0" expanded="false" />
+            <element signature="e#6909#7270#0" expanded="false" />
+            <element signature="e#7665#7839#0" expanded="false" />
+            <element signature="e#9835#11742#0" expanded="false" />
+            <element signature="e#12568#12648#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/contact_prediction/plotting/plot_ccmgen_log_reached_neff.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="795">
+          <caret line="240" column="51" lean-forward="false" selection-start-line="240" selection-start-column="44" selection-end-line="240" selection-end-column="51" />
+          <folding>
+            <element signature="e#1146#2493#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen-scripts/plot_fig_3d.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="178" selection-end-column="10" />
+          <folding>
+            <element signature="e#452#467#0" expanded="false" />
+            <element signature="e#781#1994#0" expanded="false" />
+            <element signature="e#2047#4035#0" expanded="false" />
+            <element signature="e#3493#3859#0" expanded="false" />
+            <element signature="e#4059#4339#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/contact_prediction/plotting/plot_scatter_apc_vs_ec.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="195">
+          <caret line="88" column="4" lean-forward="false" selection-start-line="88" selection-start-column="4" selection-end-line="88" selection-end-column="4" />
+          <folding>
+            <element signature="e#918#2579#0" expanded="false" />
+            <element signature="e#1463#2501#0" expanded="false" />
+            <element signature="e#2036#2402#0" expanded="false" />
+            <element signature="e#2655#2879#0" expanded="false" />
+            <element signature="e#2838#2850#0" expanded="false" />
+            <element signature="e#2892#3114#0" expanded="false" />
+            <element signature="e#3215#3722#0" expanded="false" />
+            <element signature="e#5616#5683#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen-scripts/benchmark.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="585">
+          <caret line="317" column="43" lean-forward="true" selection-start-line="317" selection-start-column="43" selection-end-line="317" selection-end-column="43" />
+          <folding>
+            <element signature="e#649#1479#0" expanded="false" />
+            <element signature="e#1534#2296#0" expanded="false" />
+            <element signature="e#2367#2985#0" expanded="false" />
+            <element signature="e#3063#3682#0" expanded="false" />
+            <element signature="e#3808#5974#0" expanded="false" />
+            <element signature="e#6033#6489#0" expanded="false" />
+            <element signature="e#6626#8482#0" expanded="false" />
+            <element signature="e#8555#8842#0" expanded="false" />
+            <element signature="e#8881#9005#0" expanded="false" />
+            <element signature="e#9067#9185#0" expanded="false" />
+            <element signature="e#9285#12535#0" expanded="false" />
+            <element signature="e#12600#13056#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen-scripts/plot_fig_1ab.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="705">
+          <caret line="47" column="106" lean-forward="true" selection-start-line="47" selection-start-column="8" selection-end-line="47" selection-end-column="106" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen-scripts/plot_fig_S4.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="600">
+          <caret line="86" column="23" lean-forward="false" selection-start-line="86" selection-start-column="23" selection-end-line="86" selection-end-column="23" />
+          <folding>
+            <element signature="e#544#559#0" expanded="false" />
+            <element signature="e#883#2096#0" expanded="false" />
+            <element signature="e#2968#3248#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen-scripts/plot_fig_S1.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="320">
+          <caret line="142" column="20" lean-forward="true" selection-start-line="142" selection-start-column="20" selection-end-line="142" selection-end-column="20" />
+          <folding>
+            <element signature="e#642#657#0" expanded="false" />
+            <element signature="e#1014#2166#0" expanded="false" />
+            <element signature="e#2198#2795#0" expanded="false" />
+            <element signature="e#2819#3099#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen-scripts/plot_fig_S5.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="915">
+          <caret line="70" column="74" lean-forward="false" selection-start-line="70" selection-start-column="74" selection-end-line="70" selection-end-column="74" />
+          <folding>
+            <element signature="e#2212#2492#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen-scripts/plot_fig_1d.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="480">
+          <caret line="77" column="51" lean-forward="false" selection-start-line="77" selection-start-column="51" selection-end-line="77" selection-end-column="51" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen-scripts/plot_fig_1c.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-595">
+          <caret line="24" column="41" lean-forward="false" selection-start-line="24" selection-start-column="41" selection-end-line="24" selection-end-column="41" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen/ccmpred/scripts/plot_ccmpred.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="858">
+          <caret line="263" column="38" lean-forward="false" selection-start-line="263" selection-start-column="38" selection-end-line="263" selection-end-column="38" />
+          <folding>
+            <element signature="e#23#87#1" expanded="false" />
+            <element signature="e#411#4878#0" expanded="false" />
+            <element signature="e#4557#4861#0" expanded="false" />
+            <element signature="e#5050#7628#0" expanded="false" />
+            <element signature="e#7707#8590#0" expanded="false" />
+            <element signature="e#7887#7983#0" expanded="false" />
+            <element signature="e#8816#8912#0" expanded="false" />
+            <element signature="e#9025#9122#0" expanded="false" />
+            <element signature="e#11333#11542#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen/ccmpred/plotting/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="30" />
+          <folding>
+            <element signature="e#0#30#0" expanded="true" />
+            <element signature="e#264#1371#0" expanded="false" />
+            <element signature="e#1488#10812#0" expanded="false" />
+            <element signature="e#17930#18790#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/contact_prediction/plotting/plot_empirical_vs_model_statistics_pearson_scatter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="180">
+          <caret line="20" column="0" lean-forward="false" selection-start-line="20" selection-start-column="0" selection-end-line="64" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen-scripts/plot_fig_6.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="895">
+          <caret line="185" column="79" lean-forward="false" selection-start-line="185" selection-start-column="79" selection-end-line="185" selection-end-column="79" />
+          <folding>
+            <element signature="e#498#513#0" expanded="true" />
+            <element signature="e#751#1276#0" expanded="false" />
+            <element signature="e#1398#3683#0" expanded="false" />
+            <element signature="e#3707#3987#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CCMgen-scripts/run_ccmpred_recover.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="823">
+          <caret line="65" column="40" lean-forward="false" selection-start-line="65" selection-start-column="40" selection-end-line="65" selection-end-column="40" />
           <folding />
         </state>
       </provider>

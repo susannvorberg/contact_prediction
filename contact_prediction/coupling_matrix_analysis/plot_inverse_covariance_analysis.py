@@ -22,13 +22,14 @@ import pandas as pd
 import argparse
 from sklearn.covariance import GraphLasso,GraphLassoCV
 import json
+import flask
 import networkx as nx
 from networkx.readwrite import json_graph
-import raw
-from contact_prior.AlignmentFeatures import AlignmentFeatures
-import utils.pdb_utils as pdb
-import utils.benchmark_utils as bu
-import utils.io_utils as io
+import ccmpred.raw as raw
+from contact_prediction.contact_prior.AlignmentFeatures import AlignmentFeatures
+import contact_prediction.utils.pdb_utils as pdb
+import contact_prediction.utils.benchmark_utils as bu
+import contact_prediction.utils.io_utils as io
 
 
 positively_charged = ['K','R']
@@ -72,7 +73,7 @@ AA_INTERACTION_GROUPS={'ionic': ionic_interactions,
                        }
 
 INTERACTION_FOR_AA = {aa:'other' for aa in io.AB_INDICES.keys()}
-for key,aa_list in AA_INTERACTION_GROUPS.iteritems():
+for key,aa_list in AA_INTERACTION_GROUPS.items():
     for aa in aa_list:
         INTERACTION_FOR_AA[aa] = key
 
@@ -90,13 +91,18 @@ def collect_data(braw_dir, psicov_dir, pdb_dir, sequence_separation, cb_lower, c
         # braw_file = braw_files[1]
 
         protein = os.path.basename(braw_file).split(".")[0]
-        alignment_file = psicov_dir + protein + '.filt.psc'
+        print(protein)
+        alignment_file = psicov_dir + protein + '.aln'
         if not os.path.exists(alignment_file):
+            print("Alignment File {0} does not exist.".format(alignment_file))
             continue
 
         pdb_file = pdb_dir + protein + '.pdb'
         if not os.path.exists(pdb_file):
+            print("PDB File {0} does not exist.".format(pdb_file))
             continue
+
+
 
         AF = AlignmentFeatures(alignment_file, sequence_separation, 8, 8)
 
@@ -110,7 +116,7 @@ def collect_data(braw_dir, psicov_dir, pdb_dir, sequence_separation, cb_lower, c
 
         #mask highly gapped positions
         gaps = 1 - (AF.Ni / AF.neff)
-        highly_gapped_pos = np.where(np.array(gaps) > 0.3)[0]
+        highly_gapped_pos = np.where(np.array(gaps) > 0.5)[0]
         distance_map[highly_gapped_pos, :] = np.nan
         distance_map[:, highly_gapped_pos] = np.nan
 
@@ -123,6 +129,7 @@ def collect_data(braw_dir, psicov_dir, pdb_dir, sequence_separation, cb_lower, c
         residue_j = residue_j[(dist_ij_pairs > cb_lower) & (dist_ij_pairs < cb_upper)]
 
         if len(residue_i) == 0:
+            print("No residues left after applying distance constraints.")
             continue
 
         #apply Nij_treshold
@@ -131,15 +138,17 @@ def collect_data(braw_dir, psicov_dir, pdb_dir, sequence_separation, cb_lower, c
         residue_j = residue_j[(Nij > Nij_threshold)]
 
         if len(residue_i) == 0:
+            print("No residues left after applying pairwise counts constraints.")
             continue
 
         # compute l2norm_apc score that has mean=0
-        l2norm_apc = bu.compute_l2norm_from_braw(braw, apc=True)
+        l2norm_apc = bu.compute_l2norm_from_braw(braw.x_pair, apc=True)
         l2norm_apc_ij_pairs = l2norm_apc[residue_i, residue_j]
         residue_i = residue_i[(l2norm_apc_ij_pairs > l2normapc_threshold)]
         residue_j = residue_j[(l2norm_apc_ij_pairs > l2normapc_threshold)]
 
         if len(residue_i) == 0:
+            print("No residues left after applying APC threshold constraints.")
             continue
 
         protein_coupling_df = pd.DataFrame(
@@ -154,12 +163,12 @@ def collect_data(braw_dir, psicov_dir, pdb_dir, sequence_separation, cb_lower, c
         # -----------------------------------------------------------------------------------
         coupling_data = coupling_data.append(protein_coupling_df)
 
-        print "Dataset size: " + str(len(coupling_data))
+        print("Dataset size: " + str(len(coupling_data)))
         sys.stdout.flush()
         if len(coupling_data) > nr_residue_pairs:
             break
 
-    print "final dataset size: " + str(len(coupling_data))
+    print("final dataset size: " + str(len(coupling_data)))
     coupling_data.reset_index(inplace=True, drop=True)
 
     return coupling_data
@@ -187,26 +196,27 @@ def computePartialCorrelationsCV(coupling_data):
 
     return estimator.get_precision(), partial_correlations, reg_alpha
 
-
 def computePartialCorrelations(coupling_data, reg_alpha):
 
     # standardize
-    coupling_data -= coupling_data.mean(axis=0)
-    coupling_data /= coupling_data.std(axis=0)
+    # coupling_data -= coupling_data.mean(axis=0)
+    # coupling_data /= coupling_data.std(axis=0)
 
     # sparse inverse covariance matrix estimation
     estimator = GraphLasso(alpha=reg_alpha, assume_centered=False, mode='cd', max_iter=500)
     estimator.fit(coupling_data)
-    prec = estimator.get_precision()
 
-    #### partial correlations: rho_ij = - p_ij/ sqrt(p_ii * p_jj)
+    print("Sparse inverse covariance matrix was estiamted with {0} iterations.".format(estimator.n_iter_))
+    print("\t\t\t and by using the parameters: ", estimator.get_params())
+    prec = estimator.get_precision()
 
     #diagonal of precision matrix
     prec_diag = np.diag(prec)
 
-    # obtain partial correlations
+    # obtain partial correlations (proportional to prec matrix entries):
+    # rho_ij = - p_ij/ sqrt(p_ii * p_jj)
     partial_correlations = -prec / np.sqrt(np.outer(prec_diag, prec_diag))
-    # d = 1 / np.sqrt(np.diag(partial_correlations))
+    # d = 1 / np.sqrt(np.diag(prec))
     # partial_correlations *= d
     # partial_correlations *= d[:, np.newaxis]
 
@@ -216,6 +226,11 @@ def computePartialCorrelations(coupling_data, reg_alpha):
     return estimator.get_precision(), partial_correlations
 
 def write_json_graph(partial_correlations, max_nr_couplings, settings, out_dir):
+
+    partial_correlations *= 0.1
+    partial_correlations = np.abs(partial_correlations)
+
+
     # threshold at 50th strongest coupling
     partial_correlation_threshold = sorted(np.abs(partial_correlations.flatten()), reverse=True)[max_nr_couplings]
 
@@ -243,29 +258,86 @@ def write_json_graph(partial_correlations, max_nr_couplings, settings, out_dir):
         G.node[node]['name'] = node
         G.node[node]['group'] = INTERACTION_FOR_AA[node]
 
+
+
     # write json formatted data
     d = json_graph.node_link_data(G)  # node-link format to serialize
     d['settings'] = settings
 
 
     # write graph to json file
-    json_file = out_dir + \
-                '/cb_lower' + str(d['settings']['lower_Cb_threshold']) + \
-                '_cb_upper' + str(d['settings']['upper_Cb_threshold']) + \
-                '_seqsep' + str(d['settings']['sequence_separation']) + \
-                '_nrpairs' + str(d['settings']['nr_residue_pairs']) + \
-                '_diversity' + str(d['settings']['minDiversity']) + \
-                '_minNij' + str(d['settings']['minNij']) + \
-                '_l2normapc' + str(d['settings']['minL2normapc']) + \
-                '_reg_alpha' + str(d['settings']['graphical_lasso_regularization']) + \
-                '.json'
+    json_file = out_dir + "/force.json"
+                #
+                # '/cb_lower' + str(d['settings']['lower_Cb_threshold']) + \
+                # '_cb_upper' + str(d['settings']['upper_Cb_threshold']) + \
+                # '_seqsep' + str(d['settings']['sequence_separation']) + \
+                # '_nrpairs' + str(d['settings']['nr_residue_pairs']) + \
+                # '_diversity' + str(d['settings']['minDiversity']) + \
+                # '_minNij' + str(d['settings']['minNij']) + \
+                # '_l2normapc' + str(d['settings']['minL2normapc']) + \
+                # '_reg_alpha' + str(d['settings']['graphical_lasso_regularization']) + \
+                # '.json'
     json.dump(d, open(json_file, 'w'))
     print('Wrote node-link JSON data to file: ' + json_file)
 
     # Visualisation
-    print("Start webserver on command line in directory work: python -m SimpleHTTPServer 8000")
-    print('load http://localhost:8000/scripts/third_party_scripts/force/force.html')
+    # Serve the file over http to allow for cross origin requests
+    app = flask.Flask(__name__, static_folder=out_dir)
 
+
+    @app.route('/<path:path>')
+    def static_proxy(path):
+        return app.send_static_file(path)
+
+
+    print('\nGo to http://localhost:8000/force.html to see the example\n')
+    app.run(port=8011)
+
+
+def networkx_graph():
+
+    """
+    ==========
+    Javascript
+    ==========
+    Example of writing JSON format graph data and using the D3 Javascript library to produce an HTML/Javascript drawing.
+    """
+    # Author: Aric Hagberg <aric.hagberg@gmail.com>
+
+    #    Copyright (C) 2011-2018 by
+    #    Aric Hagberg <hagberg@lanl.gov>
+    #    Dan Schult <dschult@colgate.edu>
+    #    Pieter Swart <swart@lanl.gov>
+    #    All rights reserved.
+    #    BSD license.
+    import json
+
+    import flask
+    import networkx as nx
+    from networkx.readwrite import json_graph
+
+    G = nx.barbell_graph(6, 3)
+    # this d3 example uses the name attribute for the mouse-hover value,
+    # so add a name to each node
+    for n in G:
+        G.nodes[n]['name'] = n
+    # write json formatted data
+    d = json_graph.node_link_data(G)  # node-link format to serialize
+    # write json
+    json.dump(d, open('/home/vorberg/Documents/networkx/examples/javascript/force/force.json', 'w'))
+    print('Wrote node-link JSON data to /home/vorberg/Documents/networkx/examples/javascript/force/force.json')
+
+    # Serve the file over http to allow for cross origin requests
+    app = flask.Flask(__name__, static_folder="/home/vorberg/Documents/networkx/examples/javascript/force")
+
+
+    @app.route('/<path:path>')
+    def static_proxy(path):
+        return app.send_static_file(path)
+
+
+    print('\nGo to http://localhost:8000/force.html to see the example\n')
+    app.run(port=8000)
 
 def main():
     parser = argparse.ArgumentParser(description='Evaluation a  contact prediction prior  model on full proteins')
@@ -288,21 +360,21 @@ def main():
 
 
     ### debugging --------------------------------------------------------------------------------------------------
-    # braw_dir =  "/home/vorberg/work/data/benchmarkset_cathV4.1/contact_prediction/ccmpred-pll-centerv/braw/"
-    # save_json_graph =  "/home/vorberg/work/data/bayesian_framework/coupling_gaussian_graphical_model/cath4.1/pll/"
-    # alignment_dir =  "/home/vorberg/work/data/benchmarkset_cathV4.1/psicov/"
-    # pdb_dir =  "/home/vorberg/work/data/benchmarkset_cathV4.1/pdb_renum_combs/"
+    # braw_dir =  "/home/vorberg/work/data/ccmgen/psicov/predictions_pcd/"
+    # save_json_graph =  "/home/vorberg/work/plots/force_graphs/"
+    # alignment_dir =  "/home/vorberg/work/data/ccmgen/psicov/alignments/"
+    # pdb_dir =  "/home/vorberg/work/data/ccmgen/psicov/pdb/"
     # cb_lower = 0
-    # cb_upper = 4
-    # nr_residue_pairs = 1000
+    # cb_upper = 8
+    # nr_residue_pairs = 4000
     # -----------------------------------------------------------------------------------------------------------------
 
 
 
-    sequence_separation = 10
+    sequence_separation = 8
     max_nr_couplings = 50
     diversity_threshold = 0.3
-    Nij_threshold = 1000
+    Nij_threshold = 10
     l2normapc_threshold = 0
 
 
@@ -323,10 +395,10 @@ def main():
     while (nr_non_zero < 2 or nr_non_zero > max_nr_couplings):
         if nr_non_zero < 2:
             print(str(nr_non_zero) + " nonzero correlations: decrease alpha to " + str(reg_alpha - 0.01))
-            reg_alpha -= 0.01
+            reg_alpha -= 0.005
         if nr_non_zero > max_nr_couplings:
             print(str(nr_non_zero) + " nonzero correlations: increase alpha to " + str(reg_alpha + 0.01))
-            reg_alpha += 0.01
+            reg_alpha += 0.005
         sparse_inv_cov_matrix, partial_correlations = computePartialCorrelations(coupling_data, reg_alpha)
         nr_non_zero = len(partial_correlations[np.nonzero(partial_correlations)])
 
@@ -339,6 +411,8 @@ def main():
     settings['minNij'] = Nij_threshold
     settings['minL2normapc'] = l2normapc_threshold
     settings['graphical_lasso_regularization'] = np.round(reg_alpha, decimals=3)
+
+
 
     write_json_graph(partial_correlations, max_nr_couplings, settings, save_json_graph)
 

@@ -11,8 +11,8 @@ import argparse
 import os
 import plotly.graph_objs as go
 from plotly.offline import plot as plotly_plot
-from ..utils import io_utils as io
-from ..utils import alignment_utils as au
+from contact_prediction.utils import io_utils as io
+from contact_prediction.utils import alignment_utils as au
 import numpy as np
 
 def plot_amino_acid_distribution_per_position(aa_counts_single, title, plot_file=None, freq=True):
@@ -69,9 +69,10 @@ def main():
     alignment_file              = str(args.alignment_file)
     plot_file                   = str(args.plot_file)
 
-    #protein='1fjrA02'
-    #alignment_file="/home/vorberg/work/data/benchmarkset_cathV4.1/psicov/" + protein + ".filt.psc"
-    #plot_file = "/home/vorberg/alignment_"+protein+".html"
+    #protein='2cuaA'
+    #alignment_file="/home/vorberg/work/data/ccmgen/psicov/alignments/" + protein + ".aln"
+    #alignment_file = "/home/vorberg/work/data/ccmgen/psicov/sampled_pcd_cheating_12_incmr/" + protein + ".star.aln"
+    #plot_file = "/home/vorberg/alignment_"+protein+".cheating_12_incmr.html"
 
 
     alignment = io.read_alignment(alignment_file)

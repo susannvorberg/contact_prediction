@@ -72,11 +72,16 @@ def main():
     if noncontact_thr < contact_thr:
         noncontact_thr = contact_thr
 
+
     #debugging
     # eval_dir="/home/vorberg/work/data/benchmarkset_cathV4.1/evaluation/"
-    # plot_dir="/home/vorberg/"
-    # seqsep=12
+    # eval_dir="/home/vorberg/Documents/eval_ccmgen/evaluation"
+    # plot_dir="/home/vorberg/Documents/eval_ccmgen/plots/"
+    # seqsep=6
     # contact_thr=8
+    # noncontact_thr=8
+    # methods = ["real-apc", "real-noapc", "real-fec", "star-apc", "star-noapc", "star-fec", "binary-apc", "binary-noapc", "binary-fec"]
+    # plot_type=['precision_vs_rank','precision_per_protein', 'meanerror_rank', 'facetted_by_neff' , 'facetted_by_div']
 
     if not os.path.exists(eval_dir):
         print("Evaluation dir {0} does not exitst!".format(eval_dir))

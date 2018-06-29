@@ -191,7 +191,7 @@ done
 #            echo " "
 #
 #            jobname=ccmpredpy_cd.alpha0.sig_decayrate5e-6.samplesize.$name
-#            bsub -W 48:00 -q mpi -m "mpi mpi2 mpi3_all hh sa" -n $OMP_NUM_THREADS -R span[hosts=1] -a openmp  -J $jobname -o job-$jobname-%J.out ccmpred.py $settings
+#            bsub -W 48:00 -q mpi -m "mpi mpi2 mpi3_all hh sa" -n $OMP_NUM_THREADS -R span[hosts=1] -a openmp  -J $jobname -o job-$jobname-%J.out run_ccmpred.py $settings
 #        fi
 #    done
 #done

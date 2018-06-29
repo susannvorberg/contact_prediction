@@ -42,7 +42,7 @@ function run_update_script  {
 
     echo "add $method_name... from "$mat_dir
 
-    settings=$"/usr/users/svorber/work/data/benchmarkset_cathV4.1/evaluation/"
+    settings=$"/usr/users/svorber/work/data/benchmarkset_cathV4.1/evaluation_entropy_correction/"
     settings=$settings" "$mat_dir
     settings=$settings" "$method_name
     settings=$settings" --mat_file "#--no_update
@@ -317,26 +317,77 @@ function run_update_script  {
 #mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/ec_pair_weight_logreg_20000_balance5_regcoeff10/"
 #run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
 
-method_name="sec-21"
+#method_name="sjec-20"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_sergeys_joint_entropy_correction-20states/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+
+#method_name="sjec-20-alnfilter"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_sergeys_joint_entropy_correction-20states-filteredseq/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+
+#method_name="sjec-21"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_sergeys_joint_entropy_correction-21states/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+
+#method_name="sjec-21-alnfilter"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_sergeys_joint_entropy_correction-21states-filteredseq/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+
+#method_name="sjec-21-loge"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_sergeys_joint_entropy_correction-21states-loge/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+#
+#method_name="jec-20"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_joint_entropy_correction-20states/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+
+#method_name="jec-20-alnfilter"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_joint_entropy_correction-20states-filteredseq/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+
+#method_name="jec-21"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_joint_entropy_correction-21states/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+
+#method_name="jec-21-alnfilter"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_joint_entropy_correction-21states-filteredseq/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+
+#method_name="jec-21-loge"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_joint_entropy_correction-21states-loge/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+#
+#method_name="fec-20"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_ec_eta_stefansversion-20states/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+
+#method_name="fec-20-alnfilter"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_ec_eta_stefansversion-20states-filteredseq/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+
+#method_name="fec-21"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_ec_eta_stefansversion-21states/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
+
+method_name="fec-21-alnfilter"
 echo "add method $method_name"
-mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/sergeys_correction/"
+mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_ec_eta_stefansversion-21states-filteredseq/"
 run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
 
-method_name="sec-21"
-echo "add method $method_name"
-mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/sergeys_correction/"
-run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
-
-method_name="sec-21"
-echo "add method $method_name"
-mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/sergeys_correction/"
-run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
-
-method_name="sec-21"
-echo "add method $method_name"
-mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/sergeys_correction/"
-run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
-
-
-
-
+#method_name="fec-21-loge"
+#echo "add method $method_name"
+#mat_dir="/usr/users/svorber/work/data/benchmarkset_cathV4.1/contact_prediction/count_correction/frobenius_ec_eta_stefansversion-21states-loge/"
+#run_update_script $method_name $mat_dir $CONTACT_PREDICTION_PATH
